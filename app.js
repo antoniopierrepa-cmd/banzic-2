@@ -356,7 +356,7 @@
   }
 
   // ---------- Carte
-  let map, layer;
+  let map, layer, rayonLayer = null;
   function couleur(l, t) {
     const s = statutLieu(l.id, t).code;
     if (s === 'live') return l.type === 'plage' ? '#3DD6C6' : '#FF8A3D';
@@ -403,6 +403,10 @@
         L.tileLayer(esri + 'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 })
       ])
     };
+    // Si le fond de carte ne charge pas (aperçu dans Claude, réseau coupé) : fond dessiné de secours + petit mot
+    let tuilesOk = 0, tuilesKo = 0;
+    Object.values(FONDS).forEach((g) => g.eachLayer((t) => { t.on('tileload', () => { tuilesOk++; $('#map').classList.remove('sans-fond'); }); t.on('tileerror', () => { tuilesKo++; if (!tuilesOk && tuilesKo >= 4) $('#map').classList.add('sans-fond'); }); }));
+    setTimeout(() => { if (!tuilesOk) $('#map').classList.add('sans-fond'); }, 4000);
     choisirFond(store.get('fond', 'nuit'));
     L.control.zoom({ position: 'topright' }).addTo(map);
     layer = L.layerGroup().addTo(map);
@@ -2211,9 +2215,10 @@
     Object.values(LIEUX_DEST).filter((l) => l.dest === d.id).forEach((l) => {
       const m = L.circleMarker([l.lat, l.lng], { radius: 7, color: '#F4EFE6', weight: 1, fillColor: l.type === 'plage' ? '#3DD6C6' : '#FF8A3D', fillOpacity: n < 0 ? .45 : .85 });
       m.bindPopup(d.local
-        ? `<div class="pop-venue">${esc(l.nom)}</div><div class="pop-slot">${esc(l.zone)}</div><div class="pop-slot" style="margin-top:4px">${esc(l.style || 'Club')} · DJ à confirmer</div><button class="pop-btn" data-lieu="${l.id}">${T('voir_lieu')}</button>`
+        ? entreeBulle({ k: 'club', lieu: esc(l.zone), etat: 'Club', tete: '<span class="pb-ico club">♪</span>', t: l.nom, heure: esc((l.style || 'Club').split(/[,·:]/)[0].trim()), bang: '<span>Pas encore de DJ annoncé · <b>bangue</b> si ça joue</span>', actions: `<div class="pb-actions"><button class="pb-btn plein" data-lieu="${l.id}">${T('voir_lieu')}</button></div>` })
         : `${photo(l, 'pop-photo')}<div class="pop-venue">${esc(l.nom)}</div><div class="pop-slot">${l.type === 'plage' ? T('plage') : T('club')} · ${esc(l.zone)}</div>
         <div class="pop-slot" style="margin-top:4px">${moisNom(MOIS_NOW)} : ${labelMois(n)}</div><button class="pop-btn" data-lieu="${l.id}">${T('voir_lieu')}</button>`);
+      if (d.local) { m.options.className = ''; m.getPopup().options.className = 'pop-banzic'; m.getPopup().options.closeButton = false; survolBulle(m); }
       m.addTo(layer);
     });
   }
@@ -2500,11 +2505,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const SPOTS_DEMO = () => {
     const now = Date.now();
     return [
-      { id: 'demo-port', demo: true, dest: 'ibiza', type: 'bar', nom: 'Terrasse du port', dj: 'DJ local, house', lat: 38.9107, lng: 1.4372, t: now - 50 * 60000, maj: now - 12 * 60000, conf: 4 },
-      { id: 'demo-bateau', demo: true, dest: 'ibiza', type: 'bateau', nom: 'Catamaran sunset', dj: '', lat: 38.9185, lng: 1.4565, t: now - 35 * 60000, maj: now - 6 * 60000, conf: 2,
+      { id: 'demo-port', demo: true, dest: 'ibiza', type: 'bar', nom: 'Terrasse du port', dj: 'DJ local, house', lat: 38.9107, lng: 1.4372, t: now - 50 * 60000, maj: now - 12 * 60000, conf: 4, par: 'ibz_nights' },
+      { id: 'demo-bateau', demo: true, dest: 'ibiza', type: 'bateau', nom: 'Catamaran sunset', dj: '', lat: 38.9185, lng: 1.4565, t: now - 35 * 60000, maj: now - 6 * 60000, conf: 2, par: 'sunset.lover',
         trace: [[38.9095, 1.4460], [38.9140, 1.4520]] },
-      { id: 'demo-mourillon', demo: true, dest: 'local', type: 'plage', nom: 'Plage du Mourillon', dj: 'DJ Sunny, house', lat: 43.1068, lng: 5.9448, t: now - 40 * 60000, maj: now - 9 * 60000, conf: 5, note: 4 },
-      { id: 'demo-rooftop', demo: true, dest: 'local', type: 'rooftop', nom: 'Rooftop du centre', dj: '', lat: 43.1242, lng: 5.9292, t: now - 25 * 60000, maj: now - 4 * 60000, conf: 3, note: 5 }
+      { id: 'demo-mourillon', demo: true, dest: 'local', type: 'plage', nom: 'Plage du Mourillon', dj: 'DJ Sunny, house', lat: 43.1068, lng: 5.9448, t: now - 40 * 60000, maj: now - 9 * 60000, conf: 5, note: 4, par: 'lea_83' },
+      { id: 'demo-rooftop', demo: true, dest: 'local', type: 'rooftop', nom: 'Rooftop du centre', dj: '', lat: 43.1242, lng: 5.9292, t: now - 25 * 60000, maj: now - 4 * 60000, conf: 3, note: 5, par: 'max.tln' }
     ];
   };
   let SPOTS = store.get('spots', []).concat(SPOTS_DEMO());
@@ -2519,20 +2524,18 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7"/></svg>' });
 
   function popupSpot(s) {
-    return `<div class="pop-venue">${esc(s.nom || TYPES_SPOT[s.type])}</div>
-      <div class="pop-slot">${TYPES_SPOT[s.type]} · signalé ${ilYa(s.t)}</div>
-      <div class="pop-dj">${s.dj ? lienDjs(s.dj) : 'DJ inconnu'}</div>
-      <div class="pop-slot">${spotPublic(s) ? `Confirmé par ${s.conf} personnes · dernière ${ilYa(s.maj)}` : `<b>Ton signalement · en attente ${Math.min(s.conf, SEUIL_SPOT)}/${SEUIL_SPOT}</b>`}</div>
-      ${s.type === 'bateau' ? '<div class="pop-slot">Le bateau bouge : chaque confirmation met sa position à jour.</div>' : ''}
-      <button class="pop-btn" data-spot-ok="${s.id}">${s.type === 'bateau' ? 'Je suis à bord : il joue' : 'J\'y suis : il joue'}</button>
-      ${s.mien && !spotPublic(s) ? `<button class="lien-demo" data-spot-autre="${s.id}">Démo : un autre utilisateur confirme</button>` : ''}`;
+    const n = s.note || 0, c = s.conf || 0, v = n >= 4 && c >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || c >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
+    return entreeBulle({ k: 'spot', lieu: esc(s.nom || TYPES_SPOT[s.type]), etat: 'Spot', tete: `<span class="pb-ico spot">${TYPES_SPOT[s.type].slice(0, 1)}</span>`, t: s.dj || 'DJ inconnu',
+      heure: `Signalé à ${hm(s.t)} par @${esc(s.par || 'un Banger')}`,
+      bang: spotPublic(s) ? `${tetesBangers(c, s.id)}<span><b>${c} Bangers</b> y sont${n ? ' · ' + '★'.repeat(n) : ''}</span><span class="pb-vaut ${v[1]}">${v[0]}</span>` : `<span><b>Ton signalement</b> · en attente ${Math.min(c, SEUIL_SPOT)}/${SEUIL_SPOT}</span>`,
+      actions: `<div class="pb-actions"><button class="pb-btn plein" data-spot-ok="${s.id}">${s.type === 'bateau' ? 'Je suis à bord' : 'J\'y suis : il joue'}</button></div>${s.mien && !spotPublic(s) ? `<button class="lien-demo" data-spot-autre="${s.id}">Démo : un autre utilisateur confirme</button>` : ''}` });
   }
   function marqueursSpots() {
     spotsVisibles().forEach((s) => {
       if (s.type === 'bateau' && s.trace && s.trace.length) {
         L.polyline(s.trace.concat([[s.lat, s.lng]]), { color: '#B58CFF', weight: 2, dashArray: '4 6', opacity: .8 }).addTo(layer);
       }
-      L.marker([s.lat, s.lng], { icon: iconeSpot(s), zIndexOffset: 500 }).bindPopup(popupSpot(s)).addTo(layer);
+      survolBulle(L.marker([s.lat, s.lng], { icon: iconeSpot(s), zIndexOffset: 500 }).bindPopup(popupSpot(s), OPT_BULLE)).addTo(layer);
     });
   }
   function blocSpots() {
@@ -2827,19 +2830,44 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     return `<div class="section-title">Déclarés par les DJ <small>${xs.length} en ce moment</small></div>` + miens.map(carteDecl).join('')
       + (autres.length ? `<div class="acc-rang dc-rang">${autres.map(carte).join('')}</div>` : '');
   }
+  // Bulles blanches de la grande carte : même contenu que l'encart de l'accueil (dessin, état, nom, heure, infos)
+  function dessinBulle(k) {
+    if (k === 'spot') return '<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6c-10 0-18 8-18 18 0 13 18 32 18 32s18-19 18-32c0-10-8-18-18-18z" fill="#0A0D16"/><path d="M24 26l9-6v14l-9-6z" fill="#B58CFF"/><rect x="20" y="22" width="5" height="8" rx="1" fill="#B58CFF"/><path d="M37 21q4 5 0 10M40 18q7 8 0 16" fill="none" stroke="#B58CFF" stroke-width="2" stroke-linecap="round"/></svg>';
+    if (k === 'club') return '<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="#0A0D16"/><circle cx="32" cy="32" r="14" fill="none" stroke="#3DD6C6" stroke-width="1.5" opacity=".6"/><circle cx="32" cy="32" r="8" fill="none" stroke="#3DD6C6" stroke-width="1.5" opacity=".6"/><circle cx="32" cy="32" r="3" fill="#3DD6C6"/></svg>';
+    const c = k === 'live' ? '#F2C53A' : '#FF8A3D';
+    return `<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="17" r="8" fill="#0A0D16"/><path d="M22 17a10 10 0 0 1 20 0" fill="none" stroke="#0A0D16" stroke-width="3"/><rect x="19" y="15" width="5" height="8" rx="2" fill="#0A0D16"/><rect x="40" y="15" width="5" height="8" rx="2" fill="#0A0D16"/><path d="M20 40c2-9 7-13 12-13s10 4 12 13" fill="#0A0D16"/><path d="M14 33l6 7M50 33l-6 7" stroke="#0A0D16" stroke-width="3.5" stroke-linecap="round"/><rect x="6" y="40" width="52" height="16" rx="3" fill="#0A0D16"/><circle cx="20" cy="48" r="5.5" fill="${c}"/><circle cx="44" cy="48" r="5.5" fill="${c}"/></svg>`;
+  }
+  // Les Bangers présents (rempli par la communauté quand ils « banguent » sur place) : petites têtes empilées
+  const tetesBangers = (n, graine) => { const ids = AV_ILLUS.h.concat(AV_ILLUS.f); let g = 7; for (const ch of String(graine)) g = (g * 31 + ch.charCodeAt(0)) >>> 0;
+    return `<span class="bg-tetes">${Array.from({ length: Math.min(n, 4) }, (_, i) => `<img src="avatars-banzic/${ids[(g + i * 7) % ids.length]}.jpg" alt="">`).join('')}</span>`; };
+  // Une entrée de bulle (un DJ, un spot, un club) ; plusieurs entrées au même endroit s'empilent dans la même bulle
+  const entreeBulle = (o) => `<div class="pb-e pb-${o.k}"><div class="pb-haut"><span class="pb-lieu">${o.lieu}</span><span class="pb-etat"><i></i>${o.etat}</span></div>
+    <div class="pb-dj">${o.tete || ''}<span><b>${esc(o.t)}</b><small>${o.heure}</small></span></div>
+    <div class="pb-bang">${o.bang}</div>${o.actions || ''}</div>`;
+  const bulleCarteHtml = (o) => entreeBulle(o);
+  const bullesEmpilees = (lst) => `<div class="pb-pile">${lst.join('<hr class="pb-sep">')}</div>`;
+  const OPT_BULLE = { className: 'pop-banzic', maxWidth: 280, minWidth: 240, closeButton: false, offset: [0, -8] };
+  const survolBulle = (m) => m.on('mouseover', function () { this.openPopup(); });
+
   function marqueursDecls() {
-    declsVisibles().forEach((x) => {
-      const l = lieuDe(x), d = djDe(x); if (!l || l.lat == null) return;
-      L.marker([l.lat, l.lng], { icon: L.divIcon({ className: 'decl-pin' + (declConfirmee(x) ? ' ok' : ''), iconSize: [30, 30], iconAnchor: [15, 15], html: 'DJ' }), zIndexOffset: 600 })
-        .bindPopup(`<div class="pop-venue">${esc(l.nom)}</div><div class="pop-dj">${esc(d.nom)}</div><div class="pop-slot">${esc(x.style)} · jusqu'à ${hm(x.fin)} env.</div>
-          <div class="pop-slot">${declConfirmee(x) ? 'Live confirmé par ' + x.conf + ' personnes' : 'Déclaré par le DJ, pas encore confirmé'} · ${credibilite(d).niv.code === 'nouveau' ? 'Nouveau DJ' : 'crédibilité ' + credibilite(d).score + '/100'}</div>`).addTo(layer);
+    const groupes = {};
+    declsVisibles().forEach((x) => { const l = lieuDe(x), d = djDe(x); if (!l || l.lat == null) return; const k = l.lat.toFixed(4) + ',' + l.lng.toFixed(4);
+      (groupes[k] = groupes[k] || { l, ok: false, html: [] });
+      const ok = declConfirmee(x); groupes[k].ok = groupes[k].ok || ok;
+      groupes[k].html.push(entreeBulle({ k: ok ? 'live' : 'decl', lieu: esc(l.nom), etat: ok ? 'En live' : 'Déclaré', tete: avatarDj(d.nom, 'pb-av'), t: d.nom,
+        heure: `${hm(x.debut)} → ${hm(x.fin)}${x.style ? ' · ' + esc(x.style) : ''}`,
+        bang: ok ? `${tetesBangers(x.conf, x.id)}<span><b>${x.conf} Bangers</b> y sont et confirment</span>` : '<span>Le DJ s\'est déclaré ici · <b>bangue</b> si tu y es</span>',
+        actions: `<div class="pb-actions"><button class="pb-btn" data-decl-ok="${x.id}">J'y suis</button><button class="pb-btn plein" data-dj-pro="${esc(d.nom)}">Fiche du DJ</button></div>` })); });
+    Object.values(groupes).forEach((g) => {
+      L.marker([g.l.lat, g.l.lng], { icon: L.divIcon({ className: 'decl-pin' + (g.ok ? ' ok' : '') + (g.html.length > 1 ? ' plusieurs' : ''), iconSize: [30, 30], iconAnchor: [15, 15], html: g.html.length > 1 ? 'DJ<sup>' + g.html.length + '</sup>' : 'DJ' }), zIndexOffset: 600 })
+        .bindPopup(bullesEmpilees(g.html), OPT_BULLE).addTo(layer);
     });
   }
 
 
   // Carte : cartes moyennes en bas (DJ déclarés et spots signalés), un appui centre la carte et ouvre la bulle
   function renderCartesMap() {
-    const box = $('#map-cartes'); if (!box) return;
+    const box = $('#map-cartes'); if (!box) return; box.hidden = true; box.innerHTML = ''; return; // cartes du bas retirées : les infos sont dans les bulles
     const c = (DEST[state.dest] || {}).centre, dist = (la, lo) => c && la != null ? distKm(c, [la, lo]) : null;
     const kmTxt = (k) => k == null ? '' : ' · ' + (k < 1 ? '< 1' : Math.round(k)) + ' km';
     const ds = declsVisibles().map((x) => { const d = djDe(x), l = lieuDe(x); return `<button class="mc-carte mc-decl" data-mc-ll="${l.lat},${l.lng}">
@@ -3482,6 +3510,52 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   }
   document.addEventListener('click', (e) => { const b = e.target.closest('[data-genre-live]'); if (!b) return; e.stopPropagation(); state.genreLive = b.dataset.genreLive || null; renderAccueil(); if (state.djLiveOuvert) renderDjLive(); });
 
+  // Légende « autour de moi » : on passe le doigt (ou la souris) sur un point, la bulle explique ce qu'il veut dire
+  const bulleLegende = (it) => { const box = it && it.closest('.aut-legende'); if (!box) return; const b = box.querySelector('.lg-bulle');
+    box.querySelectorAll('.lg-item').forEach((x) => x.classList.toggle('on', x === it)); b.textContent = it.dataset.lgInfo; b.classList.add('vu');
+    clearTimeout(bulleLegende.t); bulleLegende.t = setTimeout(() => { b.classList.remove('vu'); box.querySelectorAll('.lg-item').forEach((x) => x.classList.remove('on')); }, 2600); };
+  document.addEventListener('pointerover', (e) => { const it = e.target.closest && e.target.closest('.lg-item'); if (it) bulleLegende(it); });
+  document.addEventListener('touchmove', (e) => { const t = e.touches[0]; const el = t && document.elementFromPoint(t.clientX, t.clientY); const it = el && el.closest('.lg-item'); if (it) bulleLegende(it); }, { passive: true });
+  document.addEventListener('click', (e) => { const it = e.target.closest('.lg-item'); if (it) bulleLegende(it); });
+
+  // Tuiles « autour de moi » : on cherche la plus grande taille de carré qui fait tenir toutes les tuiles dans la zone
+  function tailleZoneAutour() {
+    const z = $('#aut-zone'); if (!z) return; const n = z.children.length; if (!n) return;
+    const W = z.clientWidth, H = parseFloat(getComputedStyle(z).getPropertyValue('--zone-h')) || 240, g = 6;
+    let best = 0, bc = 1;
+    for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c); const s = Math.min((W - (c - 1) * g) / c, (H - (r - 1) * g) / r); if (s > best) { best = s; bc = c; } }
+    const s = Math.floor(Math.min(best, 112));
+    z.style.setProperty('--s', s + 'px'); z.style.setProperty('--cols', bc);
+    z.dataset.taille = s >= 96 ? 'l' : s >= 70 ? 'm' : s >= 48 ? 's' : 'xs';
+  }
+  window.addEventListener('resize', tailleZoneAutour);
+
+  // Mini-carte : le doigt (ou la souris) passe sur un point → encart avec tout ce qu'on sait ; on touche l'encart pour ouvrir la fiche
+  function bulleMiniCarte(x, y, colle) {
+    const box = document.querySelector('[data-mm] .mm-art'); if (!box) return;
+    const r = box.getBoundingClientRect(); if (x < r.left || x > r.right || y < r.top || y > r.bottom) return;
+    let best = null, bd = 30;
+    box.querySelectorAll('.mm-pt').forEach((c) => { const b = c.getBoundingClientRect(), d = Math.hypot(b.left + b.width / 2 - x, b.top + b.height / 2 - y); if (d < bd) { bd = d; best = c; } });
+    const bulle = box.querySelector('.mm-bulle'); if (!best) { if (!colle) bulle.hidden = true; return; }
+    const info = (window.__MM_INFOS || [])[+best.dataset.i]; if (!info) return;
+    if (bulle.dataset.i !== best.dataset.i) { bulle.dataset.i = best.dataset.i; bulle.className = 'mm-bulle enc-' + info.k; bulle.innerHTML = info.html; bulle.dataset.ouvre = info.attr; }
+    bulle.hidden = false;
+    const b = best.getBoundingClientRect(), px = b.left + b.width / 2 - r.left, py = b.top + b.height / 2 - r.top;
+    const w = bulle.offsetWidth, h = bulle.offsetHeight;
+    // l'encart se met du côté opposé au point, pour ne jamais le cacher
+    bulle.style.left = (px < r.width / 2 ? Math.min(r.width - w - 6, px + 18) : Math.max(6, px - w - 18)) + 'px';
+    bulle.style.top = Math.max(6, Math.min(r.height - h - 6, py - h / 2)) + 'px';
+    bulle.dataset.t = Date.now();
+    box.querySelectorAll('.mm-pt.on').forEach((c) => c.classList.remove('on')); best.classList.add('on');
+  }
+  document.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') bulleMiniCarte(e.clientX, e.clientY); });
+  document.addEventListener('touchstart', (e) => { const t = e.touches[0]; if (t && e.target.closest('[data-mm]')) bulleMiniCarte(t.clientX, t.clientY, true); }, { passive: true });
+  document.addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t && e.target.closest('[data-mm]')) bulleMiniCarte(t.clientX, t.clientY, true); }, { passive: true });
+  document.addEventListener('click', (e) => {
+    const bu = e.target.closest('.mm-bulle'); if (bu && Date.now() - (+bu.dataset.t || 0) < 450) return; if (bu) { const m = (bu.dataset.ouvre || '').match(/data-([a-z-]+)="([^"]*)"/); if (m) { const f = document.createElement('button'); f.setAttribute('data-' + m[1], m[2].replace(/&quot;/g, '"').replace(/&amp;/g, '&')); f.hidden = true; document.body.appendChild(f); f.click(); f.remove(); } return; }
+    if (e.target.closest('[data-mm]') && !e.target.closest('[data-tab]')) bulleMiniCarte(e.clientX, e.clientY, true);
+  });
+
   function renderAccueil() {
     const t = state.t, auj = iso(new Date());
     let h = '';
@@ -3491,12 +3565,31 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const spotsP = SPOTS.filter((sp) => spotPublic(sp) && sp.lat != null && km(sp.lat, sp.lng) <= 60);
     const coin = Object.values(LIEUX_DEST).filter((l) => l.dest === 'local').map((l) => ({ l, d: km(l.lat, l.lng) })).filter((o) => o.d <= 60).sort((a, b) => a.d - b.d);
     // Les cartes affichent le lieu répertorié en titre, et le DJ qui y joue en dessous
-    const cartesAutour = decls.map(({ x, l }) => { const d = djDe(x); return accCarte({ titre: l.nom, sous: `${d.nom} · jusqu'à ${hm(x.fin)}`, attr: x.lieu ? `data-lieu="${x.lieu}"` : `data-dj-pro="${esc(d.nom)}"`,
-        badge: declConfirmee(x) ? '<span class="acc-badge"><i></i>LIVE</span>' : '<span class="acc-badge or">Déclaré</span>' }); })
-      .concat(spotsP.map((sp) => accCarte({ titre: sp.nom || TYPES_SPOT[sp.type], sous: `${sp.dj || 'DJ inconnu'} · ${TYPES_SPOT[sp.type]}`, attr: `data-spot-voir="${sp.id}"`, badge: '<span class="acc-badge or">Signalé</span>' })))
-      .concat(coin.map(({ l, d }) => accCarte({ titre: l.nom, sous: `${(l.style || 'Club').split(/[,·:]/)[0].trim()} · ${d < 1 ? '< 1' : Math.round(d)} km`, attr: `data-lieu="${l.id}"`, badge: `<span class="acc-badge hors">${esc(l.zone.split('·')[0].trim())}</span>` })));
-    cartesAutour.unshift(carteMiniMap(centre0, decls, spotsP, coin));
-    h += accRubrique('En direct autour de moi', `${esc(state.zoneGeo.nom)}${state.zoneGeo.approx ? ' · position de démo' : ''} · DJ déclarés et clubs du coin`, cartesAutour, 'data-acc-autour="1"');
+    // Couleurs de la légende : live (or), déclaré (orange), spot signalé (violet), club (turquoise)
+    const COUL_AUTOUR = { live: ['#F2C53A', '#7A5A10'], decl: ['#FF8A3D', '#7A2E10'], spot: ['#B58CFF', '#3E2A7A'], club: ['#3DD6C6', '#0E4A52'] };
+    const gAut = (k) => `linear-gradient(145deg, ${COUL_AUTOUR[k][0]}, ${COUL_AUTOUR[k][1]})`;
+    // Cartes « autour de moi » : petit carré avec un dessin explicite (un DJ aux platines, un spot signalé), aux couleurs de la légende
+    const DESSIN_DJ = (c) => `<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="17" r="8" fill="#0A0D16"/><path d="M22 17a10 10 0 0 1 20 0" fill="none" stroke="#0A0D16" stroke-width="3"/><rect x="19" y="15" width="5" height="8" rx="2" fill="#0A0D16"/><rect x="40" y="15" width="5" height="8" rx="2" fill="#0A0D16"/><path d="M20 40c2-9 7-13 12-13s10 4 12 13" fill="#0A0D16"/><path d="M14 33l6 7M50 33l-6 7" stroke="#0A0D16" stroke-width="3.5" stroke-linecap="round"/><rect x="6" y="40" width="52" height="16" rx="3" fill="#0A0D16"/><circle cx="20" cy="48" r="5.5" fill="${c}"/><circle cx="44" cy="48" r="5.5" fill="${c}"/><circle cx="20" cy="48" r="1.6" fill="#0A0D16"/><circle cx="44" cy="48" r="1.6" fill="#0A0D16"/><path d="M2 12q3 -4 0 -8M58 10q4 -5 0 -10M62 14q3 -4 0 -8" fill="none" stroke="#0A0D16" stroke-width="2" stroke-linecap="round" opacity=".7"/></svg>`;
+    const DESSIN_SPOT = `<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6c-10 0-18 8-18 18 0 13 18 32 18 32s18-19 18-32c0-10-8-18-18-18z" fill="#0A0D16"/><path d="M24 26l9-6v14l-9-6z" fill="#B58CFF"/><rect x="20" y="22" width="5" height="8" rx="1" fill="#B58CFF"/><path d="M37 21q4 5 0 10M40 18q7 8 0 16" fill="none" stroke="#B58CFF" stroke-width="2" stroke-linecap="round"/></svg>`;
+    const DESSIN_CLUB = `<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="#0A0D16"/><circle cx="32" cy="32" r="14" fill="none" stroke="#3DD6C6" stroke-width="1.5" opacity=".6"/><circle cx="32" cy="32" r="8" fill="none" stroke="#3DD6C6" stroke-width="1.5" opacity=".6"/><circle cx="32" cy="32" r="3" fill="#3DD6C6"/><path d="M46 14l6-6" stroke="#0A0D16" stroke-width="3" stroke-linecap="round"/></svg>`;
+    const ilYa = (ms) => { const m = Math.max(1, Math.round((Date.now() - ms) / 60000)); return m < 60 ? `il y a ${m} min` : `il y a ${Math.floor(m / 60)} h`; };
+    // Tuiles « autour de moi » : tout dans le carré (état, dessin, nom, heure). Triées par distance ; ce qui est fini disparaît
+    // (déclarations terminées, spots expirés). Plus il y a de soirées, plus les tuiles rétrécissent pour tenir dans la zone.
+    const kmDe = (la, lo) => la == null ? 99 : km(la, lo);
+    // Encart qui s'ouvre quand on passe le doigt sur un point de la mini-carte : tout ce qu'on sait du lieu
+    const vautLeCoup = (sp) => { const n = sp.note || 0, c = sp.conf || 0; return n >= 4 && c >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || c >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof']; };
+    const fmtKm = (d) => d < 1 ? '< 1 km' : Math.round(d) + ' km';
+    const encart = (o) => ({ k: o.k, attr: o.attr, html: `<span class="enc-art enc-${o.k}">${o.dessin}</span><span class="enc-txt"><span class="enc-etat enc-${o.k}"><i></i>${o.etat}</span><b>${esc(o.t)}</b><span class="enc-heure">${o.heure}</span><small>${o.s}</small>${o.plus || ''}<span class="enc-voir">Voir la fiche →</span></span>` });
+    const infos = decls.filter((o) => o.l).map(({ x, l }) => { const d = djDe(x), k = declConfirmee(x) ? 'live' : 'decl', dist = kmDe(l.lat, l.lng);
+        return encart({ k, attr: x.lieu ? `data-lieu="${x.lieu}"` : `data-dj-pro="${esc(d.nom)}"`, dessin: DESSIN_DJ(k === 'live' ? '#F2C53A' : '#FF8A3D'), etat: k === 'live' ? 'DJ en live' : 'DJ déclaré',
+          heure: `${hm(x.debut)} → ${hm(x.fin)}`, t: d.nom, s: `${esc(l.nom)} · ${fmtKm(dist)}`, plus: `<small>${k === 'live' ? x.conf + ' Bangers confirment' : 'Pas encore confirmé par les Bangers'}</small>` }); })
+      .concat(spotsP.map((sp) => { const dist = kmDe(sp.lat, sp.lng), v = vautLeCoup(sp); return encart({ k: 'spot', attr: `data-spot-voir="${sp.id}"`, dessin: DESSIN_SPOT, etat: 'Spot signalé', heure: `Signalé à ${hm(sp.t)}`,
+        t: sp.nom || TYPES_SPOT[sp.type], s: `${esc(sp.dj || 'DJ inconnu')} · ${fmtKm(dist)}`, plus: `<small>par <b>@${esc(sp.par || 'un Banger')}</b> · ${sp.conf} confirment${sp.note ? ' · ' + '★'.repeat(sp.note) : ''}</small><span class="enc-vaut ${v[1]}">${v[0]}</span>` }); }))
+      .concat(coin.slice(0, 14).map(({ l, d }) => encart({ k: 'club', attr: `data-lieu="${l.id}"`, dessin: DESSIN_CLUB, etat: 'Club du coin', heure: 'DJ à confirmer', t: l.nom, s: `${esc((l.style || 'Club').split(/[,·:]/)[0].trim())} · ${fmtKm(d)}` })));
+    const lgItem = (k, nom, info) => `<button type="button" class="lg-item" data-lg-info="${info}"><i class="lg ${k}"></i>${nom}</button>`;
+    const legende = `<div class="aut-legende" aria-label="Légende de la carte">${lgItem('moi', 'Toi', 'Ta position')}${lgItem('live', 'Live', 'DJ en live, confirmé par les Bangers')}${lgItem('decl', 'Déclaré', 'DJ déclaré, pas encore confirmé')}${lgItem('spot', 'Spot', 'Spot signalé par un Banger : bar, plage, bateau…')}${lgItem('club', 'Club', 'Club du coin, DJ à confirmer')}<span class="lg-bulle" aria-live="polite"></span></div>`;
+    h += `<section class="acc-rub"><div class="acc-tete"><div><h2>En direct autour de moi</h2><small>${esc(state.zoneGeo.nom)}${state.zoneGeo.approx ? ' · position de démo' : ''} · passe le doigt sur un point</small></div></div>
+      <div class="aut-carte">${carteMiniMap(centre0, decls, spotsP, coin, infos)}</div>${legende}</section>`;
     // 1 bis. Agenda autour de moi : de petites cartes par type de sortie, avec le nombre de dates dans le rayon de l'Agenda
     const rayonAg = RAYONS[state.rayonIdx], dansRayon = soireesAvecKm().filter((x) => x.km <= rayonAg);
     const nbType = (k) => k === 'tout' ? dansRayon.length : dansRayon.filter((x) => (x.type || 'club') === k).length;
@@ -3566,15 +3659,15 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   }
   // Première carte de « En direct autour de moi » : une mini-carte dessinée (ma position, les DJ déclarés, les clubs du coin).
   // Dessinée en SVG pour s'afficher partout, même sans fond de carte ; un toucher ouvre la vraie carte.
-  function carteMiniMap(c, decls, spots, coin) {
-    const W = 264, H = 165, cx = W / 2, cy = H / 2;
-    const pts = decls.filter((o) => o.l).map((o, i) => o.l.lat != null ? { la: o.l.lat, lo: o.l.lng, t: 'dj' } : { la: c[0] + 0.004 + i * 0.002, lo: c[1] + 0.006, t: 'dj' })
+  function carteMiniMap(c, decls, spots, coin, infos) {
+    const W = 420, H = 165, cx = W / 2, cy = H / 2;
+    const pts = decls.filter((o) => o.l).map((o, i) => { const t = declConfirmee(o.x) ? 'live' : 'decl'; return o.l.lat != null ? { la: o.l.lat, lo: o.l.lng, t } : { la: c[0] + 0.004 + i * 0.002, lo: c[1] + 0.006, t }; })
       .concat(spots.map((sp) => ({ la: sp.lat, lo: sp.lng, t: 'spot' })))
       .concat(coin.slice(0, 14).map((o) => ({ la: o.l.lat, lo: o.l.lng, t: 'club' })));
     const xy = (p) => ({ x: (p.lo - c[1]) * Math.cos(c[0] * Math.PI / 180), y: -(p.la - c[0]) });
     const raw = pts.map((p) => ({ ...xy(p), t: p.t })), max = Math.max(0.004, ...raw.map((p) => Math.hypot(p.x, p.y)));
     // échelle en racine carrée : les lieux tout proches s'écartent du centre, les lointains restent dans le cadre
-    const pos = raw.map((p) => { const d = Math.hypot(p.x, p.y) || 1e-9, r = 18 + 52 * Math.sqrt(d / max); return { x: cx + p.x / d * r, y: cy + p.y / d * r, t: p.t }; });
+    const pos = raw.map((p) => { const d = Math.hypot(p.x, p.y) || 1e-9, r = 18 + 58 * Math.sqrt(d / max); return { x: cx + p.x / d * r * 1.6, y: cy + p.y / d * r, t: p.t }; });
     let rues = ''; for (let i = 0; i < 9; i++) { const a = (i * 47 + 13) % 180, r = a * Math.PI / 180, dx = Math.cos(r) * 200, dy = Math.sin(r) * 200, ox = ((i * 37) % 120) - 60, oy = ((i * 53) % 80) - 40;
       rues += `<line x1="${cx + ox - dx}" y1="${cy + oy - dy}" x2="${cx + ox + dx}" y2="${cy + oy + dy}" stroke="#2A3A63" stroke-width="${i % 3 ? 1 : 2.4}"/>`; }
     const nDj = decls.length + spots.length;
@@ -3582,10 +3675,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       <rect width="${W}" height="${H}" fill="#0C1430"/>${rues}
       <path d="M0 ${H * .78} C ${W * .3} ${H * .7}, ${W * .55} ${H * .95}, ${W} ${H * .82} L ${W} ${H} L 0 ${H} Z" fill="#0A2240" opacity=".9"/>
       ${[28, 50, 72].map((r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#3DD6C6" stroke-opacity=".18" stroke-dasharray="3 4"/>`).join('')}
-      ${pos.filter((p) => p.t === 'club').map((p) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.6" fill="#3DD6C6" stroke="#0C1430" stroke-width="1.2"/>`).join('')}
-      ${pos.filter((p) => p.t !== 'club').map((p) => `<circle class="mm-pulse" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="11" fill="#F2C53A" opacity=".35"/><circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6" fill="#F2C53A" stroke="#0C1430" stroke-width="1.5"/>`).join('')}
+      ${pos.map((p, i) => ({ p, i })).filter((o) => o.p.t === 'club').map(({ p, i }) => `<circle class="mm-pt" data-i="${i}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.6" fill="#3DD6C6" stroke="#0C1430" stroke-width="1.2"/>`).join('')}
+      ${pos.map((p, i) => ({ p, i })).filter((o) => o.p.t !== 'club').map(({ p, i }) => { const col = { live: '#F2C53A', decl: '#FF8A3D', spot: '#B58CFF' }[p.t]; return `<circle class="mm-pulse mm-${p.t}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="11" fill="${col}" opacity=".35"/><circle class="mm-pt" data-i="${i}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6" fill="${col}" stroke="#0C1430" stroke-width="1.5"/>`; }).join('')}
       <circle class="mm-pulse" cx="${cx}" cy="${cy}" r="12" fill="#4DA3FF" opacity=".3"/><circle cx="${cx}" cy="${cy}" r="6.5" fill="#4DA3FF" stroke="#fff" stroke-width="2"/></svg>`;
-    return `<button class="acc-carte large acc-minimap" data-tab="map"><span class="acc-art mm-art">${svg}<span class="acc-badge"><i></i>${nDj} DJ autour</span><span class="mm-ouvrir">Ouvrir la carte</span></span><b>Carte autour de moi</b><span class="acc-s">${esc(state.zoneGeo.nom)} · ${coin.length} club${coin.length > 1 ? 's' : ''} à moins de 60 km</span></button>`;
+    window.__MM_INFOS = infos || [];
+    return `<div class="acc-carte large acc-minimap" data-mm="1"><span class="acc-art mm-art">${svg}<span class="acc-badge"><i></i>${nDj} DJ autour</span><button class="mm-ouvrir" data-tab="map">Ouvrir la carte</button><span class="mm-bulle" hidden></span></span></div>`;
   }
 
   // L'onglet Accueil ramène toujours à la page d'accueil
@@ -3793,15 +3887,21 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // En ouvrant la carte : on atterrit sur le point bleu de géolocalisation (position réelle du téléphone)
   function centrerSurMoi() {
     if (!map || !estInscrit()) return;
-    const poser = () => { const m = state.maPos; dessinerMoi(); map.setView([m.lat, m.lng], Math.max(map.getZoom(), 14)); };
+    // Point GPS au milieu, cercle de 50 km autour : la carte s'ouvre cadrée sur ce cercle
+    const poser = () => { const m = state.maPos, c = m ? [m.lat, m.lng] : ((state.zoneGeo && DEST[state.zoneGeo.dest]) || DEST.local).centre; dessinerMoi();
+      if (!rayonLayer) rayonLayer = L.layerGroup().addTo(map); rayonLayer.clearLayers();
+      const cercle = L.circle(c, { radius: 50000, color: '#4DA3FF', weight: 1.5, opacity: .7, dashArray: '6 6', fillColor: '#4DA3FF', fillOpacity: .05, interactive: false }).addTo(rayonLayer);
+      L.marker(L.latLng(c[0] + 50 / 111, c[1]), { icon: L.divIcon({ className: 'rayon-label', html: '<span>50 km</span>', iconSize: [60, 20], iconAnchor: [30, 10] }), interactive: false }).addTo(rayonLayer);
+      map.fitBounds(cercle.getBounds(), { padding: [10, 10] }); };
     if (state.maPos && Date.now() - state.maPos.t < 120000) { poser(); return; }
+    poser();
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition((p) => {
       state.maPos = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy, t: Date.now() };
       state.zoneGeo = zoneDe([state.maPos.lat, state.maPos.lng], false, villeProche(state.maPos.lat, state.maPos.lng));
       if (state.mode === 'geo') changerDest(state.zoneGeo.dest);
       if (state.tab === 'map') poser();
-    }, (err) => { if (err && err.code === 1) toast('Pour te voir sur la carte, autorise la position : Réglages › Confidentialité › Service de localisation › Safari'); },
+    }, () => { /* position refusée ou indisponible : la carte reste sur la zone, sans message ; le bouton viseur permet de réessayer */ },
     { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
   }
 
