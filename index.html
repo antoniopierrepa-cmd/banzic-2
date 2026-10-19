@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070B18">
+<title>Banzic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="leaflet.css">
+<link rel="stylesheet" href="style.css?v=1792422100">
+<style>html,body{height:100%;margin:0;background:#070B18}</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Écran d'accueil (au lancement de l'appli) -->
+  <div class="splash vb" id="splash" role="dialog" aria-label="Banzic">
+    <div class="splash-langue">
+      <button class="sl-bouton" id="sl-bouton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Choisir sa langue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.6 2.8 3.9 6 3.9 9.5s-1.3 6.7-3.9 9.5c-2.6-2.8-3.9-6-3.9-9.5s1.3-6.7 3.9-9.5z"/></svg>
+        <span id="sl-code">FR</span></button>
+      <div class="sl-liste" id="sl-liste" role="listbox" hidden></div>
+    </div>
+    <div class="splash-scene">
+      <div class="sc-jog" aria-hidden="true"></div>
+      <div class="sc-ecran">
+        <div class="sc-ligne" dir="ltr">
+          <svg class="sc-logo" viewBox="0 0 120 120" aria-hidden="true">
+            <g class="sv-ext"><circle cx="60" cy="60" r="50" fill="none" stroke="#FF8A3D" stroke-width="8" stroke-dasharray="220 45" stroke-linecap="round"/></g>
+            <g class="sv-int"><circle cx="60" cy="60" r="30" fill="none" stroke="#FFB27A" stroke-width="8" stroke-dasharray="130 34" stroke-linecap="round"/></g>
+            <circle cx="60" cy="60" r="12" fill="#FF8A3D"/>
+          </svg>
+          <div class="sc-nom">BANZIC</div>
+        </div>
+        <div class="sc-phrase" dir="ltr">Find your DJ. Feel the night.</div>
+        <div class="sc-barre" aria-hidden="true"><i></i></div>
+        <div class="sc-onde" aria-hidden="true"><canvas></canvas><i class="sc-tete"></i></div>
+        <div class="sc-apercu" aria-hidden="true"><canvas></canvas><i class="sc-lu"></i></div>
+      </div>
+      <div class="sc-centre" dir="ltr"><span>Find your DJ.</span> <span>Feel the night.</span></div>
+      <div class="sc-plateau" aria-hidden="true">
+        <svg class="sl-vinyle" viewBox="0 0 120 120">
+          <g fill="none" stroke="#F4F1EA" stroke-opacity=".08" stroke-width=".6"><circle cx="60" cy="60" r="56"/><circle cx="60" cy="60" r="52"/><circle cx="60" cy="60" r="44"/><circle cx="60" cy="60" r="40"/></g>
+          <g class="sv-ext"><circle cx="60" cy="60" r="50" fill="none" stroke="#FF8A3D" stroke-width="6" stroke-dasharray="220 45" stroke-linecap="round"/></g>
+          <g class="sv-int"><circle cx="60" cy="60" r="30" fill="none" stroke="#FFB27A" stroke-width="6" stroke-dasharray="130 34" stroke-linecap="round"/></g>
+          <circle cx="60" cy="60" r="11" fill="#FF8A3D"/><circle cx="60" cy="60" r="2.6" fill="#070B18"/>
+        </svg>
+      </div>
+    </div>
+    <button class="splash-entrer sp-play" id="splash-entrer" hidden aria-label="Se connecter">
+      <span class="sp-play-rond"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/><rect x="18.6" y="5.5" width="0" height="0"/></svg></span>
+      <span class="sp-txt">Se connecter</span>
+    </button>
+  </div>
+
+  <header class="top">
+    <div class="top-row">
+      <div class="brand-g">
+        <h1 class="brand"><svg class="brand-ico tourne" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="#FF8A3D" stroke-width="1.6" stroke-dasharray="44 9" stroke-linecap="round"/><circle cx="12" cy="12" r="6" fill="none" stroke="#FFB27A" stroke-width="1.6" stroke-dasharray="26 6" stroke-linecap="round"/><circle cx="12" cy="12" r="2.2" fill="#FF8A3D"/></svg>Banzic<span>.</span></h1>
+        <div class="mode-choix" role="group" aria-label="Où regarder">
+          <button class="mode-btn" data-mode="geo" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Autour de moi<small id="mode-zone"></small></span></button>
+        </div>
+      </div>
+      <div class="dest-ligne" id="dest-ligne" role="group" aria-label="Destinations"></div>
+      <button class="ent-ico" id="ent-cloche" type="button" aria-label="Notifications" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><b class="ent-pastille" id="nb-notif"></b></button>
+      <button class="ent-ico" id="ent-msg" type="button" aria-label="Messages" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.8 7L3 21l2-6A8 8 0 1 1 21 12z"/></svg><b class="ent-pastille" id="nb-msg"></b></button>
+      <button class="ent-moi" id="ent-moi" type="button" aria-label="Mon profil"></button>
+      <div class="ent-panneau" id="ent-panneau" hidden></div>
+      <div class="clock" aria-live="polite">
+        <b id="clock">--:--</b>
+        <small id="clock-date">Jeudi 1er octobre</small>
+      </div>
+    </div>
+    <div class="recherche" role="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <input id="recherche-dj" type="search" placeholder="Un DJ, un club, une ville…" aria-label="Chercher un DJ, un club ou une plage" autocomplete="off" aria-controls="suggestions-dj" aria-expanded="false">
+      <div class="suggestions" id="suggestions-dj" role="listbox" hidden></div>
+    </div>
+    <div class="pastilles">
+    <button class="acc-chip" id="chip-pourtoi" type="button" data-acc="accueil">Pour toi</button>
+    <button class="btn-autour" id="btn-autour" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Autour de moi</button>
+    <button class="btn-djlive vide" id="btn-djlive" type="button" aria-label="DJ live dans le monde">
+      <span class="pt-rouge" aria-hidden="true"></span>DJ live dans le monde <b id="djlive-n"></b>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+    <button class="acc-chip" id="chip-direct" type="button" data-acc="liste">En direct</button>
+    <button class="acc-chip" type="button" data-tab="agenda">Festivals</button>
+    </div>
+  </header>
+
+  <!-- Écran En direct -->
+  <main class="screen" id="screen-live">
+    <div id="accueil" hidden></div>
+    <div class="chips" id="chips"></div>
+    <div id="live-list"></div>
+    <p class="demo-note" id="live-note">Démo : line-ups réels du jeudi 1er octobre (source Ibiza Spotlight). Les horaires de passage et les confirmations sont simulés. L'heure est l'heure réelle : le programme de ce jeudi est rejoué au fil de la journée.</p>
+  </main>
+
+  <!-- Écran Carte -->
+  <main class="screen map-screen" id="screen-map" hidden>
+    <div id="map"></div>
+    <div class="vue-carte" role="group" aria-label="Affichage">
+      <button class="seg on" data-vue-carte="carte" aria-pressed="true">Carte</button>
+      <button class="seg" data-vue-carte="lieux" aria-pressed="false">Lieux</button>
+    </div>
+    <div class="galerie-lieux" id="galerie-lieux" hidden></div>
+    <div class="fond-carte" role="group" aria-label="Fond de carte">
+      <button class="seg" data-fond="nuit" aria-pressed="true">Nuit</button>
+      <button class="seg" data-fond="satellite" aria-pressed="false">Satellite</button>
+    </div>
+    <button class="btn-moi" id="btn-moi" type="button" aria-label="Me localiser">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+    <button class="btn-spot" id="btn-spot" aria-label="Signaler un DJ qui joue ici, hors des lieux répertoriés">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Un DJ joue ici</button>
+    <div class="panel-spot" id="panel-spot" hidden></div>
+    <div class="map-cartes" id="map-cartes" aria-label="DJ déclarés et spots"></div>
+    <div class="map-legend">
+      <span><i style="background:#FF8A3D"></i>Club live</span>
+      <span><i style="background:#3DD6C6"></i>Plage live</span>
+      <span><i style="background:#F2B53A"></i>Bientôt</span>
+      <span><i style="background:#8A8498"></i>Fini · fermé</span>
+    </div>
+  </main>
+
+  <!-- Écran Mes DJ -->
+  <main class="screen" id="screen-fav" hidden>
+    <div class="section-title">Mes DJ ce soir</div>
+    <div id="fav-list"></div>
+    <div class="section-title" id="fav-titre-annuaire">Tous les DJ passés à Ibiza</div>
+    <input class="search" id="fav-search" type="search" placeholder="Chercher un DJ" aria-label="Chercher un DJ">
+    <div id="fav-suggest" style="margin-top:10px"></div>
+  </main>
+
+  <!-- Écran Agenda -->
+  <main class="screen" id="screen-agenda" hidden></main>
+
+  <!-- Écran Profil -->
+  <main class="screen" id="screen-profil" hidden></main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <button class="btn-avis" id="btn-avis" type="button">Ton avis</button>
+  <div class="avis-calque" id="avis-calque" hidden>
+    <div class="avis-feuille" role="dialog" aria-modal="true" aria-labelledby="avis-titre">
+      <div class="avis-tete"><h2 id="avis-titre">Ton avis sur Banzic</h2><button class="ps-x" id="avis-fermer" type="button" aria-label="Fermer">×</button></div>
+      <p class="aide">C'est un prototype en test. Dis-nous ce que tu en penses, tout nous aide.</p>
+      <form id="form-avis" novalidate>
+        <div class="champ"><span>Ta note</span>
+          <div class="avis-etoiles" role="radiogroup" aria-label="Ta note sur 5">
+            <label><input type="radio" name="note" value="1"><b>★</b></label><label><input type="radio" name="note" value="2"><b>★</b></label><label><input type="radio" name="note" value="3"><b>★</b></label><label><input type="radio" name="note" value="4"><b>★</b></label><label><input type="radio" name="note" value="5"><b>★</b></label>
+          </div></div>
+        <label class="champ"><span>Ce que tu aimes</span><textarea class="search" id="avis-aime" name="aime" rows="2" maxlength="500" placeholder="L'idée, la carte, l'écran d'accueil…"></textarea></label>
+        <label class="champ"><span>Ce qui manque ou ce qui gêne</span><textarea class="search" id="avis-manque" name="manque" rows="2" maxlength="500" placeholder="Ce que tu changerais"></textarea></label>
+        <label class="champ"><span>Tu l'utiliserais à Ibiza ?</span>
+          <select class="search" id="avis-utilise" name="utilise"><option value="">Choisis</option><option>Oui, sûr</option><option>Peut-être</option><option>Non</option></select></label>
+        <label class="champ"><span>Ton prénom (facultatif)</span><input class="search" id="avis-prenom" name="prenom" maxlength="30" autocomplete="given-name"></label>
+        <p class="erreur" id="err-avis" hidden>Mets au moins une note</p>
+        <button type="submit" class="btn-plein">Envoyer mon avis</button>
+      </form>
+      <div class="avis-envoi" id="avis-envoi" hidden></div>
+      <div class="avis-recus" id="avis-recus" hidden></div>
+    </div>
+  </div>
+
+  <nav class="tabs" aria-label="Navigation principale">
+    <button class="tab on" data-tab="live">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Accueil
+    </button>
+    <button class="tab" data-tab="map">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Carte
+    </button>
+    <button class="tab tab-plus" id="tab-plus" type="button" aria-label="Banger : noter le DJ qui joue ici, ou signaler un DJ"><span class="plus-rond"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.8v14.4L19 12z"/></svg><span class="pr-txt">Banger</span></span></button>
+    <button class="tab tab-cherche" id="tab-cherche" type="button" aria-label="Chercher un DJ, un club ou une ville"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Recherche</button>
+    <button class="tab" data-tab="profil">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Profil
+    </button>
+  </nav>
+
+  <!-- Fiche DJ -->
+  <section class="sheet" id="sheet-dj" aria-hidden="true">
+    <div class="sheet-top">
+      <button class="back" id="dj-back" aria-label="Retour">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <span class="badge b-est">Fiche DJ</span>
+    </div>
+    <div class="sheet-body" id="dj-body"></div>
+  </section>
+
+  <!-- DJ en live (YouTube) -->
+  <section class="sheet" id="sheet-djlive" aria-hidden="true">
+    <div class="sheet-top">
+      <button class="back" id="djlive-back" aria-label="Retour">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body" id="djlive-body"></div>
+  </section>
+
+  <!-- Fiche lieu -->
+  <section class="sheet" id="sheet" aria-hidden="true">
+    <div class="sheet-top">
+      <button class="back" id="sheet-back" aria-label="Retour">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <span id="sheet-status"></span>
+    </div>
+    <div class="sheet-body" id="sheet-body"></div>
+    <div class="actions" id="sheet-actions"></div>
+  </section>
+
+</div>
+<script src="leaflet.js"></script>
+<script src="i18n.js?v=1792400100"></script>
+<script src="data.js?v=1792112000"></script>
+<script src="saison2025.js?v=1792112000"></script>
+<script src="destinations.js?v=3"></script>
+<script src="tournees.js?v=1792112000"></script>
+<script src="villes.js?v=2"></script>
+<script src="agenda-sud.js?v=3"></script>
+<script src="agenda-france.js?v=1"></script>
+<script src="agenda-fest.js?v=2"></script>
+<script src="agenda-ra.js?v=1"></script>
+<script src="agenda-shotgun.js?v=2"></script>
+<script src="saisons-monde.js?v=1"></script>
+<script src="photos-dj.js?v=1"></script>
+<script src="avatars-dj.js?v=1"></script>
+<script src="photos-lieux.js?v=2"></script>
+<script src="photos-lieux-illus.js?v=2"></script>
+<script src="djmag2026.js?v=1"></script>
+<script src="app.js?v=1792422100"></script>
+<!-- Prototype 2 : pop-up « Deviens membre » désactivée -->
+</body>
+</html>
