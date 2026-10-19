@@ -1990,3 +1990,7 @@ nav.tabs .tab-cherche.on { color: var(--orange); }
 .gc-coche { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 50%; background: rgba(5,7,15,.55); border: 1.5px solid rgba(255,255,255,.7); }
 .genre-carte.on .gc-coche { background: var(--orange); border-color: var(--orange); }
 .genre-carte.on .gc-coche::after { content: ''; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid #0A0D16; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+
+/* Menu Agenda de la fiche DJ : 3 onglets sur une ligne */
+.segs.ag-dj { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 10px; }
+.segs.ag-dj .seg { white-space: nowrap; font-size: 12.5px; padding-left: 4px; padding-right: 4px; }

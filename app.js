@@ -1699,6 +1699,35 @@
     return h;
   }
 
+  // Menu « Agenda » d'une fiche DJ (agenda-djs.js) : à venir à partir d'aujourd'hui, saison Ibiza 2026, dates passées
+  const agendaDj = (nom) => { const A = window.AGENDA_DJS || {}; const k = Object.keys(A).find((n) => sansAccent(n) === sansAccent(nom)); return k ? A[k] : null; };
+  function blocAgendaDj(nom) {
+    const A = agendaDj(nom); if (!A) return '';
+    const auj = isoAuj(), lig = (r) => ({ date: r[0], fin: r[1], lieu: r[2], ville: r[3], pays: r[4], titre: r[5], url: r[6], heure: r[7] });
+    const avenir = A.avenir.map(lig).filter((x) => (x.fin || x.date) >= auj), ibiza = A.ibiza.map(lig), passe = A.monde.map(lig).concat(ibiza).filter((x) => (x.fin || x.date) < auj).sort((a, b) => b.date.localeCompare(a.date));
+    const ong = state.agendaDj && state.agendaDj.dj === nom ? state.agendaDj.o : 'avenir';
+    const liste = ong === 'ibiza' ? ibiza : ong === 'passe' ? passe : avenir;
+    const fmtJ = (iso) => { const x = new Date(iso + 'T12:00'); return ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'][x.getDay()] + ' ' + x.getDate() + ' ' + MOIS[x.getMonth()] + (x.getFullYear() !== new Date().getFullYear() ? ' ' + x.getFullYear() : ''); };
+    const DEST_IMG = { Tulum: 'tulum-carte.jpg', Mykonos: 'mykonos-carte.jpg' };
+    const img = (x) => (x.ville === 'Ibiza' ? (imgLieu(lieux[x.lieu]) || ((window.PHOTOS_LIEUX || {})[x.lieu] || {}).f) : '') || photoVille(x.ville, x.pays) || DEST_IMG[x.ville] || 'fond-platine.jpg';
+    const carte = (x) => { const j = Math.round((new Date(x.date + 'T12:00') - new Date(auj + 'T12:00')) / 864e5);
+      const badge = (DRAPEAU_PAYS[x.pays] || '') + ' ' + (j === 0 ? 'Ce soir' : j === 1 ? 'Demain' : j > 1 && j <= 30 ? 'Dans ' + j + ' j' : esc(x.pays));
+      return vCarte({ tag: 'a', attr: `href="${esc(x.url)}" target="_blank" rel="noopener"`, c: '#FF8A3D', img: img(x), extra: pastilleDj(nom), badge,
+        type: fmtJ(x.date) + (x.fin ? ' → ' + fmtJ(x.fin) : '') + (x.heure ? ' · ' + x.heure : ''), nom: esc(x.ville === 'Ibiza' ? nomLieu(x.lieu) : x.lieu), lieu: esc(x.ville === 'Ibiza' ? x.titre : x.ville + ' · ' + x.pays) })
+        .replace('dc-carte vc', 'dc-carte vc date-pays').replace('style="--mc:#FF8A3D"', 'style="--mc:#FF8A3D;--mc2:#B23DFF"'); };
+    const b = (k, l, n) => `<button class="seg ${ong === k ? 'on' : ''}" data-agenda-dj="${k}" aria-pressed="${ong === k}">${l} <small>${n}</small></button>`;
+    const mj = new Date(A.maj + 'T12:00');
+    return `<div class="section-title" id="dj-agenda">Agenda <small>${avenir.length} date${avenir.length > 1 ? 's' : ''} à venir</small></div>
+      <div class="segs ag-dj" role="group" aria-label="Agenda du DJ">${b('avenir', 'À venir', avenir.length)}${b('ibiza', 'Ibiza 2026', ibiza.length)}${b('passe', 'Déjà passées', passe.length)}</div>
+      ${liste.length ? rangCartes(liste.map(carte)) : '<p class="conseil">Aucune date annoncée pour l\'instant.</p>'}
+      <p class="aide">Dates relevées le ${mj.getDate()} ${MOIS[mj.getMonth()]} ${mj.getFullYear()} sur Resident Advisor, Songkick et Ibiza Spotlight. Touche une date pour la page billets.</p>`;
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-agenda-dj]'); if (!b || !state.djOuvert) return;
+    state.agendaDj = { dj: state.djOuvert, o: b.dataset.agendaDj }; renderDj();
+    const t = document.querySelector('#dj-agenda'); if (t) t.scrollIntoView({ block: 'start' });
+  });
+
   // Fiche DJ : en-tête commun (DJ Pro = premium, DJ Live = normal, sinon fiche d'après les line-ups)
   const ALERTES_DJ = store.get('alertesDj', {});
   function ficheTeteDj(nom, pro, ceSoirN, nbSaison) {
@@ -1746,6 +1775,7 @@
 
     const pro = djProParNom(nom);
     let h = ficheTeteDj(nom, pro, ceSoir.length, saison.length) + `${photoLibre(nom) && !fondAvatarDj(nom) ? `<p class="credit-photo">Photo : ${esc(photoLibre(nom).auteur || 'Wikimedia Commons')} · ${esc(photoLibre(nom).licence)} · <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(photoLibre(nom).page.replace(/ /g, '_'))}" target="_blank" rel="noopener">Wikimedia Commons</a></p>` : `<p class="credit-photo" data-credit-photo="${esc(nom)}" hidden></p>`}`;
+    h += blocAgendaDj(nom);
     if (!pro) {
       h += `<div class="revendiquer"><span><b>Fiche créée d'après les line-ups officiels</b><small>Tu es ${esc(nom)} ? Revendique ta fiche pour la gérer : photo, bio, dates, et le badge ✓ Officiel.</small></span>
         <button class="alerte" data-revendiquer="${esc(nom)}">Revendiquer</button></div>`;
@@ -1807,7 +1837,7 @@
         ${rangCartes(saison.map((r) => vCarte({ attr: `data-saison-jour="${r.date}"`, c: '#E5484D', img: imgLieu(lieux[r.lieu]) || ((window.PHOTOS_LIEUX || {})[r.lieu] || {}).f || '', extra: pastilleDj(nom), badge: '🇪🇸 ' + NIVEAUX[r.niveau].court, type: fmtD(r.date) + (r.type ? ' · ' + TYPES[r.type] : ''), nom: esc(nomLieu(r.lieu)), lieu: esc(r.soiree) })
           .replace('dc-carte vc', 'dc-carte vc date-pays').replace('style="--mc:#E5484D"', 'style="--mc:#E5484D;--mc2:#F2C53A"')))}`;
     }
-    h += blocTournee(nom);
+    if (!agendaDj(nom)) h += blocTournee(nom);
     h += blocCommentaires(nom);
     $('#dj-body').innerHTML = h;
     remplirAvatars($('#dj-body'));
