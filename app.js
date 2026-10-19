@@ -1668,6 +1668,7 @@
     const PAYS_DEP = { ES: 'Espagne', PT: 'Portugal' };
     const agenda = (SUD.soirees || []).filter((x) => x.djs && SUD.lieux[x.lieu] && decouperDjs(x.djs).some((n) => sansAccent(n) === k))
       .map((x) => { const l = SUD.lieux[x.lieu]; return { date: x.date, lieu: x.nom, ville: l.ville, pays: PAYS_DEP[l.dep] || 'France' }; });
+    soireesDubai().filter((r) => decouperDjs(r.djs || '').some((n) => sansAccent(n) === k)).forEach((r) => agenda.push({ date: r.date, lieu: r.nomLieu, ville: 'Dubaï', pays: 'Émirats arabes unis' }));
     if (!cle && !agenda.length) return titre + (carteResident(nom) ? `<div class="acc-rang pays-rang">${carteResident(nom)}</div>` : '') + `<p class="conseil">Sa tournée hors Ibiza n'est pas encore relevée. Pour voir où il joue :</p>` + chercher;
     const d = cle ? T.djs[cle] : { dates: [], sources: {} };
     const auj = new Date(); auj.setHours(0, 0, 0, 0);
@@ -2116,6 +2117,26 @@
     });
   })();
 
+  // Agenda réel de Dubaï (agenda-dubai.js) : à partir d'aujourd'hui, date réelle du téléphone
+  const AG_DXB = window.AGENDA_DUBAI || { lieux: {}, soirees: [] };
+  const isoAuj = () => { const x = new Date(); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+  const soireesDubai = () => AG_DXB.soirees.filter((r) => r[0] >= isoAuj()).map(([date, heure, lieu, titre, djs, url]) => ({ date, heure, lieu, titre, djs, url, nomLieu: AG_DXB.lieux[lieu] || lieu }));
+  function blocAgendaDubai() {
+    const xs = soireesDubai(); if (!xs.length) return '';
+    const auj = isoAuj(), fmtJ = (iso) => { const x = new Date(iso + 'T12:00'); return ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'][x.getDay()] + ' ' + x.getDate() + ' ' + MOIS[x.getMonth()]; };
+    const img = (r) => ((window.PHOTOS_LIEUX || {})[r.lieu] || {}).f || ((window.PHOTOS_VILLES || {})['Dubaï'] || {}).f || '';
+    const carte = (r) => { const dj = (r.djs || '').split(/,| b2b /i)[0].trim(); const j = Math.round((new Date(r.date + 'T12:00') - new Date(auj + 'T12:00')) / 86400000);
+      return vCarte({ tag: 'a', attr: `href="${esc(r.url)}" target="_blank" rel="noopener"`, c: '#FF8A3D', img: img(r), extra: dj && fondAvatarDj(dj) ? pastilleDj(dj) : '',
+        badge: j === 0 ? 'Ce soir' : j === 1 ? 'Demain' : j <= 7 ? 'Dans ' + j + ' j' : '🇦🇪 Dubaï', type: fmtJ(r.date) + (r.heure ? ' · ' + r.heure : ''), nom: esc(r.djs || r.titre), lieu: esc(r.nomLieu), bas: ['Billets →'] })
+        .replace('dc-carte vc', 'dc-carte vc date-pays').replace('style="--mc:#FF8A3D"', 'style="--mc:#FF8A3D;--mc2:#B23DFF"'); };
+    const ceSoir = xs.filter((r) => r.date === auj), semaine = xs.filter((r) => r.date > auj && r.date <= new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10)), apres = xs.filter((r) => !ceSoir.includes(r) && !semaine.includes(r));
+    let h = '';
+    h += `<div class="section-title">Ce soir à Dubaï <small>${fmtJ(auj)}</small></div>` + (ceSoir.length ? rangCartes(ceSoir.map(carte)) : `<p class="conseil">Pas de soirée annoncée ce soir. La prochaine : <b>${esc(xs[0].djs || xs[0].titre)}</b>, ${fmtJ(xs[0].date)} à ${esc(xs[0].nomLieu)}.</p>`);
+    if (semaine.length) h += `<div class="section-title">Cette semaine <small>${semaine.length} soirées</small></div>` + rangCartes(semaine.map(carte));
+    if (apres.length) h += `<div class="section-title">Plus tard <small>jusqu'au ${fmtJ(xs[xs.length - 1].date)}</small></div>` + rangCartes(apres.map(carte));
+    return h + `<p class="aide">Agenda réel relevé le ${new Date(AG_DXB.maj + 'T12:00').getDate()} ${MOIS[new Date(AG_DXB.maj + 'T12:00').getMonth()]} sur Platinumlist et Resident Advisor. Vérifie toujours sur la page billets.</p>`;
+  }
+
   function renderDestLive() {
     const d = DEST[state.dest], m = MOIS_NOW, n = d.mois[m];
     if (d.local) {
@@ -2132,9 +2153,10 @@
       <p class="conseil"><b>${Maj(moisNom(m))}</b> : ${esc(d.notes[m] || (n < 0 ? 'hors saison.' : labelMois(n) + '.'))}${n < 0 ? ` ${T('reprise', { m: '<b>' + reprise(d, m) + '</b>' })}.` : ''}</p>
       ${barreAnnee(d)}`;
     h += (CARTES_ILLUS[d.id] ? carteIbizaGrande(d.id) : carteDest(d)) + carteAgendaDest(d);
+    if (d.id === 'dubai') h += blocAgendaDubai();
     h += blocDecls() + blocSpots();
     const coulNiv = (k) => k < 0 ? '#5A6378' : ['#3FBF7F', '#F59E2E', '#E5484D', '#8A5CFF'][k];
-    h += `<div class="section-title">${T('temps_forts')}</div>` + rangCartes(evenementsAVenir(d, m).map((e) => vCarte({ tag: e.url ? 'a' : 'div', attr: e.url ? `href="${e.url}" target="_blank" rel="noopener"` : '',
+    h += `<div class="section-title">${T('temps_forts')}</div>` + rangCartes(evenementsAVenir(d, m).map((e) => vCarte({ tag: e.url ? 'a' : 'div', attr: e.url ? `href="${e.url}" target="_blank" rel="noopener"` : '', img: (photoVille(d.nom, '') || FOND_DEST[d.id] || '').split('?')[0],
       c: coulNiv(d.mois[e.mois]), badge: d.mois[e.mois] < 0 ? T('hors') : NIVEAUX[d.mois[e.mois]].court, type: esc(e.quand), nom: esc(e.nom), bas: [dansMois(e.mois, m), e.url ? 'Billets →' : ''] })));
     const grp = (titre, liste) => liste.length ? `<div class="section-title">${titre} <small>${liste.length}</small></div>` + rangCartes(liste.map((l) =>
       vCarte({ attr: `data-lieu="${l.id}"`, c: COUL_TYPE_LIEU[l.type] || '#FF8A3D', img: imgLieu(l), badge: n < 0 ? T('hors') : NIVEAUX[n].court, type: l.type === 'plage' ? 'Beach club' : 'Club', nom: esc(l.nom), lieu: esc(l.zone), bas: [T('lineup_bientot')] }))) : '';
