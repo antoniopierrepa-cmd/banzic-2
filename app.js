@@ -1718,9 +1718,9 @@
     const b = (k, l, n) => `<button class="seg ${ong === k ? 'on' : ''}" data-agenda-dj="${k}" aria-pressed="${ong === k}">${l} <small>${n}</small></button>`;
     const mj = new Date(A.maj + 'T12:00');
     return `<div class="section-title" id="dj-agenda">Agenda <small>${avenir.length} date${avenir.length > 1 ? 's' : ''} à venir</small></div>
-      <div class="segs ag-dj" role="group" aria-label="Agenda du DJ">${b('avenir', 'À venir', avenir.length)}${b('ibiza', 'Ibiza 2026', ibiza.length)}${b('passe', 'Déjà passées', passe.length)}</div>
+      <div class="segs ag-dj" role="group" aria-label="Agenda du DJ">${b('avenir', 'À venir', avenir.length)}${ibiza.length ? b('ibiza', 'Ibiza 2026', ibiza.length) : ''}${passe.length ? b('passe', 'Déjà passées', passe.length) : ''}</div>
       ${liste.length ? rangCartes(liste.map(carte)) : '<p class="conseil">Aucune date annoncée pour l\'instant.</p>'}
-      <p class="aide">Dates relevées le ${mj.getDate()} ${MOIS[mj.getMonth()]} ${mj.getFullYear()} sur Resident Advisor, Songkick et Ibiza Spotlight. Touche une date pour la page billets.</p>`;
+      <p class="aide">Dates relevées le ${mj.getDate()} ${MOIS[mj.getMonth()]} ${mj.getFullYear()} sur Resident Advisor, Bandsintown, Songkick et Ibiza Spotlight. Touche une date pour la page billets.</p>`;
   }
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-agenda-dj]'); if (!b || !state.djOuvert) return;
