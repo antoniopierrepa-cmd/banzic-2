@@ -2480,6 +2480,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         if (map && DEST[state.zoneGeo.dest].local) map.setView([lat, lng], 14);
       } else majModeUI();
       dessinerMoi();
+      if (map && state.tab === 'map') map.setView([lat, lng], Math.max(map.getZoom(), 14));
       if (force) toast('📍 ' + (state.zoneGeo.dest === 'local' ? 'Te voilà : ' + state.zoneGeo.nom : 'Destination ' + DEST[state.zoneGeo.dest].nom));
     }, (err) => {
       if (!force) return;
@@ -3787,6 +3788,21 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (tab === 'map') { initMap(); setTimeout(() => map && map.invalidateSize(), 0); }
     majPortails();
     render();
+    if (tab === 'map') setTimeout(centrerSurMoi, 250);
+  }
+  // En ouvrant la carte : on atterrit sur le point bleu de géolocalisation (position réelle du téléphone)
+  function centrerSurMoi() {
+    if (!map || !estInscrit()) return;
+    const poser = () => { const m = state.maPos; dessinerMoi(); map.setView([m.lat, m.lng], Math.max(map.getZoom(), 14)); };
+    if (state.maPos && Date.now() - state.maPos.t < 120000) { poser(); return; }
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition((p) => {
+      state.maPos = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy, t: Date.now() };
+      state.zoneGeo = zoneDe([state.maPos.lat, state.maPos.lng], false, villeProche(state.maPos.lat, state.maPos.lng));
+      if (state.mode === 'geo') changerDest(state.zoneGeo.dest);
+      if (state.tab === 'map') poser();
+    }, (err) => { if (err && err.code === 1) toast('Pour te voir sur la carte, autorise la position : Réglages › Confidentialité › Service de localisation › Safari'); },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
   }
 
   // ---------- Événements
