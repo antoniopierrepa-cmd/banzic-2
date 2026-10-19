@@ -1634,13 +1634,26 @@
     const r2 = document.querySelector('#sheet-dj .pays-rang'); if (r2) r2.scrollLeft = x;
   });
 
+  // Photos des villes et pays de tournée (Wikimedia Commons, photos-villes.js) : une ville proche ou le pays à défaut
+  const VILLE_ALIAS = { 'villeurbanne': 'Lyon', 'ramonville-saint-agne': 'Toulouse', 'merignac': 'Bordeaux', 'nanterre': 'Paris', 'villepinte': 'Paris', 'la seyne-sur-mer': 'Toulon', 'englos': 'Lille',
+    'humanes de madrid': 'Madrid', 'pinto (madrid)': 'Madrid', 'osio sopra (bergame)': 'Bergame', 'le-mans': 'Le Mans', 'marennes-hiers-brouage': 'Biarritz', 'seignosse': 'Biarritz', 'bruz': 'Vannes' };
+  const PAYS_PHOTO = { 'France': 'Paris', 'Espagne': 'Madrid', 'Portugal': 'Lisbonne', 'Brésil': 'Brésil', 'États-Unis': 'Los Angeles', 'Royaume-Uni': 'Londres', 'Pays-Bas': 'Amsterdam',
+    'Émirats arabes unis': 'Dubaï', 'Italie': 'Bergame', 'Australie': 'Byron Bay', 'Arabie saoudite': 'Djeddah' };
+  const _villesIdx = (() => { const m = {}; Object.keys(window.PHOTOS_VILLES || {}).forEach((v) => { m[sansAccent(v)] = v; }); return m; })();
+  const photoVille = (ville, pays) => { const V = window.PHOTOS_VILLES || {}; let v = String(ville || '').trim();
+    const a = VILLE_ALIAS[sansAccent(v)]; if (a) v = a; v = v.replace(/\s+\d+(e|er)$/i, '');
+    const k = _villesIdx[sansAccent(v)] || _villesIdx[sansAccent(PAYS_PHOTO[pays] || '')]; return k ? V[k].f : ''; };
+  const photoPays = (pays) => { const k = PAYS_PHOTO[pays]; return k && window.PHOTOS_VILLES && window.PHOTOS_VILLES[k] ? window.PHOTOS_VILLES[k].f : ''; };
+  const pastilleDj = (nom) => `<span class="vc-av">${avatarDj(nom)}</span>`;
+
   // Carte « Résident » : le lieu d'Ibiza où il a le plus joué en 2025 (sa résidence), mise en avant en premier
   function carteResident(nom) {
     const k = sansAccent(nom), xs = (SAISON.lignes || []).filter((r) => decouperDjs(r.djs).some((d) => sansAccent(d) === k));
     if (!xs.length) return '';
     const c = {}; xs.forEach((r) => { c[r.lieu] = (c[r.lieu] || 0) + 1; });
     const [top, n] = Object.entries(c).sort((a, b) => b[1] - a[1])[0];
-    return `<button class="pays-carte resident" data-resident="1" style="--p1:#E5484D;--p2:#F2C53A"><span class="res-badge">Résident</span><span class="pays-drapeau">🇪🇸</span><b>Ibiza · ${esc(nomLieu(top))}</b><small>${n} soirée${n > 1 ? 's' : ''} · ${xs.length} dates en 2025</small></button>`;
+    const ph = imgLieu(lieux[top]) || ((window.PHOTOS_LIEUX || {})[top] || {}).f || '';
+    return `<button class="pays-carte resident${ph ? ' a-photo' : ''}" data-resident="1" style="--p1:#E5484D;--p2:#F2C53A${ph ? `;--photo:url('${ph}')` : ''}"><span class="res-badge">Résident</span>${pastilleDj(nom)}<span class="pays-drapeau">🇪🇸</span><b>Ibiza · ${esc(nomLieu(top))}</b><small>${n} soirée${n > 1 ? 's' : ''} · ${xs.length} dates en 2025</small></button>`;
   }
 
   // ---- Tournée hors Ibiza : section séparée de la partie Ibiza ----
@@ -1669,18 +1682,19 @@
     if (state.paysTournee && (state.paysTournee.dj !== nom || !pays.includes(state.paysTournee.pays))) state.paysTournee = null;
     const choix = state.paysTournee ? state.paysTournee.pays : null;
     const avenir = choix ? tousAvenir.filter((x) => x.pays === choix) : tousAvenir;
-    const cartePays = (p, n, prochaine, on) => `<button class="pays-carte${on ? ' on' : ''}" data-pays-tournee="${esc(p)}" aria-pressed="${on}" style="--p1:${p ? coulPays(p)[0] : '#3D8BFF'};--p2:${p ? coulPays(p)[1] : '#0A1F4A'}">
-      <span class="pays-drapeau">${p ? (DRAPEAU_PAYS[p] || '🌍') : '🌍'}</span><b>${p ? esc(p) : 'Tous les pays'}</b><small>${n} date${n > 1 ? 's' : ''}${prochaine ? ' · ' + esc(prochaine) : ''}</small></button>`;
+    const photoTous = tousAvenir.map((x) => photoVille(x.ville, x.pays)).find(Boolean) || '';
+    const cartePays = (p, n, prochaine, on) => { const ph = p ? photoPays(p) : photoTous; return `<button class="pays-carte${on ? ' on' : ''}${ph ? ' a-photo' : ''}" data-pays-tournee="${esc(p)}" aria-pressed="${on}" style="--p1:${p ? coulPays(p)[0] : '#3D8BFF'};--p2:${p ? coulPays(p)[1] : '#0A1F4A'}${ph ? `;--photo:url('${ph}')` : ''}">
+      <span class="pays-drapeau">${p ? (DRAPEAU_PAYS[p] || '🌍') : '🌍'}</span><b>${p ? esc(p) : 'Tous les pays'}</b><small>${n} date${n > 1 ? 's' : ''}${prochaine ? ' · ' + esc(prochaine) : ''}</small></button>` };
     h += `<p class="conseil" style="margin:0 0 8px">Touche un pays pour voir ses dates.</p><div class="acc-rang pays-rang">`
       + carteResident(nom) + cartePays('', tousAvenir.length, '', !choix)
       + pays.map((p) => { const xs = tousAvenir.filter((x) => x.pays === p); return cartePays(p, xs.length, xs[0].ville, choix === p); }).join('') + '</div>';
     const jourC = (iso) => { const x = new Date(iso + 'T12:00'); return ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'][x.getDay()] + ' ' + fmtT(iso); };
     h += `<div class="tournee">` + rangCartes(avenir.map((x) => { const [c1, c2] = coulPays(x.pays), q = quand(x).replace(/<[^>]+>/g, '');
-      return vCarte({ tag: 'div', c: c1, badge: (DRAPEAU_PAYS[x.pays] || '') + ' ' + (q || esc(x.pays)), type: jourC(x.date) + (x.fin ? ' → ' + fmtT(x.fin) : ''), nom: esc(x.lieu), lieu: esc(x.ville) + ' · ' + esc(x.pays) })
+      return vCarte({ tag: 'div', c: c1, img: photoVille(x.ville, x.pays), extra: pastilleDj(nom), badge: (DRAPEAU_PAYS[x.pays] || '') + ' ' + (q || esc(x.pays)), type: jourC(x.date) + (x.fin ? ' → ' + fmtT(x.fin) : ''), nom: esc(x.lieu), lieu: esc(x.ville) + ' · ' + esc(x.pays) })
         .replace('style="--mc:' + c1 + '"', `style="--mc:${c1};--mc2:${c2}"`).replace('dc-carte vc', 'dc-carte vc date-pays'); }));
     h += `</div><div class="liens-dj tournee-src">${Object.entries(d.sources || {}).map(([n, u]) => `<a class="lien-reseau" href="${esc(u)}" target="_blank" rel="noopener">Toute sa tournée · ${esc(n)}</a>`).join('')}</div>`;
     const mj = new Date(T.maj + 'T12:00');
-    h += `<p class="aide">Dates relevées le ${mj.getDate()} ${moisNom(mj.getMonth())} ${mj.getFullYear()} sur les agendas publics. Vérifie toujours auprès de la billetterie.</p>`;
+    h += `<p class="aide">Dates relevées le ${mj.getDate()} ${moisNom(mj.getMonth())} ${mj.getFullYear()} sur les agendas publics. Vérifie toujours auprès de la billetterie. Photos des villes : Wikimedia Commons, licences libres (auteurs cités dans photos-villes.js).</p>`;
     return h;
   }
 
@@ -1730,7 +1744,7 @@
     const saison = SAISON.lignes.filter((r) => joue(r.djs)).sort((a, b) => a.date.localeCompare(b.date));
 
     const pro = djProParNom(nom);
-    let h = ficheTeteDj(nom, pro, ceSoir.length, saison.length) + `${photoLibre(nom) && !avatarIllusDj(nom) ? `<p class="credit-photo">Photo : ${esc(photoLibre(nom).auteur || 'Wikimedia Commons')} · ${esc(photoLibre(nom).licence)} · <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(photoLibre(nom).page.replace(/ /g, '_'))}" target="_blank" rel="noopener">Wikimedia Commons</a></p>` : `<p class="credit-photo" data-credit-photo="${esc(nom)}" hidden></p>`}`;
+    let h = ficheTeteDj(nom, pro, ceSoir.length, saison.length) + `${photoLibre(nom) && !fondAvatarDj(nom) ? `<p class="credit-photo">Photo : ${esc(photoLibre(nom).auteur || 'Wikimedia Commons')} · ${esc(photoLibre(nom).licence)} · <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(photoLibre(nom).page.replace(/ /g, '_'))}" target="_blank" rel="noopener">Wikimedia Commons</a></p>` : `<p class="credit-photo" data-credit-photo="${esc(nom)}" hidden></p>`}`;
     if (!pro) {
       h += `<div class="revendiquer"><span><b>Fiche créée d'après les line-ups officiels</b><small>Tu es ${esc(nom)} ? Revendique ta fiche pour la gérer : photo, bio, dates, et le badge ✓ Officiel.</small></span>
         <button class="alerte" data-revendiquer="${esc(nom)}">Revendiquer</button></div>`;
@@ -1789,7 +1803,7 @@
             <span><small>Soirées</small>${soireesTop.map(([s, n]) => `${esc(s)} <b>${n}</b>`).join(' · ')}</span>
           </div>
         </div>
-        ${rangCartes(saison.map((r) => vCarte({ attr: `data-saison-jour="${r.date}"`, c: '#E5484D', badge: '🇪🇸 ' + NIVEAUX[r.niveau].court, type: fmtD(r.date) + (r.type ? ' · ' + TYPES[r.type] : ''), nom: esc(nomLieu(r.lieu)), lieu: esc(r.soiree) })
+        ${rangCartes(saison.map((r) => vCarte({ attr: `data-saison-jour="${r.date}"`, c: '#E5484D', img: imgLieu(lieux[r.lieu]) || ((window.PHOTOS_LIEUX || {})[r.lieu] || {}).f || '', extra: pastilleDj(nom), badge: '🇪🇸 ' + NIVEAUX[r.niveau].court, type: fmtD(r.date) + (r.type ? ' · ' + TYPES[r.type] : ''), nom: esc(nomLieu(r.lieu)), lieu: esc(r.soiree) })
           .replace('dc-carte vc', 'dc-carte vc date-pays').replace('style="--mc:#E5484D"', 'style="--mc:#E5484D;--mc2:#F2C53A"')))}`;
     }
     h += blocTournee(nom);
@@ -3158,10 +3172,19 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const photoLibre = (nom) => PHOTOS_IDX[sansAccent(nom)] || null;
   // Avatars illustrés des DJ (Top 100 et autres) : prioritaires sur les photos
   const _avDjIdx = (() => { const m = {}; Object.entries(window.AVATARS_DJ || {}).forEach(([n, f]) => { m[sansAccent(n).replace(/[^a-z0-9]/g, '')] = f; }); return m; })();
-  const avatarIllusDj = (nom) => _avDjIdx[sansAccent(String(nom || '')).replace(/[^a-z0-9]/g, '')] || '';
+  const _cleDj = (nom) => sansAccent(String(nom || '')).replace(/[^a-z0-9]/g, '');
+  const avatarIllusDj = (nom) => _avDjIdx[_cleDj(nom)] || '';
+  // DJ 101 à 1000 : avatars rangés par 100 dans une planche (10 x 10 cases) pour limiter le nombre de fichiers
+  const _avPlIdx = (() => { const m = {}; Object.entries(window.AVATARS_DJ_PLANCHES || {}).forEach(([n, v]) => { m[_cleDj(n)] = v; }); return m; })();
+  const fondPlancheDj = (nom) => { const e = _avPlIdx[_cleDj(nom)]; if (!e) return ''; const x = (e[1] % 10) * 100 / 9, y = Math.floor(e[1] / 10) * 100 / 9;
+    return `url('avatars-dj-planches/p${e[0] + 1}.jpg') ${x.toFixed(3)}% ${y.toFixed(3)}% / 1000% 1000% no-repeat`; };
+  // Fond CSS de l'avatar illustré d'un DJ (fichier seul ou case de planche), '' s'il n'en a pas
+  const fondAvatarDj = (nom) => avatarIllusDj(nom) ? `url('${avatarIllusDj(nom)}') center / cover no-repeat` : fondPlancheDj(nom);
   function avatarDj(nom, cls) {
     const ill = avatarIllusDj(nom);
     if (ill) return `<img class="avatar av-dj-illus ${cls || ''}" src="${ill}" alt="${esc(nom)}" loading="lazy">`;
+    const fpl = fondPlancheDj(nom);
+    if (fpl) return `<span class="avatar av-dj-illus ${cls || ''}" role="img" aria-label="${esc(nom)}" style="background:${fpl}"></span>`;
     const pro = djProParNom(nom);
     if (pro && pro.photo) return `<img class="avatar ${cls || ''}" src="${pro.photo}" alt="${esc(nom)}">`;
     const pl = photoLibre(nom);
@@ -3476,7 +3499,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // Bandeau « Mes DJ » en tête de l'accueil (remplace la rangée de filtres)
   function bandeauMesDj() {
     const fav = state.favs || [], ce = fav.filter((n) => passages.some((p) => p.dj === n && !p.inconnu && p.f > state.t));
-    const avs = fav.slice(0, 4).map((n, i) => avatarIllusDj(n) ? `<span class="md-av" style="--g:url('${avatarIllusDj(n)}') center/cover;z-index:${9 - i}"></span>` : `<span class="md-av" style="--g:${accGrad(n)};z-index:${9 - i}">${esc(accInit(n))}</span>`).join('');
+    const avs = fav.slice(0, 4).map((n, i) => fondAvatarDj(n) ? `<span class="md-av" style="--g:${fondAvatarDj(n)};z-index:${9 - i}"></span>` : `<span class="md-av" style="--g:${accGrad(n)};z-index:${9 - i}">${esc(accInit(n))}</span>`).join('');
     const sous = !fav.length ? 'Touche le ♥ sur la fiche d\'un DJ pour le suivre ici'
       : `${fav.length} DJ suivi${fav.length > 1 ? 's' : ''}${ce.length ? ` · ${ce.length} joue${ce.length > 1 ? 'nt' : ''} ce soir` : ''}`;
     const fond = state.profil && !state.profil.photo ? 'avatars-banzic/' + avIllus(state.profil.avatar) + '-c.jpg' : '';
