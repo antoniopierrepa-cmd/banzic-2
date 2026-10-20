@@ -2765,15 +2765,25 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const rayonSpot = (src) => src === 'gps' ? 0.1 : 1.5;
   // Lieux publics réels autour (OpenStreetMap, gratuit, sans clé) : bars, restos, cafés, boîtes, beach clubs
   const OSM_TYPES = { nightclub: ['club', 'Club'], bar: ['bar', 'Bar'], pub: ['bar', 'Pub'], biergarten: ['bar', 'Bar'], restaurant: ['bar', 'Restaurant'], cafe: ['bar', 'Café'], fast_food: ['bar', 'Snack'], beach_resort: ['beach', 'Beach club'], dance: ['club', 'Salle de danse'] };
-  function lieuxOsm(lat, lng, metres) {
+  const avecDelai = (ms) => { const c = new AbortController(); setTimeout(() => c.abort(), ms); return c.signal; };
+  // 1) Nominatim (OpenStreetMap) : recherche par type de lieu dans un petit carré autour de toi ; 2) Overpass en secours
+  async function lieuxOsm(lat, lng, metres) {
+    const d = metres / 111000, dl = d / Math.cos(lat * Math.PI / 180), xs = [];
+    for (const k of ['bar', 'pub', 'restaurant', 'nightclub', 'cafe']) {
+      try { const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&amenity=${k}&viewbox=${lng - dl},${lat + d},${lng + dl},${lat - d}&bounded=1&limit=20&accept-language=fr`, { signal: avecDelai(7000) });
+        if (r.ok) (await r.json()).forEach((x) => { if (!x.name) return; const ty = OSM_TYPES[x.type] || OSM_TYPES[k] || ['bar', 'Lieu'];
+          xs.push({ id: 'osm-' + x.osm_type + x.osm_id, nom: x.name, lat: +x.lat, lng: +x.lon, type: ty[0] === 'club' ? 'club' : 'bar', genre: ty[0], lib: ty[1],
+            zone: String(x.display_name || '').split(',').slice(1, 3).join(',').trim(), src: 'osm', dest: state.dest === 'ibiza' ? 'ibiza' : 'local' }); });
+      } catch (e) { /* on continue avec le type suivant */ }
+    }
+    if (xs.length) return xs;
     const q = `[out:json][timeout:10];(nwr(around:${metres},${lat},${lng})[amenity~"^(bar|pub|restaurant|nightclub|cafe|biergarten|fast_food)$"][name];nwr(around:${metres},${lat},${lng})[leisure~"^(beach_resort|dance)$"][name];);out center tags 40;`;
-    return fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q), headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
-      .then((r) => r.ok ? r.json() : { elements: [] })
-      .then((j) => (j.elements || []).map((x) => { const t = x.tags || {}, k = t.amenity || t.leisure, ty = OSM_TYPES[k] || ['bar', 'Lieu'];
+    try { const r = await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q), { signal: avecDelai(8000) }); const j = r.ok ? await r.json() : { elements: [] };
+      return (j.elements || []).map((x) => { const t = x.tags || {}, k = t.amenity || t.leisure, ty = OSM_TYPES[k] || ['bar', 'Lieu'];
         const la = x.lat != null ? x.lat : x.center && x.center.lat, lo = x.lon != null ? x.lon : x.center && x.center.lon;
         return la == null ? null : { id: 'osm-' + x.type + x.id, nom: t.name, lat: la, lng: lo, type: ty[0] === 'beach' ? 'plage' : ty[0] === 'club' ? 'club' : 'bar', genre: ty[0], lib: ty[1],
-          zone: [t['addr:street'], t['addr:city']].filter(Boolean).join(', '), horaires: t.opening_hours || '', src: 'osm', dest: state.dest === 'ibiza' ? 'ibiza' : 'local' }; }).filter(Boolean))
-      .catch(() => []);
+          zone: [t['addr:street'], t['addr:city']].filter(Boolean).join(', '), src: 'osm', dest: state.dest === 'ibiza' ? 'ibiza' : 'local' }; }).filter(Boolean);
+    } catch (e) { return []; }
   }
   function formSpot() {
     $('#panel-spot').innerHTML = '<div class="ps-titre"><b>Un DJ joue ici</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div><p class="aide">Je cherche ta position…</p>';
