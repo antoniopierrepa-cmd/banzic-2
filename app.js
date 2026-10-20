@@ -2281,13 +2281,13 @@
     DECLS.filter((x) => declActive(x) && djDe(x)).forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}; if (l.lat == null) return; const d = km(l.lat, l.lng); if (d > r) return;
       const ok = declConfirmee(x), avant = (x.debut - now) / 60000, reste = (x.fin - now) / 60000;
       const st = avant > 20 ? ['À l\'heure', 'bleu'] : avant > 0 ? ['Embarquement imminent', 'or'] : reste <= 15 ? ['Dernier appel', 'rouge'] : ok ? ['En cours', 'vert'] : ['Annoncé', 'orange'];
-      ligne({ conf: x.conf || 0, act: `data-decl-ok="${x.id}"`, km: d, t: x.debut, heure: hm(x.debut), porte: l.nom || 'Spot', st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Déclaré', attr: `data-dj-pro="${esc(dj.nom)}"`, nom: dj.nom,
+      ligne({ fin: x.fin, conf: x.conf || 0, act: `data-decl-ok="${x.id}"`, km: d, t: x.debut, heure: hm(x.debut), porte: l.nom || 'Spot', st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Déclaré', attr: `data-dj-pro="${esc(dj.nom)}"`, nom: dj.nom,
         l1: avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : reste > 0 ? 'encore ' + dur(Math.round(reste)) : 'se termine',
         l2: [[esc(l.nom || 'Spot') + ' · ' + fK(d)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']], vol: dj.nom }); });
     // Spots signalés par les Bangers
     SPOTS.filter((s) => spotActif(s) && spotPublic(s) && s.lat != null).forEach((sp) => { const d = km(sp.lat, sp.lng); if (d > r) return;
       const n = sp.note || 0, cf = sp.conf || 0, v = n >= 4 && cf >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || cf >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
-      ligne({ sp, km: d, t: sp.t || sp.maj, heure: hm(sp.t || sp.maj), porte: sp.nom || TYPES_SPOT[sp.type] || 'Spot', st: ['Signalé', 'violet'], k: 'spot', tag: 'Spot', attr: `data-spot-voir="${sp.id}"`, nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot',
+      ligne({ fin: (sp.maj || sp.t) + 3 * 3600000, sp, km: d, t: sp.t || sp.maj, heure: hm(sp.t || sp.maj), porte: sp.nom || TYPES_SPOT[sp.type] || 'Spot', st: ['Signalé', 'violet'], k: 'spot', tag: 'Spot', attr: `data-spot-voir="${sp.id}"`, nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot',
         l1: `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, l2: [[esc(sp.dj || 'DJ inconnu') + ' · ' + fK(d)], ['signalé par @' + esc(sp.par || 'un Banger')]], vol: '' }); });
     // Soirées de l'agenda : ce soir et demain
     SUD.soirees.filter((x) => (x.date === auj || x.date === dem) && SUD.lieux[x.lieu]).forEach((x) => { const l = SUD.lieux[x.lieu], d = km(l.lat, l.lng); if (d > r) return;
@@ -2302,7 +2302,7 @@
     { const t = state.t; passages.filter((p) => !p.inconnu && p.f > t && p.d - t <= 120).forEach((p) => { const l = lieux[p.lieu]; if (!l || l.lat == null) return; const d = km(l.lat, l.lng); if (d > r) return;
       const avant = p.d - t, reste = p.f - t, ok = !!p.constate;
       const st = avant > 20 ? ['À l\'heure', 'bleu'] : avant > 0 ? ['Embarquement imminent', 'or'] : reste <= 15 ? ['Dernier appel', 'rouge'] : ['En cours', 'vert'];
-      ligne({ conf: ok ? (p.confirmations || 1) : 0, km: d, t: now + avant * 60000, heure: p.debut, porte: l.nom, st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Line-up', attr: `data-lieu="${l.id}"`, nom: p.dj,
+      ligne({ fin: now + reste * 60000, conf: ok ? (p.confirmations || 1) : 0, km: d, t: now + avant * 60000, heure: p.debut, porte: l.nom, st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Line-up', attr: `data-lieu="${l.id}"`, nom: p.dj,
         l1: avant > 0 ? 'dans ' + dur(avant) : 'encore ' + dur(reste), l2: [[esc(l.nom) + (p.salle ? ' · ' + esc(p.salle) : '') + ' · ' + fK(d)]], vol: p.dj }); }); }
     // Dubaï : les soirées de ce soir et demain (agenda Platinumlist / RA)
     soireesDubai().filter((x) => x.date === auj || x.date === dem).forEach((x) => { const lv = LIEUX_DEST[x.lieu], la = lv ? lv.lat : DEST.dubai.centre[0], lo = lv ? lv.lng : DEST.dubai.centre[1], d = km(la, lo); if (d > r) return;
@@ -2318,7 +2318,9 @@
         l1: row[0] === dem ? 'demain' : 'ce soir', l2: [[esc(row[2]) + ' · ' + esc(row[3]) + ' · ' + fK(d)]], vol: nomDj }); }));
     // D'abord ce qui est en live en ce moment (DJ en cours, dernier appel, spots signalés), puis le reste ; dans chaque groupe, du plus proche au plus loin
     const enLive = (o) => o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert' || o.st[1] === 'rouge';
-    L.sort((a, b) => (enLive(b) ? 1 : 0) - (enLive(a) ? 1 : 0) || Math.round(a.km) - Math.round(b.km) || (a.t || 0) - (b.t || 0));
+    // Ordre : ce qui est en live d'abord, et parmi eux celui qui se termine le plus tôt ; puis les départs à venir, par heure de fin estimée (début + 5 h si on ne la connaît pas)
+    const finDe = (o) => o.fin || (o.t || 0) + 5 * 3600000;
+    L.sort((a, b) => (enLive(b) ? 1 : 0) - (enLive(a) ? 1 : 0) || finDe(a) - finDe(b) || a.km - b.km);
     const vis = (nom) => nom ? visFil(nom) : '';
     const rangee = (o) => { const v = o.lieuPin ? `<span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-lieu" src="${o.lieuPin}" alt="">${casqueConf(BANG_LIEU[o.lieuId] || 0)}</span>` : o.k === 'spot' ? (o.sp ? visSpotC(o.sp) : '') : o.vol ? visFil(o.vol, o.conf || 0, o.act || '') : '';
       // Tout ce qui est en live tourne : le DJ qui joue (son rond), le spot signalé (son épingle)
@@ -3916,7 +3918,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <span class="bc-badge"><i></i>Samedi 15 août · 16:00</span>
         <span class="ag-txt bc-txt"><small class="ag-kick bc-kick"><span class="ico-diffusion" aria-hidden="true"><i></i><b></b><b></b></span>${esc(state.zoneGeo.nom)}</small><b class="ag-titre">Direct<br>autour de moi</b><span class="ag-sous">Toute la journée sur la carte : DJ en live, beach clubs, bars</span></span></button>
       <button class="ag-banniere bk-banniere" data-tab="checkin" aria-label="Ouvrir le Check-in : les départs de la journée">
-        <span class="ag-txt bk-txt"><small class="ag-kick">Check-in</small><b class="ag-titre">Les départs<br>du jour</b><span class="ag-sous">${rows.length} départs autour de toi, rangés par distance</span></span>
+        <span class="ag-txt bk-txt"><small class="ag-kick">Check-in</small><b class="ag-titre">Les départs<br>du jour</b><span class="ag-sous">${rows.length} départs autour de toi : celui qui finit le premier en tête</span></span>
         <span class="bk-tableau"><span class="bk-horloge">${flap(hm(Date.now()), 5)}</span><span class="bk-piste" style="--duree:${Math.max(10, rows.length * 3.2)}s">${lignes}</span></span></button>`;
   }
 
