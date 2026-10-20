@@ -2457,3 +2457,73 @@ nav.tabs .tab.casque-banger svg.cb-svg { width: 104px !important; height: 80px !
 .lv-kick i { width: 8px; height: 8px; border-radius: 50%; background: #FF3B4E; box-shadow: 0 0 8px #FF3B4E; animation: fil-pt .8s ease-in-out infinite alternate; }
 .live-banniere .ag-btn { gap: 7px; padding-left: 12px; }
 .live-banniere .ag-btn svg { width: 13px; height: 13px; }
+
+/* Logo de diffusion qui clignote : un point et ses ondes, devant « Direct autour de moi » */
+.h-direct { display: flex; align-items: center; gap: 10px; }
+.ico-diffusion { position: relative; flex: none; width: 26px; height: 26px; display: grid; place-items: center; }
+.ico-diffusion i { width: 8px; height: 8px; border-radius: 50%; background: #FF3B4E; box-shadow: 0 0 8px #FF3B4E; animation: fil-pt .8s ease-in-out infinite alternate; }
+.ico-diffusion b { position: absolute; inset: 0; border: 2px solid #FF3B4E; border-left-color: transparent; border-right-color: transparent; border-radius: 50%; transform: rotate(90deg); opacity: 0; animation: diff-onde 1.6s ease-out infinite; }
+.ico-diffusion b + b { animation-delay: .8s; }
+@keyframes diff-onde { 0% { transform: rotate(90deg) scale(.35); opacity: .95; } 100% { transform: rotate(90deg) scale(1.05); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .ico-diffusion i, .ico-diffusion b { animation: none; } .ico-diffusion b { opacity: .6; transform: rotate(90deg) scale(.8); } }
+/* Bannière « Mes DJ » un peu plus haute : on voit la tête de la DJ en entier */
+.acc-mesdj.md-fin { height: 104px; background-position: 0% 18%; }
+/* Logo de diffusion plus gros, qui alterne blanc et rouge */
+.ico-diffusion { width: 34px; height: 34px; }
+.ico-diffusion i { width: 12px; height: 12px; animation: diff-point 1s steps(1) infinite; }
+.ico-diffusion b { border-width: 2.5px; animation: diff-onde 1.6s ease-out infinite, diff-onde-coul 1s steps(1) infinite; }
+@keyframes diff-point { 0% { background: #fff; box-shadow: 0 0 10px #fff; } 50% { background: #FF3B4E; box-shadow: 0 0 10px #FF3B4E; } }
+@keyframes diff-onde-coul { 0% { border-top-color: #fff; border-bottom-color: #fff; } 50% { border-top-color: #FF3B4E; border-bottom-color: #FF3B4E; } }
+
+/* Bannière et page « Les DJ qui montent » */
+.mt-banniere .ag-txt { width: 40%; }
+.mt-banniere .ag-titre { font-size: 26px; line-height: .98; }
+.mt-page { padding-bottom: 20px; }
+.mt-retour { display: inline-flex; align-items: center; gap: 4px; margin: 2px 0 10px; padding: 7px 12px 7px 8px; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; background: rgba(255,255,255,.04); color: var(--text, #fff); font: 600 13px 'DM Sans', sans-serif; cursor: pointer; }
+.mt-retour svg { width: 18px; height: 18px; }
+.mt-tete { cursor: default; }
+.mt-segs { margin: 14px 0 6px; display: grid; grid-template-columns: repeat(3, 1fr); }
+.mt-segs .seg { font-size: 12px; padding: 0 6px; }
+.mt-aide { margin: 4px 2px 10px; font-size: 12px; color: var(--muted, #9AA3B8); }
+.mt-liste { display: flex; flex-direction: column; gap: 6px; }
+.mt-ligne { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 1px solid rgba(255,255,255,.07); border-radius: 14px; background: #0B0F1C; color: var(--text, #fff); text-align: left; cursor: pointer; }
+.mt-num { flex: none; width: 20px; text-align: center; font: 800 13px 'DM Sans', sans-serif; color: #6B7590; }
+.mt-av { flex: none; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 2px rgba(181,140,255,.6); }
+.mt-av > * { width: 44px !important; height: 44px !important; border-radius: 50%; object-fit: cover; margin: 0; display: grid; place-items: center; font-size: 14px; }
+.mt-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mt-txt b { font: 700 15px 'DM Sans', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mt-txt small { font-size: 11.5px; color: var(--muted, #9AA3B8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mt-badge { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 999px; font: 800 12px 'DM Sans', sans-serif; }
+.mt-badge.monte { background: rgba(61,242,138,.15); color: #3DF28A; }
+.mt-badge.nouveau { background: rgba(181,140,255,.18); color: #C9A8FF; }
+.mt-badge.note { background: rgba(242,197,58,.14); color: #F2C53A; }
+.mt-badge img { width: 18px; height: auto; }
+.mt-banniere .ag-titre { font-size: 22px; } .mt-banniere .ag-sous { font-size: 11px; margin-top: 2px; } .mt-banniere .ag-btn { padding: 5px 10px 5px 12px; font-size: 11.5px; }
+
+/* Bannière et page « La tendance du moment » */
+.td-banniere .ag-txt { width: 44%; }
+.td-banniere .ag-titre { font-size: 24px; line-height: .98; }
+.td-banniere .ag-sous { font-size: 11.5px; }
+.td-banniere .ag-btn { padding: 5px 10px 5px 12px; font-size: 11.5px; }
+.td-ligne .mt-txt { gap: 3px; }
+.td-jauge { display: block; height: 4px; margin-top: 2px; border-radius: 2px; background: rgba(255,255,255,.08); overflow: hidden; }
+.td-jauge i { display: block; height: 100%; background: linear-gradient(90deg, #FF8A3D, #FF4FA3); border-radius: 2px; }
+.td-pourquoi { color: #C9CFDD !important; }
+.mt-badge.live { background: rgba(255,59,78,.16); color: #FF5A6B; }
+
+/* Accueil : toutes les bannières à la même taille, mêmes textes, sans bouton (on touche la bannière) */
+.ag-rub { margin-bottom: 14px; }
+.ag-banniere { aspect-ratio: 2.55 / 1; height: auto; border-radius: 16px; }
+.ag-banniere img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: right center; }
+.ag-banniere .ag-txt, .live-banniere .ag-txt, .mt-banniere .ag-txt, .td-banniere .ag-txt { position: absolute; left: 5%; top: 0; bottom: 0; width: 46%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 4px; }
+.ag-banniere .ag-kick { font: 700 9.5px 'DM Sans', sans-serif; letter-spacing: .18em; text-transform: uppercase; color: #3DD6C6; }
+.ag-banniere .ag-titre, .live-banniere .ag-titre, .mt-banniere .ag-titre, .td-banniere .ag-titre { margin: 0; font: 800 23px/1 'Syne', sans-serif; letter-spacing: -.01em; color: #fff; }
+.ag-banniere .ag-sous, .mt-banniere .ag-sous, .td-banniere .ag-sous { margin: 0; font: 500 11.5px/1.25 'DM Sans', sans-serif; color: #A9B1CC; }
+.ag-banniere .ag-compte { margin: 2px 0 0; font: 600 10px 'DM Sans', sans-serif; color: rgba(201,207,221,.7); }
+.ag-banniere .ag-btn { display: none !important; }
+.ag-banniere::after { content: ''; position: absolute; right: 10px; bottom: 10px; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,.14) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 6l6 6-6 6' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat; backdrop-filter: blur(4px); }
+.mt-tete::after { display: none; }
+.mt-banniere img { object-position: 28% center; }
+.ag-banniere::before { content: ''; position: absolute; inset: 0; z-index: 0; background: linear-gradient(90deg, rgba(5,10,28,.85) 0%, rgba(5,10,28,.6) 38%, rgba(5,10,28,0) 58%); pointer-events: none; }
+.ag-banniere img { z-index: 0; } .ag-banniere .ag-txt { z-index: 1; }
+.ag-banniere .lv-kick { color: #fff; }

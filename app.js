@@ -3854,6 +3854,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   let filToastT = 0; const toastFil = (m) => { if (Date.now() - filToastT > 4000) { filToastT = Date.now(); toast(m); } };
 
   function renderAccueil() {
+    if (state.pageMontent) { renderPageMontent(); return; }
+    if (state.pageTendance) { renderPageTendance(); return; }
     const t = state.t, auj = iso(new Date());
     let h = '';
     // 1. En direct autour de moi : DJ déclarés près de ma position, spots signalés, puis les clubs du coin
@@ -3894,7 +3896,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         return `<button class="fil-item k-spot a-vis" data-spot-voir="${sp.id}">${visSpotC(sp)}<span class="fil-l1"><em class="fil-tag spot">Spot</em><b>${esc(sp.nom || TYPES_SPOT[sp.type])}</b><span class="fil-vaut v-${v[1]}">${v[0]}</span></span><span class="fil-l2"><span>${esc(sp.dj || 'DJ inconnu')} · ${fmtKm(dist)}</span><span>signalé à ${hm(sp.t)} par @${esc(sp.par || 'un Banger')}</span></span></button>`; }));
     coin.slice(0, 14).forEach(({ l, d }) => filItems.push(filClub(l, fmtKm(d))));
     const filInfos = filItems.length ? `<div class="fil-infos" aria-label="Fil d'actualité autour de moi"><div class="fil-fenetre"><div class="fil-piste">${filItems.join('<span class="fil-sep" aria-hidden="true"></span>')}<span class="fil-sep" aria-hidden="true"></span><span class="fil-copie" aria-hidden="true">${filItems.join('<span class="fil-sep"></span>')}<span class="fil-sep"></span></span></div></div></div>` : '';
-    h += `<section class="acc-rub"><div class="acc-tete"><div><h2>En direct autour de moi</h2><small>${esc(state.zoneGeo.nom)}${state.zoneGeo.approx ? ' · position de démo' : ''} · passe le doigt sur un point</small></div></div>
+    h += `<section class="acc-rub"><div class="acc-tete"><div><h2 class="h-direct"><span class="ico-diffusion" aria-hidden="true"><i></i><b></b><b></b></span>Direct autour de moi</h2><small>${esc(state.zoneGeo.nom)}${state.zoneGeo.approx ? ' · position de démo' : ''} · passe le doigt sur un point</small></div></div>
       <div class="aut-carte">${carteMiniMap(centre0, decls, spotsP, coin, infos)}</div>${legende}${filInfos}</section>`;
     // 1 bis. Agenda autour de moi : de petites cartes par type de sortie, avec le nombre de dates dans le rayon de l'Agenda
     const rayonAg = RAYONS[state.rayonIdx], dansRayon = soireesAvecKm().filter((x) => x.km <= rayonAg);
@@ -3905,7 +3907,6 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     h += `<section class="acc-rub ag-rub"><button class="ag-banniere" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
         <img src="agenda-banniere.jpg?v=2" alt="" loading="lazy">
         <span class="ag-txt"><small class="ag-kick">Tes prochaines sorties</small><b class="ag-titre">L'agenda</b><span class="ag-sous">Clubs, concerts &amp; festivals</span>
-          <span class="ag-btn">Voir l'agenda <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           <span class="ag-compte">${nbType('tout')} dates à moins de ${rayonAg} km · ${esc(state.zoneGeo.nom)}</span></span></button></section>`;
     // 2. Les saisons
     // En saison d'abord, puis les autres dans l'ordre du compte à rebours (la plus proche en premier)
@@ -3923,7 +3924,6 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     h += `<section class="acc-rub ag-rub"><button class="ag-banniere live-banniere" data-live-tous="1" aria-label="Les DJ en live : écouter un live">
         <img src="live-banniere.jpg?v=1" alt="" loading="lazy">
         <span class="ag-txt"><small class="ag-kick lv-kick"><i></i>En direct</small><b class="ag-titre">Les DJ<br>en live</b><span class="ag-sous">Leurs sets, où que tu sois.</span>
-          <span class="ag-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.8v14.4L19 12z" fill="currentColor"/></svg> Écouter un live</span>
           <span class="ag-compte">${lives.length} DJ en live en ce moment</span></span></button></section>`;
     // La rubrique « DJ live dans le monde » (titre, styles, lecteurs) est retirée de l'accueil : la bannière ci-dessus ouvre tous les lives
     // 4. Classement DJ Mag Top 100 2026, du 1er au 100e (à la place des clubs d'Ibiza)
@@ -3942,15 +3942,17 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       return vCarte({ attr: `data-lieu="${p.lieu}"`, c: enCours ? '#FF3D5A' : '#FF8A3D', img: pl ? pl.f : imgLieu(l), badge: enCours ? '<i></i>Live' : 'À ' + p.debut,
         type: esc(l.nom), nom: esc(p.dj), lieu: esc(p.salle || ''), bas: [`${a.top} Banger${a.top > 1 ? 's' : ''} disent Top`, `${Math.round(a.top / a.total * 100)} % de Top`] }); })
       .concat(streamsActifs().slice(0, 3).map((d) => vCarte({ attr: `data-dj-pro="${esc(d.nom)}"`, c: coulGenre(genreDe(d)), img: d.photo || '', badge: '<i></i>Live en ligne', type: esc(genreDe(d)), nom: esc(d.nom), lieu: esc(d.ville || ''), bas: [(d.stream.vues || 0).toLocaleString('fr-FR') + ' à l\'écoute'] })));
-    if (tend.length) h += `<section class="acc-rub"><div class="acc-tete"><div><h2>La tendance du moment</h2><small>Ce que les Bangers adorent en ce moment</small></div></div>${rangCartes(tend)}</section>`;
+    // Bannière « La tendance du moment » (visuel fourni par Antonio, textes dans la police de l'appli) : ouvre la page des tendances
+    h += `<section class="acc-rub ag-rub"><button class="ag-banniere td-banniere" data-page-tendance="1" aria-label="La tendance du moment : explorer les tendances">
+        <img src="tendance-banniere.jpg?v=1" alt="" loading="lazy">
+        <span class="ag-txt"><small class="ag-kick">${tend.length} en ce moment</small><b class="ag-titre">La tendance<br>du moment</b><span class="ag-sous">Les coups de cœur des Bangers</span></span></button></section>`;
     // 6. Les DJ qui montent : plus fortes progressions du Top 100 2026, puis les nouvelles entrées
     const MONTEES = [['John Summit', 22], ['Mau P', 22], ['CHRIS STASSY', 22], ['GORDO', 18], ['Fred again..', 17], ['The Martinez Brothers', 15], ['Korolova', 14], ['Solomun', 14], ['Miss Monique', 14], ['B Jones', 14], ['Michael Bibi', 11], ['Indira Paganotto', 10], ['Mochakk', 10], ['Anyma', 7]];
-    const rangDe = (n) => TOP ? TOP.djs.findIndex((x) => x[0] === n) + 1 : 0;
-    const nouveaux = TOP ? TOP.djs.filter((x) => x[1] === 'N').map((x) => x[0]) : [];
-    const montent = MONTEES.map(([n, k]) => [n, '+' + k]).concat(nouveaux.map((n) => [n, 'Nouveau']));
-    const secMonte = `<section class="acc-rub"><div class="acc-tete"><div><h2>Les DJ qui montent</h2><small>Les plus fortes progressions du Top 100 2026 et les nouveaux venus</small></div></div><div class="acc-rang top-rangee">${montent.map(([nom, mv]) => `<button class="top-carte monte-carte" data-dj-pro="${esc(nom)}" style="--g:${accGrad(nom)}">
-        <span class="top-vinyle"><span class="top-tete">${avatarDj(nom, 'top-photo')}</span><span class="top-rang mv${mv === 'Nouveau' ? ' nv' : ''}">${mv === 'Nouveau' ? 'NEW' : mv}</span></span>
-        <b class="top-nom">${esc(nom)}</b><small class="top-mv ${mv === 'Nouveau' ? 'nouveau' : 'monte'}">${rangDe(nom)}e au Top 100</small></button>`).join('')}</div></section>`;
+    window.__MONTEES = MONTEES;
+    // Bannière « Les DJ qui montent » (visuel fourni par Antonio, textes dans la police de l'appli) : un appui ouvre la page de tous les DJ qui montent
+    const secMonte = `<section class="acc-rub ag-rub"><button class="ag-banniere mt-banniere" data-page-montent="1" aria-label="Les DJ qui montent : découvre la nouvelle vague">
+        <img src="montent-banniere.jpg?v=1" alt="" loading="lazy">
+        <span class="ag-txt"><small class="ag-kick">Top 100 · 2026</small><b class="ag-titre">Les DJ<br>qui montent</b><span class="ag-sous">Découvre la nouvelle vague</span></span></button></section>`;
     // « Les DJ qui montent » prend la place du Top 100, qui descend en dernier
     h = h.includes('@@TOP100@@') ? h.replace('@@TOP100@@', secMonte) + secTop : h + secMonte;
     $('#accueil').innerHTML = bandeauMesDj() + h;
@@ -3958,6 +3960,79 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const vus = new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) { vus.unobserve(en.target); remplirAvatars(en.target); } }), { rootMargin: '0px 300px' });
     document.querySelectorAll('#accueil .top-tete').forEach((el) => vus.observe(el));
   }
+  // ---- Page « La tendance du moment » : ce que les Bangers adorent, et pourquoi
+  state.tdOnglet = 'sets';
+  function renderPageTendance() {
+    const t = state.t, tAvis = (p) => { const r = { top: 0, bien: 0, bof: 0, ...(p.avis || {}) }; return { ...r, total: r.top + r.bien + r.bof }; };
+    const ong = state.tdOnglet;
+    const sets = passages.filter((p) => !p.inconnu && p.f > t && tAvis(p).total > 0).sort((x, y) => tAvis(y).top - tAvis(x).top || x.d - y.d);
+    const lives = streamsActifs();
+    const bangues = DJS_DEMO.concat(MON_DJ ? [MON_DJ] : []).map((d) => d.nom).concat((window.DJMAG2026 ? DJMAG2026.djs.slice(0, 20).map((x) => x[0]) : []))
+      .filter((n, i, arr) => arr.indexOf(n) === i).sort((x, y) => nbLikes(y) - nbLikes(x)).slice(0, 20);
+    const dur = (m) => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min';
+    let liste = '', aide = '';
+    if (ong === 'sets') {
+      aide = 'Les sets en cours ou de ce soir que les Bangers notent le mieux. Le classement suit le nombre de « Top » donnés sur place.';
+      liste = sets.map((p, i) => { const l = lieux[p.lieu], a = tAvis(p), pct = Math.round(a.top / a.total * 100), enC = t >= p.d;
+        return `<button class="mt-ligne td-ligne" data-lieu="${p.lieu}"><span class="mt-num">${i + 1}</span><span class="mt-av">${avatarDj(decouperDjs(p.dj)[0] || p.dj)}</span>
+          <span class="mt-txt"><b>${esc(p.dj)}</b><small>${esc(l.nom)}${p.salle ? ' · ' + esc(p.salle) : ''} · ${enC ? 'encore ' + dur(p.f - t) : 'à ' + p.debut}</small>
+          <span class="td-jauge"><i style="width:${pct}%"></i></span><small class="td-pourquoi">${a.top} Banger${a.top > 1 ? 's' : ''} disent Top · ${pct} % de Top sur ${a.total} avis</small></span>
+          <span class="mt-badge ${enC ? 'live' : 'monte'}">${enC ? 'LIVE' : p.debut}</span></button>`; }).join('');
+    } else if (ong === 'lives') {
+      aide = 'Les DJ qui diffusent leur set en direct en ce moment, rangés par nombre de Bangers à l\'écoute.';
+      liste = lives.map((d, i) => `<button class="mt-ligne td-ligne" data-dj-pro="${esc(d.nom)}"><span class="mt-num">${i + 1}</span><span class="mt-av">${avatarDj(d.nom)}</span>
+          <span class="mt-txt"><b>${esc(d.nom)}</b><small>${esc(d.ville || '')} · ${esc(genreDe(d))} · depuis ${hm(d.stream.depuis)}</small><small class="td-pourquoi">${d.stream.vues || 0} Bangers à l'écoute · ${esc(d.stream.titre || '')}</small></span>
+          <span class="mt-badge live">LIVE</span></button>`).join('');
+    } else {
+      aide = 'Les DJ les plus bangués avec le casque sur leur fiche : la note des Bangers sur la qualité de leurs sets.';
+      liste = bangues.map((n, i) => { const pro = djProParNom(n), r = window.DJMAG2026 ? DJMAG2026.djs.findIndex((x) => x[0] === n) + 1 : 0;
+        return `<button class="mt-ligne td-ligne" data-dj-pro="${esc(n)}"><span class="mt-num">${i + 1}</span><span class="mt-av">${avatarDj(n)}</span>
+          <span class="mt-txt"><b>${esc(n)}</b><small>${r ? r + (r === 1 ? 'er' : 'e') + ' au Top 100' : pro ? 'DJ Pro · ' + esc(pro.ville || '') : ''}${PAYS_DJ[n] ? ' · ' + esc(PAYS_DJ[n]) : ''}</small><small class="td-pourquoi">${fmtLikes(nbLikes(n))} Bangers banguent ses sets</small></span>
+          <span class="mt-badge note"><img src="banger-casque.png" alt="">${fmtLikes(nbLikes(n))}</span></button>`; }).join('');
+    }
+    $('#accueil').innerHTML = `<div class="mt-page"><button class="mt-retour" data-page-retour="1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Accueil</button>
+      <div class="ag-banniere td-banniere mt-tete"><img src="tendance-banniere.jpg?v=1" alt=""><span class="ag-txt"><small class="ag-kick">Ce soir</small><b class="ag-titre">La tendance<br>du moment</b><span class="ag-sous">Les coups de cœur des Bangers</span></span></div>
+      <div class="segs mt-segs">${[['sets', `Sets du moment`], ['lives', `Lives en ligne`], ['bangues', 'Les plus bangués']].map(([k, tt]) => `<button class="seg${k === ong ? ' on' : ''}" data-td-onglet="${k}">${tt}</button>`).join('')}</div>
+      <p class="mt-aide">${aide}</p>
+      <div class="mt-liste">${liste || '<div class="empty">Rien pour l\'instant, reviens ce soir.</div>'}</div></div>`;
+    remplirAvatars($('#accueil'));
+    window.scrollTo(0, 0); const sc = document.querySelector('#screen-live'); if (sc) sc.scrollTop = 0;
+  }
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-page-tendance]')) { state.pageTendance = true; renderPageTendance(); return; }
+    if (e.target.closest('[data-page-retour]')) { state.pageTendance = false; renderAccueil(); return; }
+    const o = e.target.closest('[data-td-onglet]'); if (o) { state.tdOnglet = o.dataset.tdOnglet; renderPageTendance(); }
+  });
+  // ---- Page « Les DJ qui montent » : les progressions, les nouveaux, les mieux notés par les Bangers, avec leur pays
+  const PAYS_DJ = {"David Guetta": "France", "Martin Garrix": "Pays-Bas", "Anyma": "Italie", "Alok": "Brésil", "Dimitri Vegas & Like Mike": "Belgique", "Charlotte de Witte": "Belgique", "Armin van Buuren": "Pays-Bas", "Timmy Trumpet": "Australie", "FISHER": "Australie", "Vintage Culture": "Brésil", "Calvin Harris": "Royaume-Uni", "Don Diablo": "Pays-Bas", "Peggy Gou": "Corée du Sud", "Black Coffee": "Afrique du Sud", "Afrojack": "Pays-Bas", "Fred again..": "Royaume-Uni", "Lost Frequencies": "Belgique", "Steve Aoki": "États-Unis", "KSHMR": "États-Unis", "W&W": "Pays-Bas", "Reinier Zonneveld": "Pays-Bas", "Tiësto": "Pays-Bas", "Carl Cox": "Royaume-Uni", "John Summit": "États-Unis", "Skrillex": "États-Unis", "Indira Paganotto": "Espagne", "Nicky Romero": "Pays-Bas", "The Martinez Brothers": "États-Unis", "Hardwell": "Pays-Bas", "Illenium": "États-Unis", "Keinemusik": "Allemagne", "Alan Walker": "Norvège", "Jamie Jones": "Royaume-Uni", "Swedish House Mafia": "Suède", "Paul van Dyk": "Allemagne", "Korolova": "Ukraine", "Michael Bibi": "Royaume-Uni", "Dom Dolla": "Australie", "Oliver Heldens": "Pays-Bas", "Josh Baker": "Royaume-Uni", "Solomun": "Allemagne", "Mahmut Orhan": "Turquie", "Claptone": "Allemagne", "Joel Corry": "Royaume-Uni", "R3hab": "Pays-Bas", "Mochakk": "Brésil", "Amelie Lens": "Belgique", "HUGEL": "France", "Lilly Palmer": "Allemagne", "GORDO": "États-Unis", "James Hype": "Royaume-Uni", "Maddix": "Pays-Bas", "Marshmello": "États-Unis", "Zedd": "Allemagne", "Mau P": "Pays-Bas", "Alesso": "Suède", "Boris Brejcha": "Allemagne", "Bassjackers": "Pays-Bas", "CHRIS STASSY": "Royaume-Uni", "DJ Snake": "France", "Miss Monique": "Ukraine", "Eric Prydz": "Suède", "ATB": "Allemagne", "Sara Landry": "États-Unis", "Kölsch": "Danemark", "Ben Nicky": "Royaume-Uni", "Sub Zero Project": "Pays-Bas", "Joseph Capriati": "Italie", "ARTBAT": "Ukraine", "Vini Vici": "Israël", "Wade": "Espagne", "Nora En Pure": "Suisse", "Shimza": "Afrique du Sud", "Quintino": "Pays-Bas", "Lucas & Steve": "Pays-Bas", "Giuseppe Ottaviani": "Italie", "Padre Guilherme": "Brésil", "Sonny Fodera": "Australie", "Deborah De Luca": "Italie", "Nico Moreno": "France", "Ferry Corsten": "Pays-Bas", "Cloonee": "Royaume-Uni", "Mosimann": "France", "PAWSA": "Royaume-Uni", "Above & Beyond": "Royaume-Uni", "Marnik": "Inde", "The Chainsmokers": "États-Unis", "Plastik Funk": "Allemagne", "Deadmau5": "Canada", "MATTN": "Belgique", "Nils van Zandt": "Pays-Bas", "Prospa": "Royaume-Uni", "¥ØU$UK€ ¥UK1MAT$U": "Japon", "Cuebrick": "Pays-Bas", "Marlon Hoffstadt": "Allemagne", "Honey Dijon": "États-Unis", "DubVision": "Pays-Bas", "KI/KI": "Pays-Bas"};
+  state.mtOnglet = 'montent';
+  function renderPageMontent() {
+    const TOP = window.DJMAG2026; if (!TOP) return;
+    const rang = (n) => TOP.djs.findIndex((x) => x[0] === n) + 1, mvDe = (n) => (TOP.djs.find((x) => x[0] === n) || [])[1];
+    const MV = { '+': ['En hausse', 'monte'], '-': ['En baisse', 'descend'], '=': ['Stable', 'stable'], N: ['Nouveau', 'nouveau'], R: ['Retour', 'retour'] };
+    const listes = {
+      montent: (window.__MONTEES || []).map(([n, k]) => ({ n, badge: '+' + k, cls: 'monte' })),
+      nouveaux: TOP.djs.filter((x) => x[1] === 'N' || x[1] === 'R').map(([n, m]) => ({ n, badge: m === 'N' ? 'NEW' : 'RETOUR', cls: 'nouveau' })),
+      notes: TOP.djs.map(([n]) => n).sort((x, y) => nbLikes(y) - nbLikes(x)).slice(0, 30).map((n) => ({ n, badge: fmtLikes(nbLikes(n)), cls: 'note' }))
+    };
+    const ong = state.mtOnglet, L = listes[ong] || [];
+    const ligne = (o, i) => { const r = rang(o.n), mv = MV[mvDe(o.n)] || ['', ''], pays = PAYS_DJ[o.n] || '';
+      return `<button class="mt-ligne" data-dj-pro="${esc(o.n)}"><span class="mt-num">${i + 1}</span><span class="mt-av">${avatarDj(o.n)}</span>
+        <span class="mt-txt"><b>${esc(o.n)}</b><small>${r ? r + (r === 1 ? 'er' : 'e') + ' au Top 100' : ''}${pays ? ' · ' + esc(pays) : ''}${mv[0] && ong !== 'montent' ? ' · ' + mv[0] : ''}</small></span>
+        <span class="mt-badge ${o.cls}">${o.cls === 'note' ? `<img src="banger-casque.png" alt="">` : ''}${esc(o.badge)}</span></button>`; };
+    $('#accueil').innerHTML = `<div class="mt-page"><button class="mt-retour" data-montent-retour="1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Accueil</button>
+      <div class="ag-banniere mt-banniere mt-tete"><img src="montent-banniere.jpg?v=1" alt=""><span class="ag-txt"><small class="ag-kick">Top 100 · 2026</small><b class="ag-titre">Les DJ<br>qui montent</b><span class="ag-sous">Découvre la nouvelle vague</span></span></div>
+      <div class="segs mt-segs">${[['montent', 'Ceux qui montent'], ['nouveaux', 'Les nouveaux'], ['notes', 'Les mieux notés']].map(([k, t]) => `<button class="seg${k === ong ? ' on' : ''}" data-mt-onglet="${k}">${t}</button>`).join('')}</div>
+      <p class="mt-aide">${ong === 'montent' ? 'Les plus fortes progressions du classement DJ Mag 2026.' : ong === 'nouveaux' ? 'Les nouvelles entrées et les retours dans le Top 100 2026.' : 'Les DJ du Top 100 les plus bangués par les Bangers sur leur fiche.'}</p>
+      <div class="mt-liste">${L.map(ligne).join('')}</div></div>`;
+    remplirAvatars($('#accueil'));
+    window.scrollTo(0, 0); const sc = document.querySelector('#screen-live'); if (sc) sc.scrollTop = 0;
+  }
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-page-montent]')) { state.pageMontent = true; renderPageMontent(); return; }
+    if (e.target.closest('[data-montent-retour]')) { state.pageMontent = false; renderAccueil(); return; }
+    const o = e.target.closest('[data-mt-onglet]'); if (o) { state.mtOnglet = o.dataset.mtOnglet; renderPageMontent(); }
+  });
   // Bandeau « Mes DJ » en tête de l'accueil (remplace la rangée de filtres)
   function bandeauMesDj() {
     const fav = state.favs || [], ce = fav.filter((n) => passages.some((p) => p.dj === n && !p.inconnu && p.f > state.t));
@@ -3999,7 +4074,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   }
 
   // L'onglet Accueil ramène toujours à la page d'accueil
-  document.addEventListener('click', (e) => { if (e.target.closest('nav [data-tab="live"]')) { state.vueAcc = 'accueil'; store.set('vueAcc', 'accueil'); } }, true);
+  document.addEventListener('click', (e) => { if (e.target.closest('nav [data-tab="live"]')) { state.pageMontent = false; state.pageTendance = false; state.vueAcc = 'accueil'; store.set('vueAcc', 'accueil'); } }, true);
   document.addEventListener('click', (e) => { if (e.target.closest('#acc-voir-live') || e.target.closest('[data-live-tous]')) ouvrirDjLive(); });
   document.addEventListener('click', (e) => {
     const dp = e.target.closest('[data-ag-deplier]'); if (!dp || e.target.closest('[data-ag-type]')) return;
