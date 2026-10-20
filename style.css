@@ -2161,3 +2161,19 @@ nav.tabs .tab-cherche.on { color: var(--orange); }
 .mm-bulle small { color: rgba(244,239,230,.75) !important; }
 .mm-bulle b { color: #fff; }
 .mm-bulle .enc-voir { color: #FF8A3D !important; }
+
+/* Casque « Banger » : le like du DJ sur sa fiche */
+.fp-tete { position: relative; }
+.casque-like { flex: none; margin-left: auto; align-self: flex-end; display: flex; flex-direction: column; align-items: center; gap: 0; padding: 0; border: 0; background: none; color: var(--text, #fff); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.casque-like img { width: 64px; height: auto; filter: grayscale(.85) brightness(.75); transition: filter .25s, transform .2s; }
+.casque-like.on img { filter: drop-shadow(0 0 10px rgba(255,138,61,.65)); }
+.casque-like:active img { transform: scale(.92); }
+.casque-like.tourne img { animation: casque-tour .62s cubic-bezier(.3,.1,.2,1); }
+@keyframes casque-tour { 0% { transform: rotate(0) scale(1); } 60% { transform: rotate(640deg) scale(1.18); } 100% { transform: rotate(720deg) scale(1); } }
+.cl-nb { margin-top: -4px; font: 800 13px 'DM Sans', sans-serif; font-variant-numeric: tabular-nums; }
+.cl-txt { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted, #9AA3B8); }
+.casque-like.on .cl-txt { color: #FF8A3D; }
+@media (prefers-reduced-motion: reduce) { .casque-like.tourne img { animation: none; } }
+.casque-like img { width: 52px; }
+.cl-nb { font-size: 12px; }
+.cl-txt { font-size: 9px; }

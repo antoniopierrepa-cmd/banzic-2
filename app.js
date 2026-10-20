@@ -1734,6 +1734,36 @@
 
   // Fiche DJ : en-tête commun (DJ Pro = premium, DJ Live = normal, sinon fiche d'après les line-ups)
   const ALERTES_DJ = store.get('alertesDj', {});
+  // Le casque « Banger » : le bouton pour dire qu'on aime le DJ. Un toucher : il fait deux tours rapides et un son de basse.
+  const LIKES_DJ = store.get('likesDj', {});
+  const baseLikes = (nom) => { let g = 7; for (const ch of nom) g = (g * 31 + ch.charCodeAt(0)) >>> 0; const r = window.DJMAG2026 ? DJMAG2026.djs.findIndex((x) => sansAccent(x[0]) === sansAccent(nom)) + 1 : 0; return r ? 2000 + (101 - r) * 180 + g % 900 : 40 + g % 600; };
+  const nbLikes = (nom) => baseLikes(nom) + (LIKES_DJ[sansAccent(nom)] ? 1 : 0);
+  const fmtLikes = (n) => n >= 10000 ? (n / 1000).toFixed(0) + 'k' : n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',') + 'k' : String(n);
+  const boutonCasque = (nom) => { const on = !!LIKES_DJ[sansAccent(nom)];
+    return `<button class="casque-like${on ? ' on' : ''}" data-casque="${esc(nom)}" aria-pressed="${on}" aria-label="${on ? 'Tu aimes ce DJ' : 'J\'aime ce DJ'}"><img src="banger-casque.png" alt=""><span class="cl-nb">${fmtLikes(nbLikes(nom))}</span><span class="cl-txt">${on ? 'Tu bangues' : 'Je bangue'}</span></button>`; };
+  let audioCtx = null;
+  function sonBanger() {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); const t = audioCtx.currentTime;
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'sine';
+      o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(48, t + .35);
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.9, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .45);
+      o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + .5);
+      const o2 = audioCtx.createOscillator(), g2 = audioCtx.createGain(); o2.type = 'triangle';
+      o2.frequency.setValueAtTime(880, t + .05); o2.frequency.exponentialRampToValueAtTime(1760, t + .25);
+      g2.gain.setValueAtTime(.0001, t + .05); g2.gain.exponentialRampToValueAtTime(.18, t + .08); g2.gain.exponentialRampToValueAtTime(.0001, t + .35);
+      o2.connect(g2).connect(audioCtx.destination); o2.start(t + .05); o2.stop(t + .4);
+    } catch (e) { /* pas de son possible : l'animation suffit */ }
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-casque]'); if (!b) return;
+    const nom = b.dataset.casque, k = sansAccent(nom), on = !LIKES_DJ[k];
+    if (on) LIKES_DJ[k] = Date.now(); else delete LIKES_DJ[k]; store.set('likesDj', LIKES_DJ);
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+    b.querySelector('.cl-nb').textContent = fmtLikes(nbLikes(nom)); b.querySelector('.cl-txt').textContent = on ? 'Tu bangues' : 'Je bangue';
+    if (on) { b.classList.remove('tourne'); void b.offsetWidth; b.classList.add('tourne'); sonBanger(); if (navigator.vibrate) navigator.vibrate(30); toast('Tu bangues ' + nom); }
+  });
+
   function ficheTeteDj(nom, pro, ceSoirN, nbSaison) {
     const tier = pro ? (pro.formule === 'pro' ? 'pro' : 'live') : 'std';
     const live = pro ? DECLS.filter((x) => x.dj === pro.id && declActive(x)) : [];
@@ -1751,7 +1781,8 @@
     const suivi = state.favs.includes(nom), al = !!ALERTES_DJ[sansAccent(nom)];
     return `<div class="fp fp-${tier}"><div class="fp-cover"${img ? ` style="--fp-img:url('${img}')"` : ''}><i class="fp-lasers"></i></div>
       <div class="fp-tete"><span class="fp-av">${avatarDj(nom, 'fp-photo')}</span>
-        <div class="fp-id"><div class="fp-nom">${esc(nom)}</div><div class="fp-sous">${sous}</div></div></div>
+        <div class="fp-id"><div class="fp-nom">${esc(nom)}</div><div class="fp-sous">${sous}</div></div>
+        ${boutonCasque(nom)}</div>
       <div class="fp-corps">
         <div class="fp-badges">${tier === 'pro' ? '<span class="fp-badge b-pro">DJ Pro</span>' : tier === 'live' ? '<span class="fp-badge b-live">DJ Live</span>' : '<span class="fp-badge b-std">Fiche line-ups</span>'}${pro && pro.officiel ? '<span class="fp-badge b-off">Officiel</span>' : ''}</div>
         ${styles.length ? `<div class="fp-puces">${styles.map((x) => `<span class="fp-puce">${esc(x)}</span>`).join('')}</div>` : ''}
