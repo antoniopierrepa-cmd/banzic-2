@@ -448,14 +448,12 @@
       const s = statutLieu(l.id, t);
       const live = s.code === 'live';
       const col = couleur(l, t);
-      const m = L.circleMarker([l.lat, l.lng], {
-        radius: live ? 9 : 6, color: '#F4EFE6', weight: live ? 2 : 1, fillColor: col, fillOpacity: live ? 1 : .8
-      });
+      const m = L.marker([l.lat, l.lng], { icon: iconeLieu(l, live, ['fini', 'ferme'].includes(s.code)), zIndexOffset: live ? 400 : 0 });
       const cur = enCours(l.id, t);
       const djs = cur.length ? cur.map((p) => `<div class="pop-dj">${p.inconnu ? esc(p.dj) : lienDjs(p.dj)}</div><div class="pop-slot">${esc(p.salle)} · ${horaire(p)}</div>`).join('') : `<div class="pop-slot" style="margin-top:4px">${s.label}</div>`;
       m.bindPopup(`${photo(l, 'pop-photo')}<div class="pop-venue">${esc(l.nom)}</div>${djs}<button class="pop-btn" data-lieu="${l.id}">Voir la soirée</button>`);
+      lierBandeau(m, `data-lieu="${l.id}"`);
       m.addTo(layer);
-      if (live) m.bringToFront();
     });
     marqueursSpots();
     marqueursDecls();
@@ -2211,34 +2209,113 @@
 
   // Bandeau d'actualité des pages saison (Ibiza, Dubaï, Miami…) : sets en cours, line-ups confirmés, DJ déclarés, spots, soirées du jour
   function filDest() {
-    const d = DEST[state.dest]; if (!d || d.local) return '';
+    const d = DEST[state.dest]; if (!d) return '';
+    const kmL = (la, lo) => d.local && la != null ? ' · ' + (distKm(d.centre, [la, lo]) < 1 ? '< 1' : Math.round(distKm(d.centre, [la, lo]))) + ' km' : '';
     const dur = (m) => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min';
-    const item = (k, tag, attr, nom, l1, l2) => { const vis = k === 'spot' ? '' : visFil(nom); return `<button class="fil-item k-${k}${vis ? ' a-vis' : ''}" ${attr}>${vis}<span class="fil-l1"><em class="fil-tag ${k}">${tag}</em><b>${esc(nom)}</b>${l1 ? `<span class="fil-t">${l1}</span>` : ''}</span><span class="fil-l2">${l2.filter(Boolean).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button>`; };
+    const item = (k, tag, attr, nom, l1, l2, visO) => { const vis = visO != null ? visO : k === 'spot' ? '' : visFil(nom); return `<button class="fil-item k-${k}${vis ? ' a-vis' : ''}" ${attr}>${vis}<span class="fil-l1"><em class="fil-tag ${k}">${tag}</em><b>${esc(nom)}</b>${l1 ? `<span class="fil-t">${l1}</span>` : ''}</span><span class="fil-l2">${l2.filter(Boolean).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button>`; };
     const xs = [];
     if (d.id === 'ibiza') {
       const t = state.t;
       passages.filter((p) => !p.inconnu && t >= p.d && t < p.f).sort((a, b) => (b.confirmations || 0) - (a.confirmations || 0)).forEach((p) => { const l = lieux[p.lieu], ok = !!p.constate;
-        xs.push(item(ok ? 'live' : 'decl', ok ? 'Live' : 'Line-up', `data-lieu="${l.id}"`, p.dj, 'encore ' + dur(p.f - t), [[esc(l.nom) + (p.salle ? ' · ' + esc(p.salle) : '')], ok ? ['confirmé par ' + (p.confirmations || 1) + ' Banger' + ((p.confirmations || 1) > 1 ? 's' : '') + ' à ' + p.constate, 'fil-ok'] : ['line-up annoncé, pas encore confirmé', 'fil-att']])); });
+        xs.push(item(ok ? 'live' : 'decl', ok ? 'Live' : 'Line-up', `data-lieu="${l.id}"`, p.dj, 'encore ' + dur(p.f - t), [[esc(l.nom) + (p.salle ? ' · ' + esc(p.salle) : '')], ok ? ['confirmé par ' + (p.confirmations || 1) + ' Banger' + ((p.confirmations || 1) > 1 ? 's' : '') + ' à ' + p.constate, 'fil-ok'] : ['line-up annoncé, pas encore confirmé', 'fil-att']], visFil(p.dj, ok ? (p.confirmations || 1) : 0, ''))); });
       passages.filter((p) => !p.inconnu && p.d > t && p.d - t <= 120).sort((a, b) => a.d - b.d).slice(0, 6).forEach((p) => { const l = lieux[p.lieu];
-        xs.push(item('decl', 'Bientôt', `data-lieu="${l.id}"`, p.dj, 'à ' + p.debut, [[esc(l.nom) + (p.salle ? ' · ' + esc(p.salle) : '')], ['dans ' + dur(p.d - t)]])); });
+        xs.push(item('decl', 'Bientôt', `data-lieu="${l.id}"`, p.dj, 'à ' + p.debut, [[esc(l.nom) + (p.salle ? ' · ' + esc(p.salle) : '')], ['dans ' + dur(p.d - t)]], visFil(p.dj, 0, ''))); });
     }
     declsVisibles().forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}, ok = declConfirmee(x), m = Math.round((x.fin - Date.now()) / 60000);
-      xs.push(item(ok ? 'live' : 'decl', ok ? 'Live' : 'Déclaré', `data-dj-pro="${esc(dj.nom)}"`, dj.nom, m > 0 ? 'encore ' + dur(m) : 'se termine', [[esc(l.nom || 'Spot')], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']])); });
+      xs.push(item(ok ? 'live' : 'decl', ok ? 'Live' : 'Déclaré', `data-dj-pro="${esc(dj.nom)}"`, dj.nom, m > 0 ? 'encore ' + dur(m) : 'se termine', [[esc(l.nom || 'Spot') + kmL(l.lat, l.lng)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']], visFil(dj.nom, x.conf || 0, `data-decl-ok="${x.id}"`))); });
     spotsVisibles().filter(spotPublic).forEach((sp) => { const n = sp.note || 0, c = sp.conf || 0, v = n >= 4 && c >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || c >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
-      xs.push(item('spot', 'Spot', `data-spot-voir="${sp.id}"`, sp.nom || TYPES_SPOT[sp.type] || 'Spot', `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, [[esc(sp.dj || 'DJ inconnu')], ['signalé à ' + hm(sp.t || sp.maj) + ' par @' + esc(sp.par || 'un Banger')], [c + ' confirment']])); });
+      xs.push(item('spot', 'Spot', `data-spot-voir="${sp.id}"`, sp.nom || TYPES_SPOT[sp.type] || 'Spot', `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, [[esc(sp.dj || 'DJ inconnu') + kmL(sp.lat, sp.lng)], ['signalé à ' + hm(sp.t || sp.maj) + ' par @' + esc(sp.par || 'un Banger')]], visSpotC(sp))); });
     const auj = isoAuj();
     if (d.id === 'dubai') soireesDubai().filter((r) => r.date === auj).forEach((r) => { const dj = (r.djs || '').split(/,| b2b /i)[0].trim();
-      xs.push(item('decl', 'Ce soir', `data-dj-pro="${esc(dj || r.titre)}"`, dj || r.titre, r.heure ? 'à ' + esc(r.heure) : '', [[esc(r.nomLieu)], [esc(r.titre)], ['line-up annoncé', 'fil-att']])); });
+      xs.push(item('decl', 'Ce soir', `data-dj-pro="${esc(dj || r.titre)}"`, dj || r.titre, r.heure ? 'à ' + esc(r.heure) : '', [[esc(r.nomLieu)], [esc(r.titre)], ['line-up annoncé', 'fil-att']], visFil(dj || r.titre, 0, ''))); });
     // Agendas du Top 100 : les DJ qui passent dans cette destination dans les 7 jours
     const villes = { dubai: ['dubai', 'dubaï'], miami: ['miami', 'miami beach'], mykonos: ['mykonos', 'mýkonos'], tulum: ['tulum'], ibiza: ['ibiza', 'sant antoni de portmany', 'sant josep de sa talaia', 'eivissa'] }[d.id] || [];
     const fin7 = iso(new Date(Date.now() + 7 * 86400000));
     Object.entries(window.AGENDA_DJS || {}).forEach(([nom, o]) => (o.avenir || []).forEach((r) => { if (r[0] >= auj && r[0] <= fin7 && villes.includes(sansAccent(String(r[3] || '')).toLowerCase())) {
       const j = Math.round((new Date(r[0] + 'T12:00') - new Date(auj + 'T12:00')) / 86400000);
-      xs.push(item('decl', j === 0 ? 'Ce soir' : 'Cette semaine', `data-dj-pro="${esc(nom)}"`, nom, j === 0 ? (r[7] ? 'à ' + esc(r[7]) : 'ce soir') : j === 1 ? 'demain' : 'dans ' + j + ' jours', [[esc(r[2])], [r[5] && r[5] !== r[2] ? esc(r[5]) : ''], ['date annoncée par le DJ', 'fil-att']])); } }));
+      xs.push(item('decl', j === 0 ? 'Ce soir' : 'Cette semaine', `data-dj-pro="${esc(nom)}"`, nom, j === 0 ? (r[7] ? 'à ' + esc(r[7]) : 'ce soir') : j === 1 ? 'demain' : 'dans ' + j + ' jours', [[esc(r[2])], [r[5] && r[5] !== r[2] ? esc(r[5]) : ''], ['date annoncée par le DJ', 'fil-att']], visFil(nom, 0, ''))); } }));
+    // Les lieux de la destination (clubs, pool parties, bars, beach clubs)
+    const lsD = (d.id === 'ibiza' ? D.lieux : Object.values(LIEUX_DEST).filter((l) => l.dest === d.id)).filter((l) => l.lat != null)
+      .map((l) => ({ l, k: distKm(d.centre, [l.lat, l.lng]) })).sort((u, v) => u.k - v.k).slice(0, 24);
+    const kmClub = (k) => d.local ? (k < 1 ? '< 1 km' : Math.round(k) + ' km') : '';
+    lsD.forEach(({ l, k }) => xs.push(filClub(l, kmClub(k))));
     if (!xs.length) return '';
-    const lot = xs.slice(0, 18), sep = '<span class="fil-sep" aria-hidden="true"></span>';
+    const lot = xs.slice(0, 60), sep = '<span class="fil-sep" aria-hidden="true"></span>';
     return `<div class="fil-infos fil-dest" aria-label="Fil d'actualité ${esc(d.nom)}"><div class="fil-fenetre"><div class="fil-piste">${lot.join(sep)}${sep}<span class="fil-copie" aria-hidden="true">${lot.join(sep)}${sep}</span></div></div></div>`;
   }
+
+  // ---- Check-in : le tableau des départs façon aéroport, autour de moi (10 à 100 km).
+  // Chaque ligne garde le bandeau tel quel ; au-dessus, la bande aéroport : heure, porte (le lieu), statut.
+  const CK_RAYONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  state.ckRayon = store.get('ckRayon', 50);
+  function renderCheckin() {
+    const box = $('#screen-checkin'); if (!box) return;
+    // Position : le GPS du téléphone ; pour tester ailleurs, ?position=dubai (ou ibiza, miami, mykonos, tulum) dans l'adresse
+    const posTest = (location.search.match(/[?&]position=([a-z]+)/) || [])[1], destTest = posTest && DEST[posTest];
+    const r = state.ckRayon, c = destTest ? destTest.centre : (state.maPos ? [state.maPos.lat, state.maPos.lng] : DEST.local.centre), now = Date.now();
+    const nomPos = destTest ? destTest.nom + ' (position de test)' : (state.zoneGeo && state.zoneGeo.nom) || 'toi';
+    const km = (la, lo) => la == null ? 0 : distKm(c, [la, lo]), fK = (x) => x < 1 ? '< 1 km' : Math.round(x) + ' km';
+    const dur = (m) => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min';
+    const auj = iso(new Date()), dem = iso(new Date(now + 86400000));
+    const msDe = (date, hh) => { if (!hh) return null; const [H, M] = hh.split(':').map(Number); const x = new Date(date + 'T00:00:00'); x.setHours(H, M, 0, 0); return x.getTime(); };
+    const L = [];
+    const ligne = (o) => L.push(o);
+    // DJ déclarés autour de moi
+    DECLS.filter((x) => declActive(x) && djDe(x)).forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}; if (l.lat == null) return; const d = km(l.lat, l.lng); if (d > r) return;
+      const ok = declConfirmee(x), avant = (x.debut - now) / 60000, reste = (x.fin - now) / 60000;
+      const st = avant > 20 ? ['À l\'heure', 'bleu'] : avant > 0 ? ['Embarquement imminent', 'or'] : reste <= 15 ? ['Dernier appel', 'rouge'] : ok ? ['En cours', 'vert'] : ['Annoncé', 'orange'];
+      ligne({ conf: x.conf || 0, act: `data-decl-ok="${x.id}"`, km: d, t: x.debut, heure: hm(x.debut), porte: l.nom || 'Spot', st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Déclaré', attr: `data-dj-pro="${esc(dj.nom)}"`, nom: dj.nom,
+        l1: avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : reste > 0 ? 'encore ' + dur(Math.round(reste)) : 'se termine',
+        l2: [[esc(l.nom || 'Spot') + ' · ' + fK(d)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']], vol: dj.nom }); });
+    // Spots signalés par les Bangers
+    SPOTS.filter((s) => spotActif(s) && spotPublic(s) && s.lat != null).forEach((sp) => { const d = km(sp.lat, sp.lng); if (d > r) return;
+      const n = sp.note || 0, cf = sp.conf || 0, v = n >= 4 && cf >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || cf >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
+      ligne({ sp, km: d, t: sp.t || sp.maj, heure: hm(sp.t || sp.maj), porte: sp.nom || TYPES_SPOT[sp.type] || 'Spot', st: ['Signalé', 'violet'], k: 'spot', tag: 'Spot', attr: `data-spot-voir="${sp.id}"`, nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot',
+        l1: `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, l2: [[esc(sp.dj || 'DJ inconnu') + ' · ' + fK(d)], ['signalé par @' + esc(sp.par || 'un Banger')]], vol: '' }); });
+    // Soirées de l'agenda : ce soir et demain
+    SUD.soirees.filter((x) => (x.date === auj || x.date === dem) && SUD.lieux[x.lieu]).forEach((x) => { const l = SUD.lieux[x.lieu], d = km(l.lat, l.lng); if (d > r) return;
+      const deb = msDe(x.date, x.heure), avant = deb ? (deb - now) / 60000 : null, dj = String(x.djs || '').split(/,| b2b | & /i)[0].trim();
+      const st = x.date === dem ? ['Demain', 'gris'] : avant == null ? ['Ce soir', 'bleu'] : avant > 20 ? ['À l\'heure', 'bleu'] : avant > 0 ? ['Embarquement imminent', 'or'] : avant > -360 ? ['En cours', 'vert'] : ['Terminé', 'gris'];
+      if (st[0] === 'Terminé') return;
+      ligne({ lieuId: x.lieu, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || '--:--', porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: dj ? `data-dj-pro="${esc(dj)}"` : '', nom: x.nom,
+        l1: x.date === dem ? 'demain' + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
+        l2: [[esc(l.nom) + ' · ' + fK(d)], [esc(String(x.djs || '').slice(0, 60))], ['line-up annoncé', 'fil-att']], vol: dj }); });
+    // Rangés par distance, du plus proche au plus loin (à distance égale, par heure)
+    // Ibiza : les sets de ce soir dans les clubs (en cours ou dans les 2 heures)
+    { const t = state.t; passages.filter((p) => !p.inconnu && p.f > t && p.d - t <= 120).forEach((p) => { const l = lieux[p.lieu]; if (!l || l.lat == null) return; const d = km(l.lat, l.lng); if (d > r) return;
+      const avant = p.d - t, reste = p.f - t, ok = !!p.constate;
+      const st = avant > 20 ? ['À l\'heure', 'bleu'] : avant > 0 ? ['Embarquement imminent', 'or'] : reste <= 15 ? ['Dernier appel', 'rouge'] : ['En cours', 'vert'];
+      ligne({ conf: ok ? (p.confirmations || 1) : 0, km: d, t: now + avant * 60000, heure: p.debut, porte: l.nom, st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Line-up', attr: `data-lieu="${l.id}"`, nom: p.dj,
+        l1: avant > 0 ? 'dans ' + dur(avant) : 'encore ' + dur(reste), l2: [[esc(l.nom) + (p.salle ? ' · ' + esc(p.salle) : '') + ' · ' + fK(d)]], vol: p.dj }); }); }
+    // Dubaï : les soirées de ce soir et demain (agenda Platinumlist / RA)
+    soireesDubai().filter((x) => x.date === auj || x.date === dem).forEach((x) => { const lv = LIEUX_DEST[x.lieu], la = lv ? lv.lat : DEST.dubai.centre[0], lo = lv ? lv.lng : DEST.dubai.centre[1], d = km(la, lo); if (d > r) return;
+      const deb = msDe(x.date, x.heure), avant = deb ? (deb - now) / 60000 : null, dj = String(x.djs || '').split(/,| b2b | & /i)[0].trim();
+      const st = x.date === dem ? ['Demain', 'gris'] : avant == null ? ['Ce soir', 'bleu'] : avant > 20 ? ['À l\'heure', 'bleu'] : avant > 0 ? ['Embarquement imminent', 'or'] : ['En cours', 'vert'];
+      ligne({ lieuId: x.lieu, lieuPin: pinLieu({ nom: x.nomLieu }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || '--:--', porte: x.nomLieu, st, k: 'decl', tag: 'Soirée', attr: dj ? `data-dj-pro="${esc(dj)}"` : '', nom: x.titre,
+        l1: x.date === dem ? 'demain' + (x.heure ? ' à ' + x.heure : '') : x.heure ? 'à ' + x.heure : 'ce soir', l2: [[esc(x.nomLieu) + ' · ' + fK(d)], [esc(String(x.djs || '').slice(0, 60))]], vol: '' }); });
+    // Les DJ du Top 100 qui jouent ce soir ou demain dans une ville du rayon
+    const V = new Map((window.VILLES || []).map((v) => [sansAccent(v[0]).toLowerCase(), v]));
+    Object.entries(window.AGENDA_DJS || {}).forEach(([nomDj, o]) => (o.avenir || []).forEach((row) => { if (row[0] !== auj && row[0] !== dem) return; const v = V.get(sansAccent(String(row[3] || '')).toLowerCase()); if (!v) return; const d = km(v[2], v[3]); if (d > r) return;
+      const deb = msDe(row[0], row[7]);
+      ligne({ km: d, t: deb || msDe(row[0], '23:58'), heure: row[7] || '--:--', porte: row[2], st: row[0] === dem ? ['Demain', 'gris'] : ['Ce soir', 'bleu'], k: 'decl', tag: 'Top 100', attr: `data-dj-pro="${esc(nomDj)}"`, nom: nomDj,
+        l1: row[0] === dem ? 'demain' : 'ce soir', l2: [[esc(row[2]) + ' · ' + esc(row[3]) + ' · ' + fK(d)]], vol: nomDj }); }));
+    L.sort((a, b) => Math.round(a.km) - Math.round(b.km) || (a.t || 0) - (b.t || 0));
+    const vis = (nom) => nom ? visFil(nom) : '';
+    const rangee = (o) => { const v = o.lieuPin ? `<span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-lieu" src="${o.lieuPin}" alt="">${casqueConf(BANG_LIEU[o.lieuId] || 0)}</span>` : o.k === 'spot' ? (o.sp ? visSpotC(o.sp) : '') : o.vol ? visFil(o.vol, o.conf || 0, o.act || '') : '';
+      return `<div class="ck-ligne ck-${o.st[1]}">
+        <div class="ck-bande"><span class="ck-h">${flap(o.heure, 5)}</span><span class="ck-porte"><small>Porte</small>${esc(o.porte)}</span><span class="ck-st ck-st-${o.st[1]}"><i></i>${esc(o.st[0])}</span></div>
+        <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em><b>${esc(o.nom)}</b>${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button></div>`; };
+    const i = CK_RAYONS.indexOf(r);
+    box.innerHTML = `<div class="ck-tete"><div><h2>Check-in</h2><small>Départs autour de ${esc(nomPos)} · <b>${r} km</b> · ${L.length} départ${L.length > 1 ? 's' : ''}</small></div><span class="ck-horloge">${flap(hm(now), 5)}</span></div>
+      <div class="fd-rail ck-rail"><input type="range" id="fader-ck" min="0" max="${CK_RAYONS.length - 1}" step="1" value="${i}" style="--pct:${i / (CK_RAYONS.length - 1) * 100}%" aria-label="Rayon du check-in" aria-valuetext="${r} kilomètres">
+        <div class="fd-graduations" aria-hidden="true">${CK_RAYONS.map((k, j) => `<span class="${j === i ? 'on' : ''}" data-ck-rayon="${j}">${k}</span>`).join('')}</div></div>
+      <div class="ck-legende"><span class="ck-st ck-st-or"><i></i>Embarquement imminent</span><span>commence dans moins de 20 min</span><span class="ck-st ck-st-rouge"><i></i>Dernier appel</span><span>se termine dans moins de 15 min</span></div>
+      ${L.length ? `<div class="ck-liste">${L.map(rangee).join('')}</div>` : `<div class="empty">Aucun départ à moins de ${r} km pour l'instant. Pousse le fader vers 100 km.</div>`}`;
+  }
+  const reglerCk = (j) => { state.ckRayon = CK_RAYONS[Math.max(0, Math.min(CK_RAYONS.length - 1, j))]; store.set('ckRayon', state.ckRayon); renderCheckin(); };
+  document.addEventListener('change', (e) => { if (e.target.id === 'fader-ck') reglerCk(+e.target.value); });
+  document.addEventListener('input', (e) => { if (e.target.id === 'fader-ck') { const j = +e.target.value; e.target.style.setProperty('--pct', j / (CK_RAYONS.length - 1) * 100 + '%'); document.querySelectorAll('[data-ck-rayon]').forEach((s, k) => s.classList.toggle('on', k === j)); } });
+  document.addEventListener('click', (e) => { const g = e.target.closest('[data-ck-rayon]'); if (g) reglerCk(+g.dataset.ckRayon); });
 
   // Mini-carte des pages saison, comme celle de l'accueil : DJ en live, déclarés, spots et clubs, avec l'encart au doigt
   function miniCarteDest(d) {
@@ -2312,12 +2389,12 @@
   function marqueursDest() {
     const d = DEST[state.dest], n = d.mois[MOIS_NOW];
     Object.values(LIEUX_DEST).filter((l) => l.dest === d.id).forEach((l) => {
-      const m = L.circleMarker([l.lat, l.lng], { radius: 7, color: '#F4EFE6', weight: 1, fillColor: l.type === 'plage' ? '#3DD6C6' : '#FF8A3D', fillOpacity: n < 0 ? .45 : .85 });
+      const m = L.marker([l.lat, l.lng], { icon: iconeLieu(l, false, n < 0) }); m.__lieu = l.id;
       m.bindPopup(d.local
         ? entreeBulle({ k: 'club', lieu: esc(l.zone), etat: 'Club', tete: '<span class="pb-ico club">♪</span>', t: l.nom, heure: esc((l.style || 'Club').split(/[,·:]/)[0].trim()), bang: '<span>Pas encore de DJ annoncé · <b>bangue</b> si ça joue</span>', actions: `<div class="pb-actions"><button class="pb-btn plein" data-lieu="${l.id}">${T('voir_lieu')}</button></div>` })
         : `${photo(l, 'pop-photo')}<div class="pop-venue">${esc(l.nom)}</div><div class="pop-slot">${l.type === 'plage' ? T('plage') : T('club')} · ${esc(l.zone)}</div>
         <div class="pop-slot" style="margin-top:4px">${moisNom(MOIS_NOW)} : ${labelMois(n)}</div><button class="pop-btn" data-lieu="${l.id}">${T('voir_lieu')}</button>`);
-      if (d.local) { m.options.className = ''; m.getPopup().options.className = 'pop-banzic'; m.getPopup().options.closeButton = false; survolBulle(m); }
+      if (d.local) { m.options.className = ''; }
       m.addTo(layer);
     });
   }
@@ -2617,7 +2694,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const spotPublic = (s) => s.conf >= SEUIL_SPOT;
   const spotsVisibles = () => SPOTS.filter((s) => s.dest === state.dest && spotActif(s) && (spotPublic(s) || s.mien));
   const ilYa = (ms) => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'à l\'instant' : m < 60 ? `il y a ${m} min` : m < 1440 ? `il y a ${Math.floor(m / 60)} h` : `il y a ${Math.floor(m / 1440)} j`; };
-  const iconeSpot = (s) => L.divIcon({ className: 'spot-pin' + (s.type === 'bateau' ? ' bateau' : '') + (spotPublic(s) ? '' : ' attente'), iconSize: [30, 30], iconAnchor: [15, 15],
+  const iconeSpot = (s) => djInconnu(s) ? L.divIcon({ className: 'pin-dj pin-inconnu', iconSize: [44, 48], iconAnchor: [22, 47], html: `<img src="${PIN_INCONNU}" alt="">` }) : L.divIcon({ className: 'pin-lieu pin-spot', iconSize: [44, 48], iconAnchor: [22, 47], html: `<img src="${pinSpot(s)}" alt="">` }) || L.divIcon({ className: 'spot-pin' + (s.type === 'bateau' ? ' bateau' : '') + (spotPublic(s) ? '' : ' attente'), iconSize: [30, 30], iconAnchor: [15, 15],
     html: s.type === 'bateau'
       ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h18l-2 3H5z"/><path d="M12 3v11M12 4l6 9h-6"/></svg>'
       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7"/></svg>' });
@@ -2634,7 +2711,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       if (s.type === 'bateau' && s.trace && s.trace.length) {
         L.polyline(s.trace.concat([[s.lat, s.lng]]), { color: '#B58CFF', weight: 2, dashArray: '4 6', opacity: .8 }).addTo(layer);
       }
-      survolBulle(L.marker([s.lat, s.lng], { icon: iconeSpot(s), zIndexOffset: 500 }).bindPopup(popupSpot(s), OPT_BULLE)).addTo(layer);
+      lierBandeau(survolBulle(L.marker([s.lat, s.lng], { icon: iconeSpot(s), zIndexOffset: 500 }).bindPopup(popupSpot(s), OPT_BULLE)), `data-spot-voir="${s.id}"`).addTo(layer);
     });
   }
   function blocSpots() {
@@ -2670,7 +2747,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <datalist id="liste-djs-spot">${state.dest === 'ibiza' ? [...tousLesDjs().values()].slice(0, 300).map((n) => `<option value="${esc(n)}">`).join('') : ''}</datalist>
         ${connu ? '' : `<div class="ps-types">${Object.entries(TYPES_SPOT).map(([k, l], i) => `<label class="ps-type" style="--pc:${({ club: '#3D8BFF', bar: '#A77BFF', resto: '#3DF28A', plage: '#3DD6C6', rooftop: '#FF4FA3', bateau: '#FF8A3D', rue: '#F2C53A' })[k]}"><input type="radio" name="type" value="${k}" ${i === 0 ? 'checked' : ''} hidden><span><i aria-hidden="true"></i>${l}</span></label>`).join('')}<button type="button" class="ps-type ps-ajout-nom" data-ps-nom="1"><span><b aria-hidden="true">+</b>Nom de l'endroit</span></button></div>
           <input class="search ps-nom-champ" name="nom" maxlength="40" placeholder="Nom de l'endroit : terrasse du port, catamaran…" hidden>`}
-        <div class="ps-note"><span>Ta note <b class="ps-note-txt" id="ps-note-txt"></b></span><div class="ps-vinyles" role="radiogroup" aria-label="Note de 1 à 5 vinyles">${[1, 2, 3, 4, 5].map((n) => `<label class="ps-vinyle" title="${n} sur 5"><input type="radio" name="note" value="${n}" hidden aria-label="${n} sur 5"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" class="vn-disque"/><circle cx="20" cy="20" r="15" class="vn-sillon"/><circle cx="20" cy="20" r="11.5" class="vn-sillon"/><circle cx="20" cy="20" r="7" class="vn-label"/><circle cx="20" cy="20" r="1.6" class="vn-trou"/></svg></label>`).join('')}</div></div>
+        <!-- plus de note : on signale juste qu'un DJ joue ici -->
         <button type="submit" class="btn-plein">Signaler</button>
         <button type="button" class="alerte ps-retour" data-spot-fermer="1">← Annuler, retour à la carte</button>
         <p class="aide">Visible tout de suite pour toi ; les autres le verront quand 2 personnes à côté l'auront confirmé.${connu ? '' : ' Il s\'efface 3 h après la dernière confirmation. Pas de spot dans un lieu privé.'}</p>
@@ -2715,7 +2792,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       t: Date.now(), maj: Date.now(), conf: 0, mien: true, trace: [], note, notes: note ? [note] : [] };
     SPOTS.push(s); sauverSpots();
     renderMap(); rappelCompte && rappelCompte();
-    toast(src === 'gps' || connu ? 'Signalé' + (note ? ' et noté ' + note + '/5' : '') + ' : visible pour toi, en attente de 2 confirmations' : 'Démo : spot placé au centre de la carte (déplace la carte avant de signaler)');
+    if (connu) { BANG_LIEU[connu.id] = (BANG_LIEU[connu.id] || 0) + 1; store.set('bangLieu', BANG_LIEU); }
+    toast(src === 'gps' || connu ? 'Banguérisé : tu es là, un DJ joue · visible pour toi, en attente de 2 confirmations' : 'Démo : spot placé au centre de la carte (déplace la carte avant de signaler)');
   });
   document.addEventListener('click', (e) => {
     if (e.target.closest('#btn-spot')) { formSpot(); return; }
@@ -2946,29 +3024,47 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const bulleCarteHtml = (o) => entreeBulle(o);
   const bullesEmpilees = (lst) => `<div class="pb-pile">${lst.join('<hr class="pb-sep">')}</div>`;
   const OPT_BULLE = { className: 'pop-banzic', maxWidth: 280, minWidth: 240, closeButton: false, offset: [0, -8] };
+  // Grande carte : plus aucune bulle. Toucher un repère cale le bandeau sur son info, ou ouvre directement sa fiche
+  if (window.L && L.Layer && !L.Layer.prototype.__sansBulle) {
+    const ouvrirDepuisRepere = function () {
+      if (window.__zoomRepere) window.__zoomRepere(this);
+      const html = typeof this.__bulle === 'string' ? this.__bulle : '';
+      const m = html.match(/data-(lieu|spot-voir|dj-pro)="([^"]*)"/) || (this.__lieu ? [null, 'lieu', this.__lieu] : null); if (!m) return;
+      const attr = `data-${m[1]}="${m[2]}"`;
+      if (window.__filCibler && window.__filCibler(attr)) return;
+      const f = document.createElement('button'); f.setAttribute('data-' + m[1], m[2].replace(/&quot;/g, '"').replace(/&amp;/g, '&')); f.hidden = true; document.body.appendChild(f); f.click(); f.remove();
+    };
+    L.Layer.prototype.__sansBulle = true;
+    L.Layer.prototype.bindPopup = function (c) { this.__bulle = c; this.off('click', ouvrirDepuisRepere); this.on('click', ouvrirDepuisRepere); return this; };
+    L.Layer.prototype.unbindPopup = function () { this.__bulle = null; this.off('click', ouvrirDepuisRepere); return this; };
+    L.Layer.prototype.openPopup = function () { return this; };
+    L.Layer.prototype.getPopup = function () { return null; };
+  }
   const survolBulle = (m) => m.on('mouseover', function () { this.openPopup(); });
 
   function marqueursDecls() {
     const groupes = {};
     declsVisibles().forEach((x) => { const l = lieuDe(x), d = djDe(x); if (!l || l.lat == null) return; const k = l.lat.toFixed(4) + ',' + l.lng.toFixed(4);
-      (groupes[k] = groupes[k] || { l, ok: false, html: [], pin: '' }); groupes[k].pin = groupes[k].pin || pinDj(d);
+      (groupes[k] = groupes[k] || { l, ok: false, html: [], pin: '', nom1: d.nom }); groupes[k].pin = groupes[k].pin || pinDj(d);
       const ok = declConfirmee(x); groupes[k].ok = groupes[k].ok || ok;
       groupes[k].html.push(entreeBulle({ k: ok ? 'live' : 'decl', lieu: esc(l.nom), etat: ok ? 'En live' : 'Déclaré', tete: avatarDj(d.nom, 'pb-av'), t: d.nom,
         heure: `${hm(x.debut)} → ${hm(x.fin)}${x.style ? ' · ' + esc(x.style) : ''}`,
         bang: ok ? `${tetesBangers(x.conf, x.id)}<span><b>${x.conf} Bangers</b> y sont et confirment</span>` : '<span>Le DJ s\'est déclaré ici · <b>bangue</b> si tu y es</span>',
         actions: `<div class="pb-actions"><button class="pb-btn" data-decl-ok="${x.id}">J'y suis</button><button class="pb-btn plein" data-dj-pro="${esc(d.nom)}">Fiche du DJ</button></div>` })); });
     Object.values(groupes).forEach((g) => {
-      const icone = g.pin ? L.divIcon({ className: 'pin-dj' + (g.ok ? ' ok' : ''), iconSize: [52, 56], iconAnchor: [26, 55], html: `<img src="${g.pin}" alt="">${g.html.length > 1 ? '<sup>' + g.html.length + '</sup>' : ''}` })
+      const icone = g.pin ? L.divIcon({ className: 'pin-dj' + (g.ok ? ' ok' : ''), iconSize: [44, 48], iconAnchor: [22, 47], html: `<img src="${g.pin}" alt="">${g.html.length > 1 ? '<sup>' + g.html.length + '</sup>' : ''}` })
         : L.divIcon({ className: 'decl-pin' + (g.ok ? ' ok' : '') + (g.html.length > 1 ? ' plusieurs' : ''), iconSize: [30, 30], iconAnchor: [15, 15], html: g.html.length > 1 ? 'DJ<sup>' + g.html.length + '</sup>' : 'DJ' });
-      L.marker([g.l.lat, g.l.lng], { icon: icone, zIndexOffset: 600 })
-        .bindPopup(bullesEmpilees(g.html), OPT_BULLE).addTo(layer);
+      lierBandeau(L.marker([g.l.lat, g.l.lng], { icon: icone, zIndexOffset: 600 })
+        .bindPopup(bullesEmpilees(g.html), OPT_BULLE), `data-dj-pro="${esc(g.nom1)}"`).addTo(layer);
     });
   }
 
 
   // Carte : cartes moyennes en bas (DJ déclarés et spots signalés), un appui centre la carte et ouvre la bulle
   function renderCartesMap() {
-    const box = $('#map-cartes'); if (!box) return; box.hidden = true; box.innerHTML = ''; return; // cartes du bas retirées : les infos sont dans les bulles
+    const box = $('#map-cartes'); if (!box) return;
+    // Le bandeau d'actu défile en bas de la grande carte, comme sur l'accueil et les pages saison
+    const fil = filDest(); box.innerHTML = fil; box.hidden = !fil; box.classList.add('avec-fil'); return;
     const c = (DEST[state.dest] || {}).centre, dist = (la, lo) => c && la != null ? distKm(c, [la, lo]) : null;
     const kmTxt = (k) => k == null ? '' : ' · ' + (k < 1 ? '< 1' : Math.round(k)) + ' km';
     const ds = declsVisibles().map((x) => { const d = djDe(x), l = lieuDe(x); return `<button class="mc-carte mc-decl" data-mc-ll="${l.lat},${l.lng}">
@@ -3371,9 +3467,31 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const PINS_TOUS = [...PINS_DJ, 'x-libre-1', 'x-libre-2', 'x-libre-3', 'x-libre-4', 'x-libre-5', 'x-trio'];
   const cleePin = (pro) => !pro ? '' : pro.pin && PINS_TOUS.includes(pro.pin) ? pro.pin : PINS_DJ.has(pro.id) ? pro.id : '';
   const pinDj = (pro) => cleePin(pro) ? 'pins-dj/' + cleePin(pro) + '.png' : '';
+  // Compteur des Bangers par lieu (part de zéro, +1 à chaque fois qu'un Banger banguérise sur place)
+  const BANG_LIEU = store.get('bangLieu', {});
+  // Épingles des lieux (visuels fournis par Antonio) : club, pool party, bar, beach club
+  const typeLieu = (l) => { if (!l) return 'club'; const t = `${l.nom || ''} ${l.style || ''} ${l.salle || ''}`;
+    if (/pool|piscine|destino|o beach|ushua/i.test(t)) return 'pool';
+    if (l.type === 'plage' || /beach|plage|playa|chiringuito/i.test(t)) return 'beach';
+    if (/\bbar\b|rooftop|lounge|\bpub\b|café|cafe|sunset|cocktail/i.test(t)) return 'bar';
+    return 'club'; };
+  const pinLieu = (l) => 'pins-lieux/' + typeLieu(l) + '.png';
+  const pinSpot = (sp) => pinLieu({ nom: sp.nom || '', style: sp.type === 'plage' ? 'beach' : sp.type === 'bateau' ? 'beach' : sp.type || '' });
+  const iconeLieu = (l, on, eteint) => L.divIcon({ className: 'pin-lieu' + (on ? ' on' : '') + (eteint ? ' eteint' : ''), iconSize: [44, 48], iconAnchor: [22, 47], html: `<img src="${pinLieu(l)}" alt="">` });
+  // Spot signalé sans DJ connu : l'épingle violette « DJ inconnu » (visuel fourni par Antonio), sur les cartes et dans les bandeaux
+  const PIN_INCONNU = 'pins-dj/spot-inconnu.png';
+  const djInconnu = (sp) => !!sp && (!String(sp.dj || '').trim() || /inconnu|^\s*dj local\b|^\s*\?+\s*$/i.test(sp.dj));
+  const visSpot = (sp) => djInconnu(sp) ? `<img class="fil-vis fil-pin fil-inconnu" src="${PIN_INCONNU}" alt="">` : '';
   // Visuel du DJ dans le bandeau qui défile : son épingle s'il est DJ Pro, sinon sa tête en rond
   // Dans le bandeau : la photo de sa fiche, avec son casque et le nombre de Bangers qui le banguent
-  const visFil = (nom) => `<span class="fil-vis fil-dj"><span class="fil-rond">${avatarDj(nom)}</span><span class="fil-casque${LIKES_DJ[sansAccent(nom)] ? ' on' : ''}" data-fil-casque="${esc(nom)}" role="button" aria-label="Banguer ${esc(nom)}"><img src="banger-casque.png" alt=""><b>${fmtLikes(nbLikes(nom))}</b></span></span>`;
+  // L'épingle GPS verte du bandeau = le compteur des Bangers sur place qui confirment (image figée : pour confirmer, c'est le bouton BANGER du bas)
+  // (le casque reste réservé à la fiche DJ : là, on bangue la qualité du set ; ici c'est une épingle GPS verte)
+  const casqueConf = (n, act) => `<span class="fil-casque fil-gps${n ? ' on' : ''}" aria-label="${n} Bangers sur place confirment"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7z" fill="#3DF28A" stroke="#0A0D16" stroke-width="1.6"/><circle cx="12" cy="9" r="2.6" fill="#0A0D16"/></svg><b>${n || 0}</b></span>`;
+  const visFil = (nom, n, act) => `<span class="fil-vis fil-dj"><span class="fil-rond">${avatarDj(nom)}</span>${casqueConf(n, act)}</span>`;
+  // Info de lieu dans les bandeaux : nom, type, distance ; adresse et horaires d'ouverture à compléter plus tard
+  const filClub = (l, kmTxt) => { const ty = typeLieu(l), lib = { club: 'Club', pool: 'Pool party', bar: 'Bar', beach: 'Beach club' }[ty];
+    return `<button class="fil-item k-club a-vis" data-lieu="${l.id}"><span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-lieu" src="${pinLieu(l)}" alt="">${casqueConf(BANG_LIEU[l.id] || 0)}</span><span class="fil-l1"><em class="fil-tag club">${lib}</em><b>${esc(l.nom)}</b><span class="fil-t">${esc(l.horaires || 'Horaires à venir')}</span></span><span class="fil-l2"><span>${esc(l.adresse || 'Adresse à venir')}</span>${kmTxt ? `<span>${kmTxt}</span>` : ''}${l.style ? `<span>${esc(String(l.style).split(/[,·:]/)[0].trim())}</span>` : ''}</span></button>`; };
+  const visSpotC = (sp) => djInconnu(sp) ? `<span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-inconnu" src="${PIN_INCONNU}" alt="">${casqueConf(sp.conf || 0, `data-spot-ok="${sp.id}"`)}</span>` : visFil(sp.dj, sp.conf || 0, `data-spot-ok="${sp.id}"`);
   const avPinDj = (pro) => cleePin(pro) ? 'pins-dj/' + cleePin(pro) + '-av.jpg' : '';
   function avatarDj(nom, cls) {
     const ill = avatarIllusDj(nom);
@@ -3652,8 +3770,14 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const r = box.getBoundingClientRect(); if (x < r.left || x > r.right || y < r.top || y > r.bottom) return;
     let best = null, bd = 30;
     box.querySelectorAll('.mm-pt').forEach((c) => { const b = c.getBoundingClientRect(), d = Math.hypot(b.left + b.width / 2 - x, b.top + b.height / 2 - y); if (d < bd) { bd = d; best = c; } });
-    const bulle = box.querySelector('.mm-bulle'); if (!best) { if (!colle) bulle.hidden = true; return; }
+    if (!best) return;
     const info = (window.__MM_INFOS || [])[+best.dataset.i]; if (!info) return;
+    // Plus d'encart sur la carte : c'est le bandeau qui défile en dessous qui se cale sur l'info du point
+    if (window.__filCibler) window.__filCibler(info.attr);
+    box.querySelectorAll('.mm-pt.on').forEach((c) => c.classList.remove('on')); best.parentNode.appendChild(best); best.classList.add('on');
+    clearTimeout(window.__mmZoomT); window.__mmZoomT = setTimeout(() => best.classList.remove('on'), 2600);
+    return;
+    const bulle = box.querySelector('.mm-bulle');
     if (bulle.dataset.i !== best.dataset.i) { bulle.dataset.i = best.dataset.i; bulle.className = 'mm-bulle enc-' + info.k; bulle.innerHTML = info.html; bulle.dataset.ouvre = info.attr; }
     bulle.hidden = false;
     const b = best.getBoundingClientRect(), px = b.left + b.width / 2 - r.left, py = b.top + b.height / 2 - r.top;
@@ -3694,14 +3818,24 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // Le bandeau défile tout le temps. Seul le doigt sur un point de la mini-carte le bloque sur l'info de ce lieu,
   // 5 secondes, ou jusqu'à un petit glissé de gauche à droite sur le bandeau
   function filCibler(attr) {
-    const p = filPiste(); if (!p || !attr) return;
-    const m = attr.match(/data-([a-z-]+)="([^"]*)"/); if (!m) return;
+    const p = filPiste(); if (!p || !attr) return false;
+    const m = attr.match(/data-([a-z-]+)="([^"]*)"/); if (!m) return false;
     const v = m[2].replace(/&quot;/g, '"').replace(/&amp;/g, '&');
-    const its = filItemsVus(p).filter((it) => it.getAttribute('data-' + m[1]) === v); if (!its.length) return;
+    const its = filItemsVus(p).filter((it) => it.getAttribute('data-' + m[1]) === v); if (!its.length) return false;
     const moitie = p.scrollWidth / 2, xs = its.map((it) => it.offsetLeft - 8).filter((l) => l < moitie + 1);
     const cible = xs.length ? xs[0] : its[0].offsetLeft - 8;
     p.querySelectorAll('.fil-item.cible').forEach((x) => x.classList.remove('cible')); its.forEach((it) => it.classList.add('cible'));
-    FIL.cible = cible; FIL.bloque = Date.now() + 5000;
+    FIL.cible = cible; FIL.bloque = Date.now() + 5000; return true;
+  }
+  // Le doigt sur un repère de la grande carte le grossit un instant, pour bien voir le dessin
+  function zoomRepere(m) { const el = m.getElement && m.getElement(); if (!el) return; document.querySelectorAll('.leaflet-marker-icon.zoom').forEach((x) => x !== el && x.classList.remove('zoom')); el.classList.add('zoom'); clearTimeout(el.__zt); el.__zt = setTimeout(() => el.classList.remove('zoom'), 2600); }
+  window.__zoomRepere = zoomRepere;
+  // Grande carte : si le lieu a son info dans le bandeau, toucher le repère cale le bandeau dessus (pas de bulle)
+  function lierBandeau(m, attr) {
+    const p = document.querySelector('#map-cartes .fil-piste'); if (!p || !attr) return m;
+    const mm = attr.match(/data-([a-z-]+)="([^"]*)"/); if (!mm) return m;
+    if (!filItemsVus(p).some((it) => it.getAttribute('data-' + mm[1]) === mm[2])) return m;
+    m.unbindPopup(); m.off('mouseover'); m.on('click mouseover', () => { filCibler(attr); zoomRepere(m); }); return m;
   }
   window.__filCibler = filCibler;
   let filX0 = null;
@@ -3711,13 +3845,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const zone = e.target.closest('.fil-infos'); if (!zone) return;
     e.stopImmediatePropagation(); e.preventDefault();
     const it = e.target.closest('.fil-item');
-    // Toucher le casque : on bangue le DJ tout de suite, sans ouvrir sa fiche
-    const cq = e.target.closest('[data-fil-casque]');
-    if (cq) { const nom = cq.dataset.filCasque, k = sansAccent(nom), on = !LIKES_DJ[k];
-      if (on) LIKES_DJ[k] = Date.now(); else delete LIKES_DJ[k]; store.set('likesDj', LIKES_DJ);
-      document.querySelectorAll('[data-fil-casque]').forEach((c) => { if (c.dataset.filCasque !== nom) return; c.classList.toggle('on', on); c.querySelector('b').textContent = fmtLikes(nbLikes(nom)); if (on) { c.classList.remove('tourne'); void c.offsetWidth; c.classList.add('tourne'); } });
-      if (on) { sonBanger(); if (navigator.vibrate) navigator.vibrate(30); toastFil2('Tu bangues ' + nom); } else toastFil2('Tu ne bangues plus ' + nom);
-      return; }
+
     // Toucher une info ouvre sa fiche ; le bandeau, lui, ne s'arrête pas
     const ouvre = it && [...it.attributes].find((x) => /^data-(lieu|dj-pro|spot-voir)$/.test(x.name));
     if (ouvre) { const f = document.createElement('button'); f.setAttribute(ouvre.name, ouvre.value); f.hidden = true; document.body.appendChild(f); f.click(); f.remove(); }
@@ -3761,9 +3889,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const resteJeu = (fin) => { const m = Math.round((fin - Date.now()) / 60000); if (m <= 0) return 'se termine'; return 'encore ' + (m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min'); };
     const avant = (deb) => { const m = Math.round((deb - Date.now()) / 60000); return m > 0 ? 'commence dans ' + (m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min') : null; };
     const filItems = decls.filter((o) => o.l).map(({ x, l }) => ({ x, l, dist: kmDe(l.lat, l.lng) })).sort((a, b) => a.dist - b.dist).map(({ x, l, dist }) => { const d = djDe(x), k = declConfirmee(x) ? 'live' : 'decl';
-        return `<button class="fil-item k-${k} a-vis" ${x.lieu ? `data-lieu="${x.lieu}"` : `data-dj-pro="${esc(d.nom)}"`}>${visFil(d.nom)}<span class="fil-l1"><em class="fil-tag ${k}">${k === 'live' ? 'Live' : 'Déclaré'}</em><b>${esc(d.nom)}</b><span class="fil-t">${avant(x.debut) || resteJeu(x.fin)}</span></span><span class="fil-l2"><span>${esc(l.nom)} · ${fmtKm(dist)}</span><span class="${k === 'live' ? 'fil-ok' : 'fil-att'}">${k === 'live' ? x.conf + ' Banger' + (x.conf > 1 ? 's' : '') + ' confirment' : 'pas encore confirmé'}</span></span></button>`; })
+        return `<button class="fil-item k-${k} a-vis" ${x.lieu ? `data-lieu="${x.lieu}"` : `data-dj-pro="${esc(d.nom)}"`}>${visFil(d.nom, x.conf || 0, `data-decl-ok="${x.id}"`)}<span class="fil-l1"><em class="fil-tag ${k}">${k === 'live' ? 'Live' : 'Déclaré'}</em><b>${esc(d.nom)}</b><span class="fil-t">${avant(x.debut) || resteJeu(x.fin)}</span></span><span class="fil-l2"><span>${esc(l.nom)} · ${fmtKm(dist)}</span><span class="${k === 'live' ? 'fil-ok' : 'fil-att'}">${k === 'live' ? x.conf + ' Banger' + (x.conf > 1 ? 's' : '') + ' confirment' : 'pas encore confirmé'}</span></span></button>`; })
       .concat(spotsP.map((sp) => ({ sp, dist: kmDe(sp.lat, sp.lng) })).sort((a, b) => a.dist - b.dist).map(({ sp, dist }) => { const v = vautLeCoup(sp);
-        return `<button class="fil-item k-spot" data-spot-voir="${sp.id}"><span class="fil-l1"><em class="fil-tag spot">Spot</em><b>${esc(sp.nom || TYPES_SPOT[sp.type])}</b><span class="fil-vaut v-${v[1]}">${v[0]}</span></span><span class="fil-l2"><span>${esc(sp.dj || 'DJ inconnu')} · ${fmtKm(dist)}</span><span>signalé à ${hm(sp.t)} par @${esc(sp.par || 'un Banger')}</span><span>${sp.conf} confirment</span></span></button>`; }));
+        return `<button class="fil-item k-spot a-vis" data-spot-voir="${sp.id}">${visSpotC(sp)}<span class="fil-l1"><em class="fil-tag spot">Spot</em><b>${esc(sp.nom || TYPES_SPOT[sp.type])}</b><span class="fil-vaut v-${v[1]}">${v[0]}</span></span><span class="fil-l2"><span>${esc(sp.dj || 'DJ inconnu')} · ${fmtKm(dist)}</span><span>signalé à ${hm(sp.t)} par @${esc(sp.par || 'un Banger')}</span></span></button>`; }));
+    coin.slice(0, 14).forEach(({ l, d }) => filItems.push(filClub(l, fmtKm(d))));
     const filInfos = filItems.length ? `<div class="fil-infos" aria-label="Fil d'actualité autour de moi"><div class="fil-fenetre"><div class="fil-piste">${filItems.join('<span class="fil-sep" aria-hidden="true"></span>')}<span class="fil-sep" aria-hidden="true"></span><span class="fil-copie" aria-hidden="true">${filItems.join('<span class="fil-sep"></span>')}<span class="fil-sep"></span></span></div></div></div>` : '';
     h += `<section class="acc-rub"><div class="acc-tete"><div><h2>En direct autour de moi</h2><small>${esc(state.zoneGeo.nom)}${state.zoneGeo.approx ? ' · position de démo' : ''} · passe le doigt sur un point</small></div></div>
       <div class="aut-carte">${carteMiniMap(centre0, decls, spotsP, coin, infos)}</div>${legende}${filInfos}</section>`;
@@ -3838,9 +3967,9 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // Dessinée en SVG pour s'afficher partout, même sans fond de carte ; un toucher ouvre la vraie carte.
   function carteMiniMap(c, decls, spots, coin, infos) {
     const W = 420, H = 165, cx = W / 2, cy = H / 2;
-    const pts = decls.filter((o) => o.l).map((o, i) => { const t = declConfirmee(o.x) ? 'live' : 'decl', pin = o.x && o.x.dj ? pinDj(djDe(o.x)) : ''; return o.l.lat != null ? { la: o.l.lat, lo: o.l.lng, t, pin } : { la: c[0] + 0.004 + i * 0.002, lo: c[1] + 0.006, t, pin }; })
-      .concat(spots.map((sp) => ({ la: sp.lat, lo: sp.lng, t: 'spot' })))
-      .concat(coin.slice(0, 14).map((o) => ({ la: o.l.lat, lo: o.l.lng, t: 'club' })));
+    const pts = decls.filter((o) => o.l).map((o, i) => { const t = declConfirmee(o.x) ? 'live' : 'decl', pin = (o.x && o.x.dj && pinDj(djDe(o.x))) || pinLieu(o.l); return o.l.lat != null ? { la: o.l.lat, lo: o.l.lng, t, pin } : { la: c[0] + 0.004 + i * 0.002, lo: c[1] + 0.006, t, pin }; })
+      .concat(spots.map((sp) => ({ la: sp.lat, lo: sp.lng, t: 'spot', pin: djInconnu(sp) ? PIN_INCONNU : pinSpot(sp) })))
+      .concat(coin.slice(0, 14).map((o) => ({ la: o.l.lat, lo: o.l.lng, t: 'club', pin: pinLieu(o.l) })));
     const xy = (p) => ({ x: (p.lo - c[1]) * Math.cos(c[0] * Math.PI / 180), y: -(p.la - c[0]) });
     const raw = pts.map((p) => ({ ...xy(p), t: p.t, pin: p.pin })), max = Math.max(0.004, ...raw.map((p) => Math.hypot(p.x, p.y)));
     // échelle en racine carrée : les lieux tout proches s'écartent du centre, les lointains restent dans le cadre
@@ -3852,9 +3981,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       <rect width="${W}" height="${H}" fill="#0C1430"/>${rues}
       <path d="M0 ${H * .78} C ${W * .3} ${H * .7}, ${W * .55} ${H * .95}, ${W} ${H * .82} L ${W} ${H} L 0 ${H} Z" fill="#0A2240" opacity=".9"/>
       ${[28, 50, 72].map((r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#3DD6C6" stroke-opacity=".18" stroke-dasharray="3 4"/>`).join('')}
-      ${pos.map((p, i) => ({ p, i })).filter((o) => o.p.t === 'club').map(({ p, i }) => `<circle class="mm-pt" data-i="${i}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.6" fill="#3DD6C6" stroke="#0C1430" stroke-width="1.2"/>`).join('')}
-      ${pos.map((p, i) => ({ p, i })).filter((o) => o.p.t !== 'club' && !o.p.pin).map(({ p, i }) => { const col = { live: '#F2C53A', decl: '#FF8A3D', spot: '#B58CFF' }[p.t]; return `<circle class="mm-pulse mm-${p.t}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="11" fill="${col}" opacity=".35"/><circle class="mm-pt" data-i="${i}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6" fill="${col}" stroke="#0C1430" stroke-width="1.5"/>`; }).join('')}
-      ${pos.map((p, i) => ({ p, i })).filter((o) => o.p.pin).map(({ p, i }) => { const col = p.t === 'live' ? '#F2C53A' : '#FF8A3D'; return `<ellipse cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" rx="9" ry="3" fill="${col}" opacity=".55" class="mm-pulse"/><image class="mm-pt mm-pin" data-i="${i}" href="${p.pin}" x="${(p.x - 20).toFixed(1)}" y="${(p.y - 42).toFixed(1)}" width="40" height="43"/>`; }).join('')}
+      ${pos.map((p, i) => ({ p, i })).sort((u, v) => (u.p.t === 'club' ? 0 : 1) - (v.p.t === 'club' ? 0 : 1)).map(({ p, i }) => { const col = { live: '#F2C53A', decl: '#FF8A3D', spot: '#B58CFF', club: '#3DD6C6' }[p.t];
+        return `<ellipse class="mm-pulse mm-${p.t}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" rx="${p.t === 'club' ? 6 : 9}" ry="${p.t === 'club' ? 2 : 3}" fill="${col}" opacity="${p.t === 'club' ? .35 : .6}"/><image class="mm-pt mm-pin mm-${p.t}" data-i="${i}" href="${p.pin}" x="${(p.x - 15).toFixed(1)}" y="${(p.y - 32).toFixed(1)}" width="30" height="33"/>`; }).join('')}
       <circle class="mm-pulse" cx="${cx}" cy="${cy}" r="12" fill="#4DA3FF" opacity=".3"/><circle cx="${cx}" cy="${cy}" r="6.5" fill="#4DA3FF" stroke="#fff" stroke-width="2"/></svg>`;
     window.__MM_INFOS = infos || [];
     return `<div class="acc-carte large acc-minimap" data-mm="1"><span class="acc-art mm-art">${svg}<span class="acc-badge"><i></i>${nDj} DJ autour</span><button class="mm-ouvrir" data-tab="map">Ouvrir la carte</button><span class="mm-bulle" hidden></span></span></div>`;
@@ -3973,12 +4101,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     f.innerHTML = `<div class="plus-feuille" role="dialog" aria-label="Noter ${esc(d.nom)}"><div class="plus-poignee"></div>
       <form id="form-note-dj" data-decl="${x.id}" novalidate>
         <div class="nd-tete" style="--g:${accGrad(d.nom)}">${ACC_ANNEAUX}
-          <span class="nd-av">${d.photo ? `<img src="${d.photo}" alt="">` : esc(accInit(d.nom))}</span>
+          <span class="nd-av">${avatarDj(d.nom)}</span>
           <span class="nd-txt"><span class="acc-badge nd-live"><i></i>${declConfirmee(x) ? 'LIVE' : 'DÉCLARÉ'}</span><b>${esc(d.nom)}</b><small>joue ici · ${esc(l.nom)}</small><small>${esc(x.style)} · jusqu'à ${hm(x.fin)}</small></span>
         </div>
-        <div class="ps-note"><span>${deja ? 'Ta note' : 'Note son set'} <b class="ps-note-txt">${deja ? '· ' + NOTE_MOTS[deja] : ''}</b></span>
-          <div class="ps-vinyles" role="radiogroup" aria-label="Note de 1 à 5 vinyles">${[1, 2, 3, 4, 5].map((n) => `<label class="ps-vinyle ${deja && n <= deja ? 'on' : ''}"><input type="radio" name="note" value="${n}" hidden ${deja === n ? 'checked' : ''} aria-label="${n} sur 5">${VINYLE_SVG}</label>`).join('')}</div></div>
-        <button type="submit" class="btn-plein nd-envoyer" ${deja ? '' : 'disabled'}>${deja ? 'Changer ma note' : 'Envoyer ma note'}</button>
+        <p class="nd-explic">Tu es sur place avec ${esc(d.nom)} ? Banguérise : le compteur vert de ce lieu monte d'un Banger.</p>
+        <button type="submit" class="btn-plein nd-envoyer nd-bang" ${deja ? 'disabled' : ''}>${deja ? 'Déjà banguérisé ici' : 'Je suis là, je bangue'}</button>
         <div class="nd-autres"><button type="button" class="lien-demo" data-dj-pro="${esc(d.nom)}">Voir sa fiche</button><button type="button" class="lien-demo" data-nd-autre="1">Ce n'est pas lui · signaler un autre DJ</button></div>
       </form>
       <button class="plus-fermer" data-plus="fermer">Fermer</button></div>`;
@@ -3987,8 +4114,13 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   document.addEventListener('submit', (e) => {
     if (e.target.id !== 'form-note-dj') return;
     e.preventDefault();
-    const n = +(new FormData(e.target).get('note') || 0); if (!n) return;
     const x = DECLS.find((y) => y.id === e.target.dataset.decl); if (!x) return;
+    // Banguériser : juste « je suis là avec ce DJ » (plus de note) : +1 au compteur vert du DJ et du lieu
+    if (!state.notesDj[x.id]) { state.notesDj[x.id] = 1; store.set('notesDj', state.notesDj); x.conf = (x.conf || 0) + 1; state.votesDecl[x.id] = 'ok'; store.set('votesDecl', state.votesDecl);
+      if (x.lieu) { BANG_LIEU[x.lieu] = (BANG_LIEU[x.lieu] || 0) + 1; store.set('bangLieu', BANG_LIEU); }
+      try { sauverDecls(); } catch (err) { /* démo */ } sonBanger(); if (navigator.vibrate) navigator.vibrate(30); toast('Banguérisé avec ' + djDe(x).nom + ' : +1 Banger sur place'); }
+    fermerPlus(); render(); return;
+    const n = 0;
     const d = djDe(x), avant = state.notesDj[x.id];
     // La note compte dans la crédibilité du DJ : 5 = top, 3-4 = bien, 1-2 = bof
     const cat = (k) => k >= 5 ? 'top' : k >= 3 ? 'bien' : 'bof';
@@ -4012,7 +4144,6 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (k === 'spot') { setTab('map'); setTimeout(() => { const s = $('#btn-spot'); if (s) s.click(); }, 250); }
     else if (k === 'mixe') { state.vueDj = MON_DJ ? 'mixe' : 'creer'; setTab('profil'); }
     else if (k === 'agenda') setTab('agenda');
-    else if (k === 'avis') { const a = $('#btn-avis'); if (a) a.click(); }
   });
 
   function render() {
@@ -4023,6 +4154,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (state.tab === 'map') renderMap();
     if (state.tab === 'agenda') renderAgenda();
     if (state.tab === 'profil') renderProfil();
+    if (state.tab === 'checkin') renderCheckin();
   }
 
   // Accès : « En direct », la carte et les fiches des lieux sont réservés aux inscrits.
@@ -4056,6 +4188,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     $('#screen-fav').hidden = tab !== 'fav';
     $('#screen-agenda').hidden = tab !== 'agenda';
     $('#screen-profil').hidden = tab !== 'profil';
+    $('#screen-checkin').hidden = tab !== 'checkin';
     const pst = document.querySelector('.pastilles'); if (pst) pst.hidden = tab !== 'live'; // boutons Autour de moi / DJ live : seulement sur « En direct »
     if (tab === 'map') { initMap(); setTimeout(() => map && map.invalidateSize(), 0); }
     majPortails();
@@ -4145,63 +4278,17 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (t === state.t) return;
     state.t = t;
     renderClock();
-    if (['live', 'map', 'fav'].includes(state.tab)) render();
+    if (['live', 'map', 'fav', 'checkin'].includes(state.tab)) render();
     if (state.lieuOuvert) renderSheet();
     if (state.djOuvert) renderDj();
   }, 30000);
   $('#fav-search').addEventListener('input', renderFavs);
 
-  // ---------- Avis des testeurs : enregistrés dans la page en ligne si possible, sinon envoyés par WhatsApp
-  (function avis() {
-    const calque = $('#avis-calque'), form = $('#form-avis'), envoi = $('#avis-envoi'), recus = $('#avis-recus');
-    if (!calque) return;
-    let db = null, user = null, abonne = false;
-    const cl = window.claude && window.claude.use ? window.claude : null;
-    if (cl) { cl.use('db').then((x) => { db = x; }).catch(() => {}); cl.use('user').then((x) => { user = x; }).catch(() => {}); }
-    const ouvrir = () => { calque.hidden = false; form.hidden = false; envoi.hidden = true; afficherRecus(); };
-    const fermer = () => { calque.hidden = true; };
-    $('#btn-avis').addEventListener('click', ouvrir);
-    $('#avis-fermer').addEventListener('click', fermer);
-    calque.addEventListener('click', (e) => { if (e.target === calque) fermer(); });
-    form.addEventListener('change', (e) => { if (e.target.name === 'note') form.querySelectorAll('.avis-etoiles label').forEach((l, i) => l.classList.toggle('on', i < +e.target.value)); });
-    const texte = (v) => `Avis Banzic : ${'★'.repeat(v.note)}${'☆'.repeat(5 - v.note)}` + (v.aime ? `\nJ'aime : ${v.aime}` : '') + (v.manque ? `\nÀ améliorer : ${v.manque}` : '') + (v.utilise ? `\nÀ Ibiza : ${v.utilise}` : '') + (v.prenom ? `\n${v.prenom}` : '');
-    function whatsapp(v, msg) {
-      envoi.innerHTML = `<p class="conseil">${msg}</p>
-        <a class="btn-plein btn-wa" href="https://wa.me/?text=${encodeURIComponent(texte(v))}" target="_blank" rel="noopener">Envoyer par WhatsApp</a>
-        <p class="aide">Choisis Antonio dans tes contacts. Tu peux aussi copier ton avis :</p>
-        <textarea class="search" rows="4" readonly>${esc(texte(v))}</textarea>`;
-    }
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const f = new FormData(form);
-      const v = { note: +f.get('note') || 0, aime: String(f.get('aime') || '').trim(), manque: String(f.get('manque') || '').trim(), utilise: String(f.get('utilise') || ''), prenom: String(f.get('prenom') || '').trim(), langue: LANG, date: new Date().toISOString() };
-      $('#err-avis').hidden = !!v.note; if (!v.note) return;
-      form.hidden = true; envoi.hidden = false;
-      let ok = false;
-      if (db && user) {
-        try { const id = await user.id(); if (id) { await db.doc('avis/' + id).set(v); ok = true; } } catch (err) { ok = false; }
-      }
-      if (ok) { envoi.innerHTML = '<p class="conseil"><b>Merci !</b> Ton avis est bien arrivé. Tu peux le modifier en l\'envoyant à nouveau.</p>'; afficherRecus(); }
-      else whatsapp(v, '<b>Merci !</b> Dernière étape : envoie-le à Antonio.');
-    });
-    // Le propriétaire de la page voit tous les avis reçus
-    function afficherRecus() {
-      if (!db || !user || !user.isOwner || !user.isOwner()) return;
-      recus.hidden = false;
-      if (abonne) return; abonne = true;
-      recus.innerHTML = '<div class="section-title">Avis reçus</div><p class="aide">Chargement…</p>';
-      db.collection('avis').orderBy('date', 'desc').limit(200).onSnapshot((snap) => {
-        const xs = (snap.docs || []).map((d) => d.data ? d.data() : d);
-        const moy = xs.length ? (xs.reduce((s, x) => s + (+x.note || 0), 0) / xs.length).toFixed(1).replace('.', ',') : '–';
-        recus.innerHTML = `<div class="section-title">Avis reçus <small>${xs.length} · moyenne ${moy}/5</small></div>` + (xs.map((x) => `<div class="mini"><span><span class="venue">${'★'.repeat(+x.note || 0)}${'☆'.repeat(5 - (+x.note || 0))} ${esc(x.prenom || 'Anonyme')}</span>
-          <small>${x.aime ? 'Aime : ' + esc(x.aime) + '<br>' : ''}${x.manque ? 'À améliorer : ' + esc(x.manque) + '<br>' : ''}${x.utilise ? 'À Ibiza : ' + esc(x.utilise) : ''}</small></span></div>`).join('') || '<p class="aide">Aucun avis enregistré ici pour l\'instant. Ceux envoyés par WhatsApp arrivent sur ton téléphone.</p>');
-      }, () => { recus.innerHTML = '<p class="aide">Impossible de charger les avis pour l\'instant.</p>'; });
-    }
-  })();
-
   // Écran d'accueil : au tout premier lancement, il attend « Entrer » ; ensuite, il s'efface tout seul.
   (function splash() {
     const el = $('#splash'); if (!el) return;
+    // Page de démarrage mise de côté pour l'instant (on la remettra plus tard) : on la retrouve avec ?demarrage=1 dans l'adresse
+    if (!/[?&]demarrage=1\b/.test(location.search)) { el.remove(); return; }
     // Le bouton vert mène tout de suite à la page d'accueil
     const fermer = () => { if (el.classList.contains('fin')) return; el.classList.add('fin'); state.vueAcc = 'accueil'; setTab('live'); setTimeout(() => el.remove(), 600); };
     const premier = !store.get('dejaVu', false);

@@ -15,7 +15,7 @@ window.LANGUES = [
 window.I18N = {
   fr: {
     aucun: 'Rien trouvé pour « {q} »',
-    tab_live: 'Accueil', tab_map: 'Carte', tab_agenda: 'Agenda', tab_fav: 'Mes DJ', tab_profil: 'Profil',
+    tab_live: 'Accueil', tab_map: 'Carte', tab_agenda: 'Agenda', tab_fav: 'Mes DJ', tab_profil: 'Profil', tab_checkin: 'Check-in',
     recherche: 'Un DJ, un club, une ville…', recherche_lieu: 'Un club, une plage…',
     carte: 'Carte', lieux: 'Lieux', nuit: 'Nuit', satellite: 'Satellite',
     pop_titre: 'Popularité estimée', pop0: 'Peu de monde', pop1: 'Du monde', pop2: 'Beaucoup de monde', pop3: 'Saturé', hors: 'Hors saison',
@@ -31,7 +31,7 @@ window.I18N = {
   },
   en: {
     aucun: 'Nothing found for “{q}”',
-    tab_live: 'Home', tab_map: 'Map', tab_agenda: 'Calendar', tab_fav: 'My DJs', tab_profil: 'Profile',
+    tab_live: 'Home', tab_map: 'Map', tab_agenda: 'Calendar', tab_fav: 'My DJs', tab_profil: 'Profile', tab_checkin: 'Check-in',
     recherche: 'A DJ, a club, a city…', recherche_lieu: 'A club, a beach…',
     carte: 'Map', lieux: 'Venues', nuit: 'Night', satellite: 'Satellite',
     pop_titre: 'Estimated crowd', pop0: 'Few people', pop1: 'Lively', pop2: 'Big crowd', pop3: 'Packed', hors: 'Off season',
@@ -47,7 +47,7 @@ window.I18N = {
   },
   es: {
     aucun: 'Nada encontrado para «{q}»',
-    tab_live: 'Inicio', tab_map: 'Mapa', tab_agenda: 'Agenda', tab_fav: 'Mis DJ', tab_profil: 'Perfil',
+    tab_live: 'Inicio', tab_map: 'Mapa', tab_agenda: 'Agenda', tab_fav: 'Mis DJ', tab_profil: 'Perfil', tab_checkin: 'Check-in',
     recherche: 'Un DJ, un club, una ciudad…', recherche_lieu: 'Un club, una playa…',
     carte: 'Mapa', lieux: 'Lugares', nuit: 'Noche', satellite: 'Satélite',
     pop_titre: 'Afluencia estimada', pop0: 'Poca gente', pop1: 'Ambiente', pop2: 'Mucha gente', pop3: 'A tope', hors: 'Fuera de temporada',
@@ -63,7 +63,7 @@ window.I18N = {
   },
   el: {
     aucun: 'Δεν βρέθηκε τίποτα για «{q}»',
-    tab_live: 'Αρχική', tab_map: 'Χάρτης', tab_agenda: 'Ημερολόγιο', tab_fav: 'Οι DJ μου', tab_profil: 'Προφίλ',
+    tab_live: 'Αρχική', tab_map: 'Χάρτης', tab_agenda: 'Ημερολόγιο', tab_fav: 'Οι DJ μου', tab_profil: 'Προφίλ', tab_checkin: 'Check-in',
     recherche: 'Ένας DJ, ένα κλαμπ, μια παραλία…', recherche_lieu: 'Ένα κλαμπ, μια παραλία…',
     carte: 'Χάρτης', lieux: 'Μέρη', nuit: 'Νύχτα', satellite: 'Δορυφόρος',
     pop_titre: 'Εκτιμώμενη προσέλευση', pop0: 'Λίγος κόσμος', pop1: 'Αρκετός κόσμος', pop2: 'Πολύς κόσμος', pop3: 'Γεμάτο', hors: 'Εκτός σεζόν',
@@ -79,7 +79,7 @@ window.I18N = {
   },
   ar: {
     aucun: 'لا توجد نتائج لـ «{q}»',
-    tab_live: 'الرئيسية', tab_map: 'الخريطة', tab_agenda: 'الأجندة', tab_fav: 'الـDJ المفضلون', tab_profil: 'الملف الشخصي',
+    tab_live: 'الرئيسية', tab_map: 'الخريطة', tab_agenda: 'الأجندة', tab_fav: 'الـDJ المفضلون', tab_profil: 'الملف الشخصي', tab_checkin: 'Check-in',
     recherche: 'DJ، نادٍ، شاطئ…', recherche_lieu: 'نادٍ، شاطئ…',
     carte: 'الخريطة', lieux: 'الأماكن', nuit: 'ليلي', satellite: 'قمر صناعي',
     pop_titre: 'الإقبال المتوقع', pop0: 'قليل من الناس', pop1: 'إقبال جيد', pop2: 'إقبال كبير', pop3: 'مكتظ', hors: 'خارج الموسم',
@@ -95,7 +95,7 @@ window.I18N = {
   },
   it: {
     aucun: 'Nessun risultato per «{q}»',
-    tab_live: 'Home', tab_map: 'Mappa', tab_agenda: 'Agenda', tab_fav: 'I miei DJ', tab_profil: 'Profilo',
+    tab_live: 'Home', tab_map: 'Mappa', tab_agenda: 'Agenda', tab_fav: 'I miei DJ', tab_profil: 'Profilo', tab_checkin: 'Check-in',
     recherche: 'Un DJ, un club, una città…', recherche_lieu: 'Un club, una spiaggia…',
     carte: 'Mappa', lieux: 'Locali', nuit: 'Notte', satellite: 'Satellite',
     pop_titre: 'Affluenza stimata', pop0: 'Poca gente', pop1: 'C\'è gente', pop2: 'Tanta gente', pop3: 'Pieno', hors: 'Fuori stagione',
@@ -111,7 +111,7 @@ window.I18N = {
   },
   de: {
     aucun: 'Nichts gefunden für „{q}“',
-    tab_live: 'Start', tab_map: 'Karte', tab_agenda: 'Kalender', tab_fav: 'Meine DJs', tab_profil: 'Profil',
+    tab_live: 'Start', tab_map: 'Karte', tab_agenda: 'Kalender', tab_fav: 'Meine DJs', tab_profil: 'Profil', tab_checkin: 'Check-in',
     recherche: 'Ein DJ, ein Club, eine Stadt…', recherche_lieu: 'Ein Club, ein Strand…',
     carte: 'Karte', lieux: 'Orte', nuit: 'Nacht', satellite: 'Satellit',
     pop_titre: 'Erwarteter Andrang', pop0: 'Wenig los', pop1: 'Gut besucht', pop2: 'Viel los', pop3: 'Überfüllt', hors: 'Nebensaison',
@@ -127,7 +127,7 @@ window.I18N = {
   },
   pt: {
     aucun: 'Nada encontrado para “{q}”',
-    tab_live: 'Início', tab_map: 'Mapa', tab_agenda: 'Agenda', tab_fav: 'Meus DJs', tab_profil: 'Perfil',
+    tab_live: 'Início', tab_map: 'Mapa', tab_agenda: 'Agenda', tab_fav: 'Meus DJs', tab_profil: 'Perfil', tab_checkin: 'Check-in',
     recherche: 'Um DJ, um clube, uma cidade…', recherche_lieu: 'Um clube, uma praia…',
     carte: 'Mapa', lieux: 'Locais', nuit: 'Noite', satellite: 'Satélite',
     pop_titre: 'Afluência estimada', pop0: 'Pouca gente', pop1: 'Movimentado', pop2: 'Muita gente', pop3: 'Lotado', hors: 'Fora de temporada',
