@@ -2607,3 +2607,23 @@ nav.tabs .tab.casque-banger svg.cb-svg { width: 104px !important; height: 80px !
 .ps-refus { padding: 12px; border-radius: 12px; border: 1px solid rgba(255,90,95,.45); background: rgba(255,90,95,.1); display: flex; flex-direction: column; gap: 4px; }
 .ps-refus b { color: #FF7A7F; } .ps-refus small { color: #C9CFDD; font-size: 12.5px; }
 .ps-suite { display: flex; flex-direction: column; gap: 10px; } .ps-suite .btn-plein { width: 100%; }
+
+/* Dernier appel : le bandeau clignote en rouge ; embarquement : léger clignotement doré */
+.ck-ligne.ck-rouge { animation: ck-dernier 1s ease-in-out infinite; border-color: rgba(255,90,95,.6); }
+@keyframes ck-dernier { 0%, 100% { background: #0B0F1C; } 50% { background: #2A0E14; box-shadow: 0 0 16px rgba(255,90,95,.35); } }
+.ck-ligne.ck-rouge .fil-item { background: transparent; }
+
+/* Bouton BANGER du bas : une carte carrée verte, avec une onde carrée qui s'élargit */
+nav.tabs .tab.tab-plus.carte-banger { position: relative; overflow: visible; padding: 0; background: none; display: grid; place-items: center; }
+.cbx-carte { position: relative; z-index: 1; display: grid; place-items: center; width: 74px; height: 50px; margin-top: -22px; border-radius: 14px; background: linear-gradient(160deg, #5BFF9E, #17A04E); color: #06210F; font: 800 12px 'DM Sans', sans-serif; letter-spacing: .06em; border: 3px solid #0A0D16; box-shadow: 0 8px 18px rgba(0,0,0,.5), 0 0 16px rgba(43,212,106,.45); transition: transform .15s; }
+.carte-banger:active .cbx-carte { transform: scale(.94); }
+.cbx-onde { position: absolute; left: 50%; top: 50%; width: 74px; height: 50px; margin: -36px 0 0 -37px; border-radius: 14px; border: 2px solid #2BD46A; opacity: 0; animation: cbx-onde 2.2s ease-out infinite; pointer-events: none; }
+.cbx-onde.o2 { animation-delay: 1.1s; }
+@keyframes cbx-onde { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.45, 1.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cbx-onde { animation: none; } }
+nav.tabs .tab.tab-plus.carte-banger { border: 0 !important; box-shadow: none !important; }
+.cbx-onde { top: calc(50% - 11px); margin: -25px 0 0 -37px; }
+/* BANGER : rond vert (sans casque), avec une onde ronde */
+.cbx-carte { width: 64px; height: 64px; margin-top: -26px; border-radius: 50%; font-size: 10.5px; letter-spacing: .03em; }
+.cbx-onde { width: 64px; height: 64px; border-radius: 50%; top: calc(50% - 13px); margin: -32px 0 0 -32px; }
+@keyframes cbx-onde { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.5); opacity: 0; } }
