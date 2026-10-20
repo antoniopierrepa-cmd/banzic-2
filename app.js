@@ -326,7 +326,13 @@
     if (!state.favs.length) {
       $('#fav-list').innerHTML = `<div class="empty">Ajoute tes DJ préférés : l'appli te dit où et à quelle heure ils jouent ce soir.</div>`;
     } else {
-      const favCartes = state.favs.map((dj) => {
+      const liveFav = (dj) => { const pro = djProParNom(dj); return !!pro && (enStream(pro) || DECLS.some((x) => x.dj === pro.id && declActive(x))); };
+      const favCartes = state.favs.slice().sort((x, y) => (liveFav(y) ? 1 : 0) - (liveFav(x) ? 1 : 0)).map((dj) => {
+        // DJ Pro / Premium de l'appli : en live s'il s'est déclaré (et pas encore fini) ou s'il diffuse son live
+        const pro = djProParNom(dj), decl = pro && DECLS.find((x) => x.dj === pro.id && declActive(x));
+        if (decl || (pro && enStream(pro))) { const l = decl ? lieuDe(decl) || {} : {};
+          return vCarte({ tag: 'div', attr: decl ? `role="button" tabindex="0" data-dj-pro="${esc(dj)}"` : `role="button" tabindex="0" data-dj-pro="${esc(dj)}"`, c: '#F2C53A', img: avPinDj(pro) || (decl && l.id ? imgLieu(l) : ''), badge: 'En live',
+            extra: heart(dj), type: decl ? esc(l.nom || 'Spot') : 'Live en ligne', nom: esc(dj), lieu: decl ? `${esc(l.nom || 'Spot')} · jusqu'à ${hm(decl.fin)}` : 'En direct sur sa chaîne' }); }
         const p = prochainSetDe(dj);
         let info, badge;
         if (!p) { info = 'Ne joue plus ce soir'; badge = '<span class="badge b-off">Pas ce soir</span>'; }
@@ -1165,7 +1171,7 @@
     { id: 'miami', nom: 'Miami', saison: 'hiver et Miami Music Week en mars' },
     { id: 'dubai', nom: 'Dubaï', saison: 'novembre à avril' }
   ];
-  const nomDest = (p) => p.destination === 'autre' ? (p.destinationAutre || 'Ailleurs') : (DESTINATIONS.find((d) => d.id === p.destination) || {}).nom || '';
+  const nomDest = (p) => p.ville ? p.ville : p.destination === 'autre' ? (p.destinationAutre || 'Ailleurs') : (DESTINATIONS.find((d) => d.id === p.destination) || {}).nom || '';
   const STYLES = ['House', 'Tech house', 'Techno', 'Afro house', 'Melodic', 'Disco & funk', 'EDM', 'Trance', 'Latino'];
   // Tous les genres (inspirés des catégories SoundCloud), en cartes illustrées qu'on fait défiler
   const GENRES = ['House', 'Deep house', 'Tech house', 'Techno', 'Hard techno', 'Melodic', 'Afro house', 'Amapiano', 'Minimal', 'Progressive', 'Trance', 'Disco & funk', 'Nu disco', 'EDM', 'Dance', 'Drum & bass', 'Dubstep', 'Bass music', 'UK garage', 'Électro', 'Ambient', 'Hip-hop & rap', 'Trap', 'R&B & soul', 'Pop', 'Latino', 'Reggaeton', 'Dancehall', 'Reggae', 'Afrobeats', 'Rock', 'Indie', 'Metal', 'Jazz & blues', 'Classique', 'Musiques du monde', 'Lo-fi'];
@@ -1306,9 +1312,11 @@
       <div class="champ" id="champ-styles"><span>Ce que tu aimes en musique <small class="aide">(un ou plusieurs)</small></span>
         ${cartesGenres('styles', p.styles)}
       <p class="erreur" id="err-styles" hidden>Choisis au moins un style</p></div>
-      <div class="champ"><span>${T('langue')}</span>
-        <div class="chips wrap">${LANGUES.map((x) => `<label class="chip ${LANG === x.id ? 'on' : ''}" lang="${x.id}"><input type="radio" name="langue" value="${x.id}" ${LANG === x.id ? 'checked' : ''} hidden>${x.nom}</label>`).join('')}</div>
-        <small class="aide">Modifiable à tout moment depuis ton profil.</small></div>
+      <label class="champ" id="champ-ville"><span>Ta ville <small class="aide">(obligatoire : c'est elle qui règle la carte et ce qui se passe autour de toi)</small></span>
+        <span class="ville-ligne"><input class="search" name="ville" list="liste-villes-profil" maxlength="40" value="${esc(p.ville || '')}" placeholder="Toulon, Marseille, Ibiza…" autocomplete="address-level2">
+        <button type="button" class="ville-gps" data-ville-gps="1" aria-label="Utiliser ma position"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7.2 2.3L12.5 20z" fill="currentColor"/></svg>Ma position</button></span>
+        <datalist id="liste-villes-profil">${(window.VILLES || []).map((v) => `<option value="${esc(v[0])}">`).join('')}</datalist></label>
+      <p class="erreur" id="err-ville" hidden>Indique ta ville pour voir ce qui se passe autour de toi</p>
       <div class="section-title">Confidentialité</div>
       ${coche('notifs', 'Questions sur place', 'Le QCM rapide quand tu arrives dans un lieu, une fois par lieu', p.notifs)}
       ${coche('geoloc', 'Position en arrière-plan', 'Pour savoir qui joue autour de toi et t\'envoyer le QCM', p.geoloc)}
@@ -1317,10 +1325,7 @@
       ${coche('alertePepites', 'Alerte pépites', 'Être prévenu quand un warm-up très bien noté joue en ce moment', p.alertePepites !== false)}
       <div class="section-title">Bons plans et alertes</div>
       ${coche('emailInfos', 'Recevoir les bons plans par email', 'Line-ups de ta semaine, grosses closings, préventes. Jamais de spam, désinscription en un clic.', p.emailInfos !== false)}
-      ${coche('alerteDj', 'Être prévenu quand mon DJ préféré joue', 'Un message dès qu\'il est annoncé près de toi ou dans tes destinations', p.alerteDj !== false)}
-      <label class="champ"><span>Ton DJ préféré <small class="aide">(facultatif)</small></span>
-        <input class="search" name="djPrefere" list="liste-djs-profil" maxlength="40" value="${esc(p.djPrefere || '')}" placeholder="Black Coffee, Solomun…" autocomplete="off">
-        <datalist id="liste-djs-profil">${[...new Set(passages.map((x) => x.dj).filter((d) => !/non annoncé|non publié|secret/i.test(d)))].sort().map((d) => `<option value="${esc(d)}">`).join('')}</datalist></label>
+      ${coche('alerteDj', 'Être prévenu quand mes DJ jouent', 'Un message dès qu\'un DJ que tu suis est annoncé près de toi', p.alerteDj !== false)}
       <label class="champ"><span>Ton email</span>
         <input class="search" type="email" name="emailContact" value="${esc(p.emailContact || (state.compte && /@/.test(state.compte.email) ? state.compte.email : ''))}" placeholder="toi@exemple.com" autocomplete="email" inputmode="email"></label>
       <p class="erreur" id="err-emailc" hidden>Entre ton email pour recevoir les bons plans et les alertes</p>
@@ -1385,7 +1390,7 @@
         <span>Présence anonyme : <b>${p.presence ? 'oui' : 'non'}</b> · Classement : <b>${p.classement ? 'oui' : 'non'}</b></span>
         <span>Compte : <b>${FOURNISSEURS[state.compte.fournisseur]}</b> · ${esc(state.compte.email)}</span>
         <span>Bons plans par email : <b>${p.emailInfos ? 'oui' : 'non'}</b> · Alerte pépites : <b>${p.alertePepites !== false ? 'oui' : 'non'}</b></span>
-        <span>DJ préféré : <b>${esc(p.djPrefere || 'aucun')}</b>${p.djPrefere ? ' · alerte : <b>' + (p.alerteDj ? 'oui' : 'non') + '</b>' : ''}</span>
+        <span>Ville : <b>${esc(p.ville || 'à renseigner')}</b> · Alerte mes DJ : <b>${p.alerteDj ? 'oui' : 'non'}</b></span>
         ${p.emailContact ? `<span>Email : <b>${esc(p.emailContact)}</b></span>` : ''}
       </div>
       <button class="alerte" data-modifier-profil="1">Modifier mon profil Banger</button>
@@ -1445,26 +1450,38 @@
     const f = new FormData(e.target);
     const pseudo = String(f.get('pseudo') || '').trim();
     if (pseudo.length < 2) { $('#err-pseudo').hidden = false; e.target.pseudo.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+    const ville = String(f.get('ville') || '').trim();
+    if (ville.length < 2) { $('#err-ville').hidden = false; $('#champ-ville').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     if (!f.getAll('styles').length) { $('#err-styles').hidden = false; $('#champ-styles').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     const emailC = String(f.get('emailContact') || '').trim();
     if ((f.get('emailInfos') || f.get('alerteDj')) && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailC)) { $('#err-emailc').hidden = false; e.target.emailContact.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     const nouveau = !state.profil;
     state.profil = {
-      pseudo, styles: f.getAll('styles'), langue: f.get('langue') || LANG,
+      pseudo, styles: f.getAll('styles'), langue: LANG, ville,
       // « Où es-tu ? » a été retiré du formulaire : on garde ce qui était déjà enregistré
-      destination: (state.profil && state.profil.destination) || 'ibiza', destinationAutre: (state.profil && state.profil.destinationAutre) || '',
-      statut: (state.profil && state.profil.statut) || 'sur-place', du: (state.profil && state.profil.du) || '', au: (state.profil && state.profil.au) || '', suivies: (state.profil && state.profil.suivies) || ['ibiza'],
+      destination: 'autre', destinationAutre: ville,
+      statut: (state.profil && state.profil.statut) || 'sur-place', du: (state.profil && state.profil.du) || '', au: (state.profil && state.profil.au) || '', suivies: (state.profil && state.profil.suivies) || [],
       notifs: !!f.get('notifs'), geoloc: !!f.get('geoloc'), presence: !!f.get('presence'), classement: !!f.get('classement'),
       emailInfos: !!f.get('emailInfos'), alertePepites: !!f.get('alertePepites'),
-      alerteDj: !!f.get('alerteDj'), djPrefere: String(f.get('djPrefere') || '').trim(), emailContact: emailC,
+      alerteDj: !!f.get('alerteDj'), emailContact: emailC,
       avatar: f.get('avatar') || 'av:h01', photo: state.photoTemp || ''
     };
-    if (f.get('langue') && f.get('langue') !== LANG) choisirLangue(f.get('langue'), true);
+    // La ville choisie règle la zone « autour de moi »
+    { const v = (window.VILLES || []).find((x) => sansAccent(x[0]).toLowerCase() === sansAccent(ville).toLowerCase()); if (v) { state.zoneGeo = { dest: 'local', nom: v[0], approx: false }; DEST.local.centre = [v[2], v[3]]; } }
     store.set('profil', state.profil);
     state.editProfil = false;
     renderProfil();
     const ecran = $('#screen-profil'); if (ecran) ecran.scrollTop = 0;
     toast(nouveau ? 'Bienvenue chez les Bangers, ' + pseudo + ' : te voilà ' + nomNiveau(NIVEAUX_PROFIL[niveauProfil(points().total)]) : 'Profil enregistré');
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('[data-ville-gps]')) return;
+    const champ = e.target.closest('form') && e.target.closest('form').querySelector('[name="ville"]'); if (!champ) return;
+    const poser = (nom) => { champ.value = nom; document.querySelectorAll('#err-ville, #err-ville-dj').forEach((x) => { x.hidden = true; }); toast('Ville : ' + nom); };
+    if (!navigator.geolocation) { poser(state.zoneGeo && state.zoneGeo.nom || 'Toulon'); return; }
+    navigator.geolocation.getCurrentPosition((pos) => { const la = pos.coords.latitude, lo = pos.coords.longitude;
+      const v = (window.VILLES || []).map((x) => ({ x, d: distKm([la, lo], [x[2], x[3]]) })).sort((u, w) => u.d - w.d)[0]; poser(v ? v.x[0] : 'Ma position'); },
+      () => poser(state.zoneGeo && state.zoneGeo.nom || 'Toulon'), { timeout: 8000 });
   });
   document.addEventListener('change', (e) => {
     if (e.target.id === 'av-fichier' && e.target.files && e.target.files[0]) {
@@ -2604,6 +2621,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const distKm = (a, b) => { const r = Math.PI / 180, x = (b[1] - a[1]) * r * Math.cos((a[0] + b[0]) / 2 * r), y = (b[0] - a[0]) * r; return Math.sqrt(x * x + y * y) * 6371; };
   state.mode = store.get('mode', 'geo');
   state.zoneGeo = { dest: 'local', nom: 'Toulon', approx: true };
+  // La ville du profil règle la zone « autour de moi » au démarrage (le GPS, s'il répond, la remplace)
+  try { const pv = state.profil && state.profil.ville && (window.VILLES || []).find((x) => sansAccent(x[0]).toLowerCase() === sansAccent(state.profil.ville).toLowerCase()); if (pv) { state.zoneGeo = { dest: 'local', nom: pv[0], approx: false }; DEST.local.centre = [pv[2], pv[3]]; } } catch (e) { /* pas de ville */ }
   function zoneDe(pos, approx, nomVille) {
     const proche = DESTS.filter((d) => !d.local).map((d) => ({ d, km: distKm(pos, d.centre) })).sort((a, b) => a.km - b.km)[0];
     if (proche && proche.km < 80) return { dest: proche.d.id, nom: proche.d.nom, approx };
@@ -3267,7 +3286,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       <label class="champ"><span>Nom d'artiste</span><input class="search" name="nom" maxlength="30" placeholder="DJ Nightowl" value="${esc(state.nomRevendique || '')}"></label>
       <p class="erreur" id="err-djnom" hidden>Choisis un nom d'artiste</p>
       <div class="champ"><span>Tes styles <small class="aide">(fais défiler)</small></span>${cartesGenres('styles', [])}</div>
-      <label class="champ"><span>Ville, zone d'activité</span><input class="search" name="ville" maxlength="30" value="${esc(DEST[state.dest].nom)}"></label>
+      <label class="champ" id="champ-ville-dj"><span>Ta ville, zone d'activité <small class="aide">(obligatoire)</small></span>
+        <span class="ville-ligne"><input class="search" name="ville" list="liste-villes-dj" maxlength="40" value="${esc((state.profil && state.profil.ville) || '')}" placeholder="Toulon, Marseille, Ibiza…" autocomplete="address-level2">
+        <button type="button" class="ville-gps" data-ville-gps="1" aria-label="Utiliser ma position"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7.2 2.3L12.5 20z" fill="currentColor"/></svg>Ma position</button></span>
+        <datalist id="liste-villes-dj">${(window.VILLES || []).map((v) => `<option value="${esc(v[0])}">`).join('')}</datalist></label>
+      <p class="erreur" id="err-ville-dj" hidden>Indique la ville où tu mixes</p>
       <div class="champ"><span>Ton avatar <small class="aide">ta tête sur la carte, ta fiche et le bandeau</small></span><div class="choix-pins">${PINS_TOUS.map((p, i) => `<label class="choix-pin${i === 0 ? ' on' : ''}"><input type="radio" name="pin" value="${p}" ${i === 0 ? 'checked' : ''}><img src="pins-dj/${p}.png" alt="" loading="lazy"></label>`).join('')}</div></div>
       <div class="champ"><span>Ta formule</span>
         ${Object.entries(FORMULES_DJ).map(([k, f], i) => `<label class="formule ${i === 0 ? 'on' : ''}"><input type="radio" name="formule" value="${k}" ${i === 0 ? 'checked' : ''}><span><b>${f.nom} · ${f.prix}</b><small>${f.aide}</small></span></label>`).join('')}
@@ -3324,6 +3347,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       e.preventDefault();
       const f = new FormData(e.target), nom = String(f.get('nom') || '').trim();
       if (nom.length < 2) { $('#err-djnom').hidden = false; return; }
+      if (String(f.get('ville') || '').trim().length < 2) { $('#err-ville-dj').hidden = false; $('#champ-ville-dj').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
       MON_DJ = { id: 'moi', formule: f.get('formule') || 'live', liens: {}, annonces: [], nom, styles: f.getAll('styles'), ville: String(f.get('ville') || '').trim(), confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 }, mien: true, pin: String(f.get('pin') || '') };
       store.set('djPro', MON_DJ); state.vueDj = null; state.nomRevendique = null; renderProfil(); toast('Profil DJ créé · formule ' + formuleDe(MON_DJ).nom + ' (démo)');
     }

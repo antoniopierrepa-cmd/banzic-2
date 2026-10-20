@@ -2575,3 +2575,8 @@ nav.tabs .tab.casque-banger svg.cb-svg { width: 104px !important; height: 80px !
 .md-av.md-live::after { content: ''; position: absolute; inset: 38%; border-radius: 50%; background: #0A0D16; box-shadow: 0 0 0 1px rgba(255,255,255,.4); }
 @keyframes md-tourne { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .md-av.md-live { animation: none; } }
+
+.ville-ligne { display: flex; gap: 8px; }
+.ville-ligne .search { flex: 1; min-width: 0; }
+.ville-gps { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 0 12px; border: 0; border-radius: 12px; background: #2F8CFF; color: #fff; font: 700 12.5px 'DM Sans', sans-serif; cursor: pointer; }
+.ville-gps svg { width: 15px; height: 15px; }
