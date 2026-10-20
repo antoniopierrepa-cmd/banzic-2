@@ -2580,3 +2580,17 @@ nav.tabs .tab.casque-banger svg.cb-svg { width: 104px !important; height: 80px !
 .ville-ligne .search { flex: 1; min-width: 0; }
 .ville-gps { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 0 12px; border: 0; border-radius: 12px; background: #2F8CFF; color: #fff; font: 700 12.5px 'DM Sans', sans-serif; cursor: pointer; }
 .ville-gps svg { width: 15px; height: 15px; }
+
+/* Check-in : les visuels collés à gauche ; ce qui est en live tourne */
+.ck-ligne .fil-item.a-vis { padding-left: 6px !important; column-gap: 10px; grid-template-columns: 54px 1fr; }
+.ck-ligne .fil-item.a-vis .fil-vis { justify-self: start; margin-left: 0; }
+.ck-ligne .fil-pinbox { width: 50px; height: 54px; }
+.ck-ligne .fil-pinbox .fil-pin { width: 48px; height: 52px; }
+.ck-tourne .fil-rond { animation: md-tourne 3s linear infinite; box-shadow: 0 0 0 2px #FF3B4E, 0 0 10px rgba(255,59,78,.6); position: relative; }
+.ck-tourne .fil-rond::after { content: ''; position: absolute; inset: 40%; border-radius: 50%; background: #0A0D16; box-shadow: 0 0 0 1px rgba(255,255,255,.4); }
+.ck-tourne .fil-pinbox .fil-pin { animation: ck-pivote 2.4s linear infinite; }
+@keyframes ck-pivote { to { transform: rotateY(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ck-tourne .fil-rond, .ck-tourne .fil-pin { animation: none; } }
+/* Rotation des lives plus douce */
+.md-av.md-live, .ck-tourne .fil-rond { animation-duration: 9s !important; }
+.ck-tourne .fil-pinbox .fil-pin { animation-duration: 7s !important; }

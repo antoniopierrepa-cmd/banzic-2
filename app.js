@@ -2316,10 +2316,14 @@
       const deb = msDe(row[0], row[7]);
       ligne({ km: d, t: deb || msDe(row[0], '23:58'), heure: row[7] || '--:--', porte: row[2], st: row[0] === dem ? ['Demain', 'gris'] : ['Ce soir', 'bleu'], k: 'decl', tag: 'Top 100', attr: `data-dj-pro="${esc(nomDj)}"`, nom: nomDj,
         l1: row[0] === dem ? 'demain' : 'ce soir', l2: [[esc(row[2]) + ' · ' + esc(row[3]) + ' · ' + fK(d)]], vol: nomDj }); }));
-    L.sort((a, b) => Math.round(a.km) - Math.round(b.km) || (a.t || 0) - (b.t || 0));
+    // D'abord ce qui est en live en ce moment (DJ en cours, dernier appel, spots signalés), puis le reste ; dans chaque groupe, du plus proche au plus loin
+    const enLive = (o) => o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert' || o.st[1] === 'rouge';
+    L.sort((a, b) => (enLive(b) ? 1 : 0) - (enLive(a) ? 1 : 0) || Math.round(a.km) - Math.round(b.km) || (a.t || 0) - (b.t || 0));
     const vis = (nom) => nom ? visFil(nom) : '';
     const rangee = (o) => { const v = o.lieuPin ? `<span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-lieu" src="${o.lieuPin}" alt="">${casqueConf(BANG_LIEU[o.lieuId] || 0)}</span>` : o.k === 'spot' ? (o.sp ? visSpotC(o.sp) : '') : o.vol ? visFil(o.vol, o.conf || 0, o.act || '') : '';
-      return `<div class="ck-ligne ck-${o.st[1]}">
+      // Tout ce qui est en live tourne : le DJ qui joue (son rond), le spot signalé (son épingle)
+      const tourne = o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert' || o.st[1] === 'rouge';
+      return `<div class="ck-ligne ck-${o.st[1]}${tourne ? ' ck-tourne' : ''}">
         <div class="ck-bande"><span class="ck-h">${flap(o.heure, 5)}</span><span class="ck-porte"><small>Porte</small>${esc(o.porte)}</span><span class="ck-st ck-st-${o.st[1]}"><i></i>${esc(o.st[0])}</span></div>
         <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em><b>${esc(o.nom)}</b>${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button></div>`; };
     const i = CK_RAYONS.indexOf(r);
