@@ -2189,3 +2189,136 @@ nav.tabs .tab-cherche.on { color: var(--orange); }
 .fp-top100 b i { font-style: normal; font-size: 12px; font-weight: 800; margin-right: 1px; vertical-align: 9px; }
 .fp-top100 em { font-style: normal; font-size: 8px; font-weight: 700; opacity: .8; letter-spacing: .04em; line-height: 1; }
 .fp-badge.b-top { background: rgba(242,197,58,.14); color: #F2C53A; border: 1px solid rgba(242,197,58,.45); }
+
+/* Légende sous la mini-carte : plus petite */
+.aut-legende { padding: 2px 6px; margin: 0 0 8px; border-radius: 9px; justify-content: space-around; }
+.aut-legende .lg-item { font-size: 10px; font-weight: 600; gap: 4px; padding: 3px 4px; color: var(--muted, #9AA3B8); }
+.aut-legende .lg { width: 7px; height: 7px; }
+.aut-legende .lg.moi { border-width: 1.5px; }
+.lg-bulle { font-size: 12px; padding: 6px 10px; }
+/* Fil d'actualité qui défile sous la carte, façon bandeau d'infos */
+.fil-infos { display: flex; align-items: stretch; margin: 0 0 14px; border-radius: 10px; overflow: hidden; background: #0B0F1C; border: 1px solid rgba(255,255,255,.08); height: 34px; }
+.fil-titre { flex: none; display: flex; align-items: center; gap: 5px; padding: 0 8px; font-size: 10px !important; background: #F2C53A; color: #0A0D16; font: 800 11px 'DM Sans', sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+.fil-titre i { width: 7px; height: 7px; border-radius: 50%; background: #E5322D; animation: fil-pt 1s ease-in-out infinite alternate; }
+@keyframes fil-pt { to { opacity: .25; } }
+.fil-fenetre { position: relative; flex: 1; min-width: 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent); mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent); }
+.fil-piste { display: flex; align-items: center; height: 100%; width: max-content; animation: fil-defile var(--duree, 30s) linear infinite; }
+.fil-copie { display: flex; align-items: center; }
+.fil-infos:hover .fil-piste, .fil-infos:active .fil-piste { animation-play-state: paused; }
+@keyframes fil-defile { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.fil-item { display: inline-flex; align-items: center; gap: 6px; padding: 0 4px; border: 0; background: none; color: var(--muted, #9AA3B8); font: 500 12px 'DM Sans', sans-serif; white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.fil-item b { color: #fff; font-weight: 700; }
+.fil-item span + span::before { content: '·'; margin-right: 7px; color: rgba(255,255,255,.3); }
+.fil-tag { font-style: normal; font: 800 9.5px 'DM Sans', sans-serif; letter-spacing: .06em; text-transform: uppercase; padding: 3px 6px; border-radius: 5px; color: #0A0D16; }
+.fil-tag.live { background: #F2C53A; } .fil-tag.decl { background: #FF8A3D; } .fil-tag.spot { background: #B58CFF; }
+.fil-ok { color: #3DF28A; font-weight: 700; } .fil-att { color: #FF8A3D; }
+.fil-vaut.top { color: #3DF28A; font-weight: 700; } .fil-vaut.bien { color: #F2C53A; font-weight: 700; } .fil-vaut.bof { color: #FF8A3D; }
+.fil-sep { flex: none; width: 5px; height: 5px; margin: 0 14px; border-radius: 50%; background: rgba(255,255,255,.25); }
+@media (prefers-reduced-motion: reduce) { .fil-piste { animation-duration: calc(var(--duree, 30s) * 2); } }
+
+/* Bandeau : un peu plus haut, chaque info sur un fond de sa couleur, légèrement transparent */
+.fil-infos { height: 44px; }
+.fil-titre { padding: 0 10px; }
+.fil-item { height: 32px; padding: 0 12px 0 5px; border-radius: 999px; font-size: 12.5px; --fc: 242,197,58; background: rgba(var(--fc), .16); border: 1px solid rgba(var(--fc), .45); color: rgba(255,255,255,.78); }
+.fil-item.k-decl { --fc: 255,138,61; }
+.fil-item.k-spot { --fc: 181,140,255; }
+.fil-item span + span::before { color: rgba(255,255,255,.35); }
+.fil-sep { width: 0; margin: 0 4px; background: none; }
+
+/* Bandeau sans étiquette, plus grand, piloté au doigt */
+.fil-infos { height: 52px; border-radius: 12px; }
+.fil-piste { animation: none !important; will-change: transform; }
+.fil-item { height: 40px; padding: 0 14px 0 6px; font-size: 14px; gap: 8px; }
+.fil-item b { font-size: 15px; }
+.fil-tag { font-size: 10.5px; padding: 4px 7px; }
+.fil-sep { margin: 0 5px; }
+
+/* Bandeau deux fois plus grand : nom en gros sur la 1re ligne, détails dessous */
+.fil-infos { height: 100px; border-radius: 16px; }
+.fil-item { height: 84px; display: inline-flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 7px; padding: 0 22px 0 14px; border-radius: 16px; font-size: 14px; }
+.fil-l1, .fil-l2 { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+.fil-l1 b { font-size: 21px; font-weight: 800; color: #fff; }
+.fil-l1 .fil-t { font-weight: 700; color: #fff; opacity: .85; }
+.fil-l1 .fil-t::before, .fil-l1 .fil-vaut::before { content: '·'; margin-right: 9px; color: rgba(255,255,255,.35); }
+.fil-l2 { font-size: 13.5px; }
+.fil-l2 span + span::before { content: '·'; margin-right: 9px; color: rgba(255,255,255,.35); }
+.fil-tag { font-size: 11px; padding: 4px 8px; }
+.fil-sep { margin: 0 6px; }
+.fil-item > .fil-l1::before, .fil-item > .fil-l2::before { content: none !important; }
+.fil-l1 > span, .fil-l2 > span { background: none; }
+
+/* Fiches DJ : rond, nom et casque remontés au milieu du bandeau du haut ; médaille Top 100 en pastille sur le rond */
+.fp:not(.fp-banger) .fp-cover { height: 150px; }
+.fp:not(.fp-banger) .fp-tete { margin-top: -121px; align-items: center; min-height: 92px; margin-bottom: 29px; z-index: 2; }
+.fp.fp-pro .fp-cover { height: 172px; }
+.fp.fp-pro .fp-tete { margin-top: -142px; min-height: 112px; margin-bottom: 30px; }
+.fp:not(.fp-banger) .fp-id { padding-bottom: 0; }
+.fp:not(.fp-banger) .fp-nom, .fp:not(.fp-banger) .fp-sous { text-shadow: 0 2px 10px rgba(0,0,0,.7); }
+.fp:not(.fp-banger) .casque-like { align-self: center; }
+.fp-av .fp-top100 { top: auto; right: -8px; bottom: -6px; width: 40px; height: 40px; padding: 0; border-radius: 50%; gap: 0; justify-content: center; border-width: 2px; border-color: #0C1120; box-shadow: 0 3px 10px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.6); }
+.fp-av .fp-top100 small { font-size: 7px; letter-spacing: .1em; }
+.fp-av .fp-top100 b { font-size: 16px; }
+.fp-av .fp-top100.or b, .fp-av .fp-top100 b { line-height: .95; }
+
+/* Pages saison : la photo du haut est montrée en entier (format 16/9), sans couper le haut */
+.dest-banniere { height: auto; aspect-ratio: 16 / 9; background-position: center top; background-size: cover; margin: 4px 0 10px; }
+.fil-infos.fil-dest { margin: 12px 0 14px; }
+
+.dest-mini { margin-top: 12px; }
+.dest-mini + .aut-legende { margin-bottom: 4px; }
+
+/* Épingles GPS illustrées des DJ Pro */
+.pin-dj { background: none; border: 0; }
+.pin-dj img { width: 52px; height: 56px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,.6)); transform-origin: 50% 100%; animation: pin-respire 2.4s ease-in-out infinite; }
+.pin-dj.ok img { filter: drop-shadow(0 0 8px rgba(242,197,58,.9)) drop-shadow(0 4px 6px rgba(0,0,0,.6)); }
+.pin-dj sup { position: absolute; top: -4px; right: -2px; min-width: 18px; height: 18px; border-radius: 9px; background: #FF8A3D; color: #0A0D16; font: 800 11px 'DM Sans', sans-serif; display: grid; place-items: center; }
+@keyframes pin-respire { 50% { transform: translateY(-3px); } }
+.mm-pin { filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .pin-dj img { animation: none; } }
+
+/* Bandeau : l'épingle du DJ Pro (ou sa tête en rond) à gauche de l'info */
+.fil-item.a-vis { display: inline-grid; grid-template-columns: auto auto; grid-template-rows: auto auto; column-gap: 12px; row-gap: 7px; align-content: center; justify-items: start; padding-left: 8px; }
+.fil-item.a-vis .fil-vis { grid-row: 1 / span 2; grid-column: 1; align-self: center; }
+.fil-item.a-vis .fil-l1, .fil-item.a-vis .fil-l2 { grid-column: 2; }
+.fil-pin { width: 64px; height: 68px; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(0,0,0,.55)); margin-top: -4px; }
+.fil-rond { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; box-shadow: 0 0 0 2px rgba(var(--fc), .8); }
+.fil-rond > .avatar, .fil-rond > img, .fil-rond > span { width: 56px !important; height: 56px !important; border-radius: 50%; object-fit: cover; margin: 0; font-size: 18px; }
+.fil-vaut.v-top { color: #3DF28A; font-weight: 700; } .fil-vaut.v-bien { color: #F2C53A; font-weight: 700; } .fil-vaut.v-bof { color: #FF8A3D; }
+.fil-t .fil-vaut::before { content: none !important; }
+
+/* Bandeau : photo de la fiche du DJ + son casque avec le nombre de Bangers */
+.fil-dj { position: relative; width: 64px; height: 64px; }
+.fil-dj .fil-rond { width: 60px; height: 60px; }
+.fil-dj .fil-rond > .avatar, .fil-dj .fil-rond > img, .fil-dj .fil-rond > span { width: 60px !important; height: 60px !important; }
+.fil-casque { position: absolute; right: -10px; bottom: -8px; display: flex; flex-direction: column; align-items: center; }
+.fil-casque img { width: 30px; height: auto; filter: drop-shadow(0 2px 3px rgba(0,0,0,.7)); }
+.fil-casque b { margin-top: -5px; padding: 0 5px; border-radius: 6px; background: #0A0D16; color: #fff; font: 800 10px 'DM Sans', sans-serif; line-height: 14px; }
+.fil-item.a-vis { padding-right: 24px; column-gap: 16px; }
+/* Choix de l'avatar à la création du profil DJ */
+.choix-pins { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 8px; }
+.choix-pin { position: relative; display: grid; place-items: center; padding: 4px; border-radius: 12px; border: 2px solid transparent; background: rgba(255,255,255,.04); cursor: pointer; }
+.choix-pin input { position: absolute; opacity: 0; pointer-events: none; }
+.choix-pin img { width: 100%; height: auto; }
+.choix-pin.on { border-color: #F2C53A; background: rgba(242,197,58,.12); }
+.fil-dj { width: 58px; height: 58px; }
+.fil-dj .fil-rond { width: 52px; height: 52px; }
+.fil-dj .fil-rond > .avatar, .fil-dj .fil-rond > img, .fil-dj .fil-rond > span { width: 52px !important; height: 52px !important; }
+.fil-casque { right: -14px; bottom: -2px; }
+.fil-casque img { width: 26px; }
+.fil-item.a-vis .fil-vis { margin-top: -6px; }
+.fil-item.a-vis { column-gap: 28px; }
+/* Casque du bandeau : pastille colorée pour mieux le voir */
+.fil-casque { right: -16px; bottom: -4px; gap: 0; }
+.fil-casque img { width: 30px; height: 30px; padding: 3px; border-radius: 50%; background: var(--cq, #F2C53A); box-shadow: 0 0 0 2px #0A0D16, 0 0 10px var(--cq, #F2C53A); filter: none; object-fit: contain; }
+.fil-casque b { margin-top: 2px; background: var(--cq, #F2C53A); color: #0A0D16; }
+
+/* Casque du bandeau en vert, et on peut banguer directement dessus */
+:root { --cq: #3DF28A; }
+.fil-casque { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.fil-casque img { background: rgba(61,242,138,.35); box-shadow: 0 0 0 2px #0A0D16, 0 0 8px rgba(61,242,138,.6); }
+.fil-casque.on img { background: #3DF28A; box-shadow: 0 0 0 2px #0A0D16, 0 0 14px #3DF28A; }
+.fil-casque b { background: #3DF28A; }
+.fil-casque.tourne img { animation: casque-tour .6s cubic-bezier(.2,.8,.3,1); }
+
+/* Info du bandeau bloquée par le doigt sur un point de la carte */
+.fil-item.cible { box-shadow: 0 0 0 2px rgba(var(--fc), .95), 0 0 18px rgba(var(--fc), .55); }

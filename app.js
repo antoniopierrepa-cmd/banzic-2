@@ -286,7 +286,9 @@
 
     let h = '';
     const pr = state.profil;
-    h += carteIbizaGrande() + carteAgendaDest(DEST.ibiza);
+    { const di = DEST.ibiza, ni = di.mois[MOIS_NOW];
+      h += `<div class="dest-banniere" style="background-image:url('ibiza-carte.jpg?v=3')"></div><div class="dest-tete"><div><h2>${esc(di.nom)}</h2><small>${esc(di.pays)} · ${T('saison')} : ${esc(di.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(di.tz) })} · ${decalage(di.tz)}</small></div>${pastilleMois(ni)}</div>${barreAnnee(di)}`
+        + miniCarteDest(di) + filDest() + carteIbizaGrande() + carteAgendaDest(di); }
     h += blocDecls();
     h += blocPepites();
     h += blocSpots();
@@ -1768,7 +1770,7 @@
     const tier = pro ? (pro.formule === 'pro' ? 'pro' : 'live') : 'std';
     const live = pro ? DECLS.filter((x) => x.dj === pro.id && declActive(x)) : [];
     const c = pro ? credibilite(pro) : null;
-    const img = avatarIllusDj(nom) || (pro && pro.photo) || (photoLibre(nom) && photoLibre(nom).f) || '';
+    const img = avatarIllusDj(nom) || avPinDj(pro) || (pro && pro.photo) || (photoLibre(nom) && photoLibre(nom).f) || '';
     let g = 7; for (const ch of nom) g = (g * 31 + ch.charCodeAt(0)) >>> 0;
     const abonnes = pro ? (pro.abonnes || (tier === 'pro' ? 1200 + g % 9000 : 40 + g % 400)) : 0;
     const k = (n) => n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',').replace(',0', '') + 'k' : n;
@@ -1781,9 +1783,9 @@
     const suivi = state.favs.includes(nom), al = !!ALERTES_DJ[sansAccent(nom)];
     const TOPM = window.DJMAG2026, iTop = TOPM ? TOPM.djs.findIndex((x) => sansAccent(x[0]) === sansAccent(nom)) : -1;
     const mvTop = iTop >= 0 ? ({ '+': 'En hausse', '-': 'En baisse', '=': 'Stable', 'N': 'Nouveau', 'R': 'Retour' })[TOPM.djs[iTop][1]] || '' : '';
-    const medTop = iTop >= 0 ? `<button class="fp-top100 ${iTop < 10 ? 'or' : iTop < 50 ? 'argent' : 'bronze'}" data-top-info="${iTop + 1}" aria-label="Classé ${iTop + 1}e au Top 100 DJ Mag 2026"><small>TOP 100</small><b><i>N°</i>${iTop + 1}</b><em>DJ Mag 2026</em></button>` : '';
-    return `<div class="fp fp-${tier}"><div class="fp-cover"${img ? ` style="--fp-img:url('${img}')"` : ''}><i class="fp-lasers"></i>${medTop}</div>
-      <div class="fp-tete"><span class="fp-av">${avatarDj(nom, 'fp-photo')}</span>
+    const medTop = iTop >= 0 ? `<button class="fp-top100 ${iTop < 10 ? 'or' : iTop < 50 ? 'argent' : 'bronze'}" data-top-info="${iTop + 1}" aria-label="Classé ${iTop + 1}e au Top 100 DJ Mag 2026"><small>TOP</small><b>${iTop + 1}</b></button>` : '';
+    return `<div class="fp fp-${tier}"><div class="fp-cover"${img ? ` style="--fp-img:url('${img}')"` : ''}><i class="fp-lasers"></i></div>
+      <div class="fp-tete"><span class="fp-av">${avatarDj(nom, 'fp-photo')}${medTop}</span>
         <div class="fp-id"><div class="fp-nom">${esc(nom)}</div><div class="fp-sous">${sous}</div></div>
         ${boutonCasque(nom)}</div>
       <div class="fp-corps">
@@ -2207,6 +2209,67 @@
     return h + `<p class="aide">Agenda réel relevé le ${new Date(AG_DXB.maj + 'T12:00').getDate()} ${MOIS[new Date(AG_DXB.maj + 'T12:00').getMonth()]} sur Platinumlist et Resident Advisor. Vérifie toujours sur la page billets.</p>`;
   }
 
+  // Bandeau d'actualité des pages saison (Ibiza, Dubaï, Miami…) : sets en cours, line-ups confirmés, DJ déclarés, spots, soirées du jour
+  function filDest() {
+    const d = DEST[state.dest]; if (!d || d.local) return '';
+    const dur = (m) => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min';
+    const item = (k, tag, attr, nom, l1, l2) => { const vis = k === 'spot' ? '' : visFil(nom); return `<button class="fil-item k-${k}${vis ? ' a-vis' : ''}" ${attr}>${vis}<span class="fil-l1"><em class="fil-tag ${k}">${tag}</em><b>${esc(nom)}</b>${l1 ? `<span class="fil-t">${l1}</span>` : ''}</span><span class="fil-l2">${l2.filter(Boolean).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button>`; };
+    const xs = [];
+    if (d.id === 'ibiza') {
+      const t = state.t;
+      passages.filter((p) => !p.inconnu && t >= p.d && t < p.f).sort((a, b) => (b.confirmations || 0) - (a.confirmations || 0)).forEach((p) => { const l = lieux[p.lieu], ok = !!p.constate;
+        xs.push(item(ok ? 'live' : 'decl', ok ? 'Live' : 'Line-up', `data-lieu="${l.id}"`, p.dj, 'encore ' + dur(p.f - t), [[esc(l.nom) + (p.salle ? ' · ' + esc(p.salle) : '')], ok ? ['confirmé par ' + (p.confirmations || 1) + ' Banger' + ((p.confirmations || 1) > 1 ? 's' : '') + ' à ' + p.constate, 'fil-ok'] : ['line-up annoncé, pas encore confirmé', 'fil-att']])); });
+      passages.filter((p) => !p.inconnu && p.d > t && p.d - t <= 120).sort((a, b) => a.d - b.d).slice(0, 6).forEach((p) => { const l = lieux[p.lieu];
+        xs.push(item('decl', 'Bientôt', `data-lieu="${l.id}"`, p.dj, 'à ' + p.debut, [[esc(l.nom) + (p.salle ? ' · ' + esc(p.salle) : '')], ['dans ' + dur(p.d - t)]])); });
+    }
+    declsVisibles().forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}, ok = declConfirmee(x), m = Math.round((x.fin - Date.now()) / 60000);
+      xs.push(item(ok ? 'live' : 'decl', ok ? 'Live' : 'Déclaré', `data-dj-pro="${esc(dj.nom)}"`, dj.nom, m > 0 ? 'encore ' + dur(m) : 'se termine', [[esc(l.nom || 'Spot')], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']])); });
+    spotsVisibles().filter(spotPublic).forEach((sp) => { const n = sp.note || 0, c = sp.conf || 0, v = n >= 4 && c >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || c >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
+      xs.push(item('spot', 'Spot', `data-spot-voir="${sp.id}"`, sp.nom || TYPES_SPOT[sp.type] || 'Spot', `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, [[esc(sp.dj || 'DJ inconnu')], ['signalé à ' + hm(sp.t || sp.maj) + ' par @' + esc(sp.par || 'un Banger')], [c + ' confirment']])); });
+    const auj = isoAuj();
+    if (d.id === 'dubai') soireesDubai().filter((r) => r.date === auj).forEach((r) => { const dj = (r.djs || '').split(/,| b2b /i)[0].trim();
+      xs.push(item('decl', 'Ce soir', `data-dj-pro="${esc(dj || r.titre)}"`, dj || r.titre, r.heure ? 'à ' + esc(r.heure) : '', [[esc(r.nomLieu)], [esc(r.titre)], ['line-up annoncé', 'fil-att']])); });
+    // Agendas du Top 100 : les DJ qui passent dans cette destination dans les 7 jours
+    const villes = { dubai: ['dubai', 'dubaï'], miami: ['miami', 'miami beach'], mykonos: ['mykonos', 'mýkonos'], tulum: ['tulum'], ibiza: ['ibiza', 'sant antoni de portmany', 'sant josep de sa talaia', 'eivissa'] }[d.id] || [];
+    const fin7 = iso(new Date(Date.now() + 7 * 86400000));
+    Object.entries(window.AGENDA_DJS || {}).forEach(([nom, o]) => (o.avenir || []).forEach((r) => { if (r[0] >= auj && r[0] <= fin7 && villes.includes(sansAccent(String(r[3] || '')).toLowerCase())) {
+      const j = Math.round((new Date(r[0] + 'T12:00') - new Date(auj + 'T12:00')) / 86400000);
+      xs.push(item('decl', j === 0 ? 'Ce soir' : 'Cette semaine', `data-dj-pro="${esc(nom)}"`, nom, j === 0 ? (r[7] ? 'à ' + esc(r[7]) : 'ce soir') : j === 1 ? 'demain' : 'dans ' + j + ' jours', [[esc(r[2])], [r[5] && r[5] !== r[2] ? esc(r[5]) : ''], ['date annoncée par le DJ', 'fil-att']])); } }));
+    if (!xs.length) return '';
+    const lot = xs.slice(0, 18), sep = '<span class="fil-sep" aria-hidden="true"></span>';
+    return `<div class="fil-infos fil-dest" aria-label="Fil d'actualité ${esc(d.nom)}"><div class="fil-fenetre"><div class="fil-piste">${lot.join(sep)}${sep}<span class="fil-copie" aria-hidden="true">${lot.join(sep)}${sep}</span></div></div></div>`;
+  }
+
+  // Mini-carte des pages saison, comme celle de l'accueil : DJ en live, déclarés, spots et clubs, avec l'encart au doigt
+  function miniCarteDest(d) {
+    const c = d.centre, kmC = (la, lo) => la == null ? 99 : distKm(c, [la, lo]);
+    const fK = (x) => x < 1 ? '< 1 km du centre' : Math.round(x) + ' km du centre';
+    const DJ_SVG = (col) => `<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="17" r="8" fill="#0A0D16"/><path d="M22 17a10 10 0 0 1 20 0" fill="none" stroke="#0A0D16" stroke-width="3"/><path d="M20 40c2-9 7-13 12-13s10 4 12 13" fill="#0A0D16"/><rect x="6" y="40" width="52" height="16" rx="3" fill="#0A0D16"/><circle cx="20" cy="48" r="5.5" fill="${col}"/><circle cx="44" cy="48" r="5.5" fill="${col}"/></svg>`;
+    const SPOT_SVG = `<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6c-10 0-18 8-18 18 0 13 18 32 18 32s18-19 18-32c0-10-8-18-18-18z" fill="#0A0D16"/><path d="M24 26l9-6v14l-9-6z" fill="#B58CFF"/></svg>`;
+    const CLUB_SVG = `<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="#0A0D16"/><circle cx="32" cy="32" r="14" fill="none" stroke="#3DD6C6" stroke-width="1.5" opacity=".6"/><circle cx="32" cy="32" r="3" fill="#3DD6C6"/></svg>`;
+    const enc = (o) => ({ k: o.k, attr: o.attr, html: `<span class="enc-art enc-${o.k}">${o.dessin}</span><span class="enc-txt"><span class="enc-etat enc-${o.k}"><i></i>${o.etat}</span><b>${esc(o.t)}</b><span class="enc-heure">${o.heure}</span><small>${o.s}</small>${o.plus || ''}<span class="enc-voir">Voir la fiche →</span></span>` });
+    const decls = [], infosD = [];
+    if (d.id === 'ibiza') { const t = state.t;
+      passages.filter((p) => !p.inconnu && t >= p.d && t < p.f).forEach((p) => { const l = lieux[p.lieu]; if (!l || l.lat == null) return; const conf = p.constate ? (p.confirmations || 2) : 0;
+        decls.push({ x: { conf }, l });
+        infosD.push(enc({ k: conf >= 2 ? 'live' : 'decl', attr: `data-lieu="${l.id}"`, dessin: DJ_SVG(conf >= 2 ? '#F2C53A' : '#FF8A3D'), etat: conf >= 2 ? 'DJ en live' : 'Line-up annoncé', heure: `${p.debut} → ${p.fin}`, t: p.dj, s: `${esc(l.nom)}${p.salle ? ' · ' + esc(p.salle) : ''}`, plus: `<small>${conf >= 2 ? conf + ' Bangers confirment' : 'Pas encore confirmé par les Bangers'}</small>` })); }); }
+    declsVisibles().forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}, ok = declConfirmee(x); decls.push({ x, l });
+      infosD.push(enc({ k: ok ? 'live' : 'decl', attr: `data-dj-pro="${esc(dj.nom)}"`, dessin: DJ_SVG(ok ? '#F2C53A' : '#FF8A3D'), etat: ok ? 'DJ en live' : 'DJ déclaré', heure: `${hm(x.debut)} → ${hm(x.fin)}`, t: dj.nom, s: esc(l.nom || 'Spot'), plus: `<small>${ok ? x.conf + ' Bangers confirment' : 'Pas encore confirmé par les Bangers'}</small>` })); });
+    const spots = spotsVisibles().filter((s) => spotPublic(s) && s.lat != null);
+    const infosS = spots.map((sp) => { const n = sp.note || 0, cf = sp.conf || 0, v = n >= 4 && cf >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || cf >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
+      return enc({ k: 'spot', attr: `data-spot-voir="${sp.id}"`, dessin: SPOT_SVG, etat: 'Spot signalé', heure: `Signalé à ${hm(sp.t || sp.maj)}`, t: sp.nom || TYPES_SPOT[sp.type] || 'Spot', s: `${esc(sp.dj || 'DJ inconnu')} · ${fK(kmC(sp.lat, sp.lng))}`, plus: `<small>par <b>@${esc(sp.par || 'un Banger')}</b> · ${cf} confirment</small><span class="enc-vaut ${v[1]}">${v[0]}</span>` }); });
+    const ls = (d.id === 'ibiza' ? D.lieux : Object.values(LIEUX_DEST).filter((l) => l.dest === d.id)).filter((l) => l.lat != null);
+    const enJeu = new Set(decls.map((o) => o.l && o.l.id));
+    const coin = ls.filter((l) => !enJeu.has(l.id)).map((l) => ({ l, d: kmC(l.lat, l.lng) })).sort((x, y) => x.d - y.d);
+    const infosC = coin.slice(0, 14).map(({ l, d: dd }) => enc({ k: 'club', attr: `data-lieu="${l.id}"`, dessin: CLUB_SVG, etat: l.type === 'plage' ? 'Beach club' : 'Club', heure: 'DJ à confirmer', t: l.nom, s: `${esc(l.zone || '')}${l.zone ? ' · ' : ''}${fK(dd)}` }));
+    let html = carteMiniMap(c, decls, spots, coin, infosD.concat(infosS, infosC));
+    html = html.replace(/<circle class="mm-pulse" cx="[\d.]+" cy="[\d.]+" r="12" fill="#4DA3FF" opacity=".3"\/><circle cx="[\d.]+" cy="[\d.]+" r="6.5" fill="#4DA3FF" stroke="#fff" stroke-width="2"\/>/, '')
+      .replace(/<span class="acc-badge"><i><\/i>\d+ DJ autour<\/span>/, `<span class="acc-badge"><i></i>${decls.length + spots.length} DJ en ce moment</span>`);
+    const lg = (k, nom, info) => `<button type="button" class="lg-item" data-lg-info="${info}"><i class="lg ${k}"></i>${nom}</button>`;
+    const legende = `<div class="aut-legende" aria-label="Légende de la carte">${lg('live', 'Live', 'DJ en live, confirmé par les Bangers')}${lg('decl', 'Déclaré', 'DJ annoncé ou déclaré, pas encore confirmé')}${lg('spot', 'Spot', 'Spot signalé par un Banger : bar, plage, bateau…')}${lg('club', 'Club', 'Club ou beach club, DJ à confirmer')}<span class="lg-bulle" aria-live="polite"></span></div>`;
+    return `<div class="aut-carte dest-mini">${html}</div>${legende}`;
+  }
+
   function renderDestLive() {
     const d = DEST[state.dest], m = MOIS_NOW, n = d.mois[m];
     if (d.local) {
@@ -2220,9 +2283,9 @@
     }
     const FOND_DEST = { ibiza: 'ibiza-carte.jpg?v=3', mykonos: 'mykonos-carte.jpg?v=3', tulum: 'tulum-carte.jpg?v=3', miami: 'miami-carte.jpg?v=3', dubai: 'dubai-carte.jpg?v=3' };
     let h = `${FOND_DEST[d.id] ? `<div class="dest-banniere" style="background-image:url('${FOND_DEST[d.id]}')"></div>` : ''}<div class="dest-tete"><div><h2>${esc(d.nom)}</h2><small>${esc(d.pays)} · ${T('saison')} : ${esc(d.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(d.tz) })} · ${decalage(d.tz)}</small></div>${pastilleMois(n)}</div>
-      <p class="conseil"><b>${Maj(moisNom(m))}</b> : ${esc(d.notes[m] || (n < 0 ? 'hors saison.' : labelMois(n) + '.'))}${n < 0 ? ` ${T('reprise', { m: '<b>' + reprise(d, m) + '</b>' })}.` : ''}</p>
-      ${barreAnnee(d)}`;
-    h += (CARTES_ILLUS[d.id] ? carteIbizaGrande(d.id) : carteDest(d)) + carteAgendaDest(d);
+      ${barreAnnee(d)}${miniCarteDest(d)}${filDest()}
+      <p class="conseil"><b>${Maj(moisNom(m))}</b> : ${esc(d.notes[m] || (n < 0 ? 'hors saison.' : labelMois(n) + '.'))}${n < 0 ? ` ${T('reprise', { m: '<b>' + reprise(d, m) + '</b>' })}.` : ''}</p>`;
+    h += (CARTES_ILLUS[d.id] ? carteIbizaGrande(d.id) : '') + carteAgendaDest(d);
     if (d.id === 'dubai') h += blocAgendaDubai();
     h += blocDecls() + blocSpots();
     const coulNiv = (k) => k < 0 ? '#5A6378' : ['#3FBF7F', '#F59E2E', '#E5484D', '#8A5CFF'][k];
@@ -2888,14 +2951,16 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   function marqueursDecls() {
     const groupes = {};
     declsVisibles().forEach((x) => { const l = lieuDe(x), d = djDe(x); if (!l || l.lat == null) return; const k = l.lat.toFixed(4) + ',' + l.lng.toFixed(4);
-      (groupes[k] = groupes[k] || { l, ok: false, html: [] });
+      (groupes[k] = groupes[k] || { l, ok: false, html: [], pin: '' }); groupes[k].pin = groupes[k].pin || pinDj(d);
       const ok = declConfirmee(x); groupes[k].ok = groupes[k].ok || ok;
       groupes[k].html.push(entreeBulle({ k: ok ? 'live' : 'decl', lieu: esc(l.nom), etat: ok ? 'En live' : 'Déclaré', tete: avatarDj(d.nom, 'pb-av'), t: d.nom,
         heure: `${hm(x.debut)} → ${hm(x.fin)}${x.style ? ' · ' + esc(x.style) : ''}`,
         bang: ok ? `${tetesBangers(x.conf, x.id)}<span><b>${x.conf} Bangers</b> y sont et confirment</span>` : '<span>Le DJ s\'est déclaré ici · <b>bangue</b> si tu y es</span>',
         actions: `<div class="pb-actions"><button class="pb-btn" data-decl-ok="${x.id}">J'y suis</button><button class="pb-btn plein" data-dj-pro="${esc(d.nom)}">Fiche du DJ</button></div>` })); });
     Object.values(groupes).forEach((g) => {
-      L.marker([g.l.lat, g.l.lng], { icon: L.divIcon({ className: 'decl-pin' + (g.ok ? ' ok' : '') + (g.html.length > 1 ? ' plusieurs' : ''), iconSize: [30, 30], iconAnchor: [15, 15], html: g.html.length > 1 ? 'DJ<sup>' + g.html.length + '</sup>' : 'DJ' }), zIndexOffset: 600 })
+      const icone = g.pin ? L.divIcon({ className: 'pin-dj' + (g.ok ? ' ok' : ''), iconSize: [52, 56], iconAnchor: [26, 55], html: `<img src="${g.pin}" alt="">${g.html.length > 1 ? '<sup>' + g.html.length + '</sup>' : ''}` })
+        : L.divIcon({ className: 'decl-pin' + (g.ok ? ' ok' : '') + (g.html.length > 1 ? ' plusieurs' : ''), iconSize: [30, 30], iconAnchor: [15, 15], html: g.html.length > 1 ? 'DJ<sup>' + g.html.length + '</sup>' : 'DJ' });
+      L.marker([g.l.lat, g.l.lng], { icon: icone, zIndexOffset: 600 })
         .bindPopup(bullesEmpilees(g.html), OPT_BULLE).addTo(layer);
     });
   }
@@ -3106,6 +3171,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       <p class="erreur" id="err-djnom" hidden>Choisis un nom d'artiste</p>
       <div class="champ"><span>Tes styles <small class="aide">(fais défiler)</small></span>${cartesGenres('styles', [])}</div>
       <label class="champ"><span>Ville, zone d'activité</span><input class="search" name="ville" maxlength="30" value="${esc(DEST[state.dest].nom)}"></label>
+      <div class="champ"><span>Ton avatar <small class="aide">ta tête sur la carte, ta fiche et le bandeau</small></span><div class="choix-pins">${PINS_TOUS.map((p, i) => `<label class="choix-pin${i === 0 ? ' on' : ''}"><input type="radio" name="pin" value="${p}" ${i === 0 ? 'checked' : ''}><img src="pins-dj/${p}.png" alt="" loading="lazy"></label>`).join('')}</div></div>
       <div class="champ"><span>Ta formule</span>
         ${Object.entries(FORMULES_DJ).map(([k, f], i) => `<label class="formule ${i === 0 ? 'on' : ''}"><input type="radio" name="formule" value="${k}" ${i === 0 ? 'checked' : ''}><span><b>${f.nom} · ${f.prix}</b><small>${f.aide}</small></span></label>`).join('')}
         <small class="aide">Sans engagement.</small></div>
@@ -3161,7 +3227,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       e.preventDefault();
       const f = new FormData(e.target), nom = String(f.get('nom') || '').trim();
       if (nom.length < 2) { $('#err-djnom').hidden = false; return; }
-      MON_DJ = { id: 'moi', formule: f.get('formule') || 'live', liens: {}, annonces: [], nom, styles: f.getAll('styles'), ville: String(f.get('ville') || '').trim(), confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 }, mien: true };
+      MON_DJ = { id: 'moi', formule: f.get('formule') || 'live', liens: {}, annonces: [], nom, styles: f.getAll('styles'), ville: String(f.get('ville') || '').trim(), confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 }, mien: true, pin: String(f.get('pin') || '') };
       store.set('djPro', MON_DJ); state.vueDj = null; state.nomRevendique = null; renderProfil(); toast('Profil DJ créé · formule ' + formuleDe(MON_DJ).nom + ' (démo)');
     }
     if (e.target.id === 'form-liens') {
@@ -3221,6 +3287,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (e.target.closest('[data-djpro-upgrade]') && MON_DJ) { MON_DJ.formule = 'pro'; MON_DJ.liens = MON_DJ.liens || {}; MON_DJ.annonces = MON_DJ.annonces || []; store.set('djPro', MON_DJ); renderProfil(); toast('Tu es passé en DJ Pro (démo)'); return; }
     const sup = e.target.closest('[data-annonce-suppr]');
     if (sup && MON_DJ) { const as = annoncesAVenir(MON_DJ), a = as[+sup.dataset.annonceSuppr]; MON_DJ.annonces = MON_DJ.annonces.filter((x) => x !== a); store.set('djPro', MON_DJ); renderProfil(); return; }
+    const lp = e.target.closest('#form-djpro label.choix-pin');
+    if (lp) { setTimeout(() => document.querySelectorAll('#form-djpro label.choix-pin').forEach((l) => l.classList.toggle('on', l.querySelector('input').checked)), 0); }
     const lab2 = e.target.closest('#form-djpro label.formule');
     if (lab2) { setTimeout(() => document.querySelectorAll('#form-djpro label.formule').forEach((l) => l.classList.toggle('on', l.querySelector('input').checked)), 0); }
     if (e.target.closest('[data-djpro-annuler]')) { state.vueDj = null; renderProfil(); return; }
@@ -3297,8 +3365,20 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     return `url('avatars-dj-planches/p${e[0] + 1}.jpg') ${x.toFixed(3)}% ${y.toFixed(3)}% / 1000% 1000% no-repeat`; };
   // Fond CSS de l'avatar illustré d'un DJ (fichier seul ou case de planche), '' s'il n'en a pas
   const fondAvatarDj = (nom) => avatarIllusDj(nom) ? `url('${avatarIllusDj(nom)}') center / cover no-repeat` : fondPlancheDj(nom);
+  // Épingles GPS illustrées des DJ Pro (visuels fournis par Antonio) : la même tête sur la carte et sur la fiche
+  const PINS_DJ = new Set(['nina-sol', 'lia-k', 'lena-brandt', 'eleni-vos', 'zoe-akin', 'marco-vela', 'kenzo-b', 'tomas-reyes', 'ren-okada', 'rafa-lume', 'thabo-nkosi', 'mc-nova', 'kai-rivera', 'dax-volt']);
+  // Le DJ Pro choisit son avatar à la création de son profil (pro.pin) ; sinon celui attribué en démo
+  const PINS_TOUS = [...PINS_DJ, 'x-libre-1', 'x-libre-2', 'x-libre-3', 'x-libre-4', 'x-libre-5', 'x-trio'];
+  const cleePin = (pro) => !pro ? '' : pro.pin && PINS_TOUS.includes(pro.pin) ? pro.pin : PINS_DJ.has(pro.id) ? pro.id : '';
+  const pinDj = (pro) => cleePin(pro) ? 'pins-dj/' + cleePin(pro) + '.png' : '';
+  // Visuel du DJ dans le bandeau qui défile : son épingle s'il est DJ Pro, sinon sa tête en rond
+  // Dans le bandeau : la photo de sa fiche, avec son casque et le nombre de Bangers qui le banguent
+  const visFil = (nom) => `<span class="fil-vis fil-dj"><span class="fil-rond">${avatarDj(nom)}</span><span class="fil-casque${LIKES_DJ[sansAccent(nom)] ? ' on' : ''}" data-fil-casque="${esc(nom)}" role="button" aria-label="Banguer ${esc(nom)}"><img src="banger-casque.png" alt=""><b>${fmtLikes(nbLikes(nom))}</b></span></span>`;
+  const avPinDj = (pro) => cleePin(pro) ? 'pins-dj/' + cleePin(pro) + '-av.jpg' : '';
   function avatarDj(nom, cls) {
     const ill = avatarIllusDj(nom);
+    const apn = avPinDj(djProParNom(nom));
+    if (!ill && apn) return `<img class="avatar av-dj-illus ${cls || ''}" src="${apn}" alt="${esc(nom)}" loading="lazy">`;
     if (ill) return `<img class="avatar av-dj-illus ${cls || ''}" src="${ill}" alt="${esc(nom)}" loading="lazy">`;
     const fpl = fondPlancheDj(nom);
     if (fpl) return `<span class="avatar av-dj-illus ${cls || ''}" role="img" aria-label="${esc(nom)}" style="background:${fpl}"></span>`;
@@ -3582,6 +3662,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     bulle.style.left = (px < r.width / 2 ? Math.min(r.width - w - 6, px + 18) : Math.max(6, px - w - 18)) + 'px';
     bulle.style.top = Math.max(6, Math.min(r.height - h - 6, py - h / 2)) + 'px';
     bulle.dataset.t = Date.now();
+    { const inf = (window.__MM_INFOS || [])[+best.dataset.i]; if (inf && window.__filCibler) window.__filCibler(inf.attr); }
     box.querySelectorAll('.mm-pt.on').forEach((c) => c.classList.remove('on')); best.classList.add('on');
   }
   document.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') bulleMiniCarte(e.clientX, e.clientY); });
@@ -3591,6 +3672,58 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const bu = e.target.closest('.mm-bulle'); if (bu && Date.now() - (+bu.dataset.t || 0) < 450) return; if (bu) { const m = (bu.dataset.ouvre || '').match(/data-([a-z-]+)="([^"]*)"/); if (m) { const f = document.createElement('button'); f.setAttribute('data-' + m[1], m[2].replace(/&quot;/g, '"').replace(/&amp;/g, '&')); f.hidden = true; document.body.appendChild(f); f.click(); f.remove(); } return; }
     if (e.target.closest('[data-mm]') && !e.target.closest('[data-tab]')) bulleMiniCarte(e.clientX, e.clientY, true);
   });
+
+  // Bandeau d'infos qui défile : s'arrête quand on passe dessus, un tap l'arrête (un 2e tap sur l'info arrêtée ouvre sa fiche), un double tap passe à l'info suivante
+  const FIL = { x: 0, pause: false, survol: false, cible: null, dernier: 0, tapT: 0, tapTimer: null };
+  function filPiste() { const p = [...document.querySelectorAll('.fil-piste')].find((x) => x.offsetParent) || null; if (p !== FIL.el) { FIL.el = p; FIL.x = 0; FIL.cible = null; FIL.pause = false; } return p; }
+  function filItemsVus(p) { return [...p.querySelectorAll('.fil-item')]; }
+  function filTick(ts) {
+    const dt = FIL.dernier ? Math.min(64, ts - FIL.dernier) : 16; FIL.dernier = ts;
+    const p = filPiste();
+    if (p && p.offsetParent) {
+      const moitie = p.scrollWidth / 2;
+      if (FIL.cible != null) { const d = FIL.cible - FIL.x; FIL.x += Math.abs(d) < 1 ? d : d * Math.min(1, dt / 90); if (Math.abs(d) < 1) FIL.cible = null; }
+      else if (FIL.bloque && Date.now() > FIL.bloque) { FIL.bloque = 0; p.querySelectorAll('.fil-item.cible').forEach((x) => x.classList.remove('cible')); }
+      else if (!FIL.bloque) FIL.x += dt * 0.045;
+      if (moitie > 0 && FIL.x >= moitie) { FIL.x -= moitie; if (FIL.cible != null) FIL.cible -= moitie; }
+      p.style.transform = `translateX(${-FIL.x}px)`;
+    }
+    requestAnimationFrame(filTick);
+  }
+  requestAnimationFrame(filTick);
+  // Le bandeau défile tout le temps. Seul le doigt sur un point de la mini-carte le bloque sur l'info de ce lieu,
+  // 5 secondes, ou jusqu'à un petit glissé de gauche à droite sur le bandeau
+  function filCibler(attr) {
+    const p = filPiste(); if (!p || !attr) return;
+    const m = attr.match(/data-([a-z-]+)="([^"]*)"/); if (!m) return;
+    const v = m[2].replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+    const its = filItemsVus(p).filter((it) => it.getAttribute('data-' + m[1]) === v); if (!its.length) return;
+    const moitie = p.scrollWidth / 2, xs = its.map((it) => it.offsetLeft - 8).filter((l) => l < moitie + 1);
+    const cible = xs.length ? xs[0] : its[0].offsetLeft - 8;
+    p.querySelectorAll('.fil-item.cible').forEach((x) => x.classList.remove('cible')); its.forEach((it) => it.classList.add('cible'));
+    FIL.cible = cible; FIL.bloque = Date.now() + 5000;
+  }
+  window.__filCibler = filCibler;
+  let filX0 = null;
+  document.addEventListener('touchstart', (e) => { filX0 = e.target.closest('.fil-infos') && e.touches[0] ? e.touches[0].clientX : null; }, { passive: true });
+  document.addEventListener('touchmove', (e) => { if (filX0 == null || !e.touches[0]) return; if (e.touches[0].clientX - filX0 > 30 && FIL.bloque) { FIL.bloque = 0; document.querySelectorAll('.fil-item.cible').forEach((x) => x.classList.remove('cible')); filX0 = null; } }, { passive: true });
+  document.addEventListener('click', (e) => {
+    const zone = e.target.closest('.fil-infos'); if (!zone) return;
+    e.stopImmediatePropagation(); e.preventDefault();
+    const it = e.target.closest('.fil-item');
+    // Toucher le casque : on bangue le DJ tout de suite, sans ouvrir sa fiche
+    const cq = e.target.closest('[data-fil-casque]');
+    if (cq) { const nom = cq.dataset.filCasque, k = sansAccent(nom), on = !LIKES_DJ[k];
+      if (on) LIKES_DJ[k] = Date.now(); else delete LIKES_DJ[k]; store.set('likesDj', LIKES_DJ);
+      document.querySelectorAll('[data-fil-casque]').forEach((c) => { if (c.dataset.filCasque !== nom) return; c.classList.toggle('on', on); c.querySelector('b').textContent = fmtLikes(nbLikes(nom)); if (on) { c.classList.remove('tourne'); void c.offsetWidth; c.classList.add('tourne'); } });
+      if (on) { sonBanger(); if (navigator.vibrate) navigator.vibrate(30); toastFil2('Tu bangues ' + nom); } else toastFil2('Tu ne bangues plus ' + nom);
+      return; }
+    // Toucher une info ouvre sa fiche ; le bandeau, lui, ne s'arrête pas
+    const ouvre = it && [...it.attributes].find((x) => /^data-(lieu|dj-pro|spot-voir)$/.test(x.name));
+    if (ouvre) { const f = document.createElement('button'); f.setAttribute(ouvre.name, ouvre.value); f.hidden = true; document.body.appendChild(f); f.click(); f.remove(); }
+  }, true);
+  const toastFil2 = (m) => toast(m);
+  let filToastT = 0; const toastFil = (m) => { if (Date.now() - filToastT > 4000) { filToastT = Date.now(); toast(m); } };
 
   function renderAccueil() {
     const t = state.t, auj = iso(new Date());
@@ -3624,8 +3757,16 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       .concat(coin.slice(0, 14).map(({ l, d }) => encart({ k: 'club', attr: `data-lieu="${l.id}"`, dessin: DESSIN_CLUB, etat: 'Club du coin', heure: 'DJ à confirmer', t: l.nom, s: `${esc((l.style || 'Club').split(/[,·:]/)[0].trim())} · ${fmtKm(d)}` })));
     const lgItem = (k, nom, info) => `<button type="button" class="lg-item" data-lg-info="${info}"><i class="lg ${k}"></i>${nom}</button>`;
     const legende = `<div class="aut-legende" aria-label="Légende de la carte">${lgItem('moi', 'Toi', 'Ta position')}${lgItem('live', 'Live', 'DJ en live, confirmé par les Bangers')}${lgItem('decl', 'Déclaré', 'DJ déclaré, pas encore confirmé')}${lgItem('spot', 'Spot', 'Spot signalé par un Banger : bar, plage, bateau…')}${lgItem('club', 'Club', 'Club du coin, DJ à confirmer')}<span class="lg-bulle" aria-live="polite"></span></div>`;
+    // Fil d'actualité qui défile sous la carte : les DJ qui jouent (où, à combien de km, combien de temps il reste, confirmés ou non) puis les spots signalés
+    const resteJeu = (fin) => { const m = Math.round((fin - Date.now()) / 60000); if (m <= 0) return 'se termine'; return 'encore ' + (m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min'); };
+    const avant = (deb) => { const m = Math.round((deb - Date.now()) / 60000); return m > 0 ? 'commence dans ' + (m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min') : null; };
+    const filItems = decls.filter((o) => o.l).map(({ x, l }) => ({ x, l, dist: kmDe(l.lat, l.lng) })).sort((a, b) => a.dist - b.dist).map(({ x, l, dist }) => { const d = djDe(x), k = declConfirmee(x) ? 'live' : 'decl';
+        return `<button class="fil-item k-${k} a-vis" ${x.lieu ? `data-lieu="${x.lieu}"` : `data-dj-pro="${esc(d.nom)}"`}>${visFil(d.nom)}<span class="fil-l1"><em class="fil-tag ${k}">${k === 'live' ? 'Live' : 'Déclaré'}</em><b>${esc(d.nom)}</b><span class="fil-t">${avant(x.debut) || resteJeu(x.fin)}</span></span><span class="fil-l2"><span>${esc(l.nom)} · ${fmtKm(dist)}</span><span class="${k === 'live' ? 'fil-ok' : 'fil-att'}">${k === 'live' ? x.conf + ' Banger' + (x.conf > 1 ? 's' : '') + ' confirment' : 'pas encore confirmé'}</span></span></button>`; })
+      .concat(spotsP.map((sp) => ({ sp, dist: kmDe(sp.lat, sp.lng) })).sort((a, b) => a.dist - b.dist).map(({ sp, dist }) => { const v = vautLeCoup(sp);
+        return `<button class="fil-item k-spot" data-spot-voir="${sp.id}"><span class="fil-l1"><em class="fil-tag spot">Spot</em><b>${esc(sp.nom || TYPES_SPOT[sp.type])}</b><span class="fil-vaut v-${v[1]}">${v[0]}</span></span><span class="fil-l2"><span>${esc(sp.dj || 'DJ inconnu')} · ${fmtKm(dist)}</span><span>signalé à ${hm(sp.t)} par @${esc(sp.par || 'un Banger')}</span><span>${sp.conf} confirment</span></span></button>`; }));
+    const filInfos = filItems.length ? `<div class="fil-infos" aria-label="Fil d'actualité autour de moi"><div class="fil-fenetre"><div class="fil-piste">${filItems.join('<span class="fil-sep" aria-hidden="true"></span>')}<span class="fil-sep" aria-hidden="true"></span><span class="fil-copie" aria-hidden="true">${filItems.join('<span class="fil-sep"></span>')}<span class="fil-sep"></span></span></div></div></div>` : '';
     h += `<section class="acc-rub"><div class="acc-tete"><div><h2>En direct autour de moi</h2><small>${esc(state.zoneGeo.nom)}${state.zoneGeo.approx ? ' · position de démo' : ''} · passe le doigt sur un point</small></div></div>
-      <div class="aut-carte">${carteMiniMap(centre0, decls, spotsP, coin, infos)}</div>${legende}</section>`;
+      <div class="aut-carte">${carteMiniMap(centre0, decls, spotsP, coin, infos)}</div>${legende}${filInfos}</section>`;
     // 1 bis. Agenda autour de moi : de petites cartes par type de sortie, avec le nombre de dates dans le rayon de l'Agenda
     const rayonAg = RAYONS[state.rayonIdx], dansRayon = soireesAvecKm().filter((x) => x.km <= rayonAg);
     const nbType = (k) => k === 'tout' ? dansRayon.length : dansRayon.filter((x) => (x.type || 'club') === k).length;
@@ -3697,13 +3838,13 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // Dessinée en SVG pour s'afficher partout, même sans fond de carte ; un toucher ouvre la vraie carte.
   function carteMiniMap(c, decls, spots, coin, infos) {
     const W = 420, H = 165, cx = W / 2, cy = H / 2;
-    const pts = decls.filter((o) => o.l).map((o, i) => { const t = declConfirmee(o.x) ? 'live' : 'decl'; return o.l.lat != null ? { la: o.l.lat, lo: o.l.lng, t } : { la: c[0] + 0.004 + i * 0.002, lo: c[1] + 0.006, t }; })
+    const pts = decls.filter((o) => o.l).map((o, i) => { const t = declConfirmee(o.x) ? 'live' : 'decl', pin = o.x && o.x.dj ? pinDj(djDe(o.x)) : ''; return o.l.lat != null ? { la: o.l.lat, lo: o.l.lng, t, pin } : { la: c[0] + 0.004 + i * 0.002, lo: c[1] + 0.006, t, pin }; })
       .concat(spots.map((sp) => ({ la: sp.lat, lo: sp.lng, t: 'spot' })))
       .concat(coin.slice(0, 14).map((o) => ({ la: o.l.lat, lo: o.l.lng, t: 'club' })));
     const xy = (p) => ({ x: (p.lo - c[1]) * Math.cos(c[0] * Math.PI / 180), y: -(p.la - c[0]) });
-    const raw = pts.map((p) => ({ ...xy(p), t: p.t })), max = Math.max(0.004, ...raw.map((p) => Math.hypot(p.x, p.y)));
+    const raw = pts.map((p) => ({ ...xy(p), t: p.t, pin: p.pin })), max = Math.max(0.004, ...raw.map((p) => Math.hypot(p.x, p.y)));
     // échelle en racine carrée : les lieux tout proches s'écartent du centre, les lointains restent dans le cadre
-    const pos = raw.map((p) => { const d = Math.hypot(p.x, p.y) || 1e-9, r = 18 + 58 * Math.sqrt(d / max); return { x: cx + p.x / d * r * 1.6, y: cy + p.y / d * r, t: p.t }; });
+    const pos = raw.map((p) => { const d = Math.hypot(p.x, p.y) || 1e-9, r = 18 + 58 * Math.sqrt(d / max); return { x: cx + p.x / d * r * 1.6, y: cy + p.y / d * r, t: p.t, pin: p.pin }; });
     let rues = ''; for (let i = 0; i < 9; i++) { const a = (i * 47 + 13) % 180, r = a * Math.PI / 180, dx = Math.cos(r) * 200, dy = Math.sin(r) * 200, ox = ((i * 37) % 120) - 60, oy = ((i * 53) % 80) - 40;
       rues += `<line x1="${cx + ox - dx}" y1="${cy + oy - dy}" x2="${cx + ox + dx}" y2="${cy + oy + dy}" stroke="#2A3A63" stroke-width="${i % 3 ? 1 : 2.4}"/>`; }
     const nDj = decls.length + spots.length;
@@ -3712,7 +3853,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       <path d="M0 ${H * .78} C ${W * .3} ${H * .7}, ${W * .55} ${H * .95}, ${W} ${H * .82} L ${W} ${H} L 0 ${H} Z" fill="#0A2240" opacity=".9"/>
       ${[28, 50, 72].map((r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#3DD6C6" stroke-opacity=".18" stroke-dasharray="3 4"/>`).join('')}
       ${pos.map((p, i) => ({ p, i })).filter((o) => o.p.t === 'club').map(({ p, i }) => `<circle class="mm-pt" data-i="${i}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.6" fill="#3DD6C6" stroke="#0C1430" stroke-width="1.2"/>`).join('')}
-      ${pos.map((p, i) => ({ p, i })).filter((o) => o.p.t !== 'club').map(({ p, i }) => { const col = { live: '#F2C53A', decl: '#FF8A3D', spot: '#B58CFF' }[p.t]; return `<circle class="mm-pulse mm-${p.t}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="11" fill="${col}" opacity=".35"/><circle class="mm-pt" data-i="${i}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6" fill="${col}" stroke="#0C1430" stroke-width="1.5"/>`; }).join('')}
+      ${pos.map((p, i) => ({ p, i })).filter((o) => o.p.t !== 'club' && !o.p.pin).map(({ p, i }) => { const col = { live: '#F2C53A', decl: '#FF8A3D', spot: '#B58CFF' }[p.t]; return `<circle class="mm-pulse mm-${p.t}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="11" fill="${col}" opacity=".35"/><circle class="mm-pt" data-i="${i}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6" fill="${col}" stroke="#0C1430" stroke-width="1.5"/>`; }).join('')}
+      ${pos.map((p, i) => ({ p, i })).filter((o) => o.p.pin).map(({ p, i }) => { const col = p.t === 'live' ? '#F2C53A' : '#FF8A3D'; return `<ellipse cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" rx="9" ry="3" fill="${col}" opacity=".55" class="mm-pulse"/><image class="mm-pt mm-pin" data-i="${i}" href="${p.pin}" x="${(p.x - 20).toFixed(1)}" y="${(p.y - 42).toFixed(1)}" width="40" height="43"/>`; }).join('')}
       <circle class="mm-pulse" cx="${cx}" cy="${cy}" r="12" fill="#4DA3FF" opacity=".3"/><circle cx="${cx}" cy="${cy}" r="6.5" fill="#4DA3FF" stroke="#fff" stroke-width="2"/></svg>`;
     window.__MM_INFOS = infos || [];
     return `<div class="acc-carte large acc-minimap" data-mm="1"><span class="acc-art mm-art">${svg}<span class="acc-badge"><i></i>${nDj} DJ autour</span><button class="mm-ouvrir" data-tab="map">Ouvrir la carte</button><span class="mm-bulle" hidden></span></span></div>`;
