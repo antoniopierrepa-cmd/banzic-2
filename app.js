@@ -3899,9 +3899,14 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     // 1 bis. Agenda autour de moi : de petites cartes par type de sortie, avec le nombre de dates dans le rayon de l'Agenda
     const rayonAg = RAYONS[state.rayonIdx], dansRayon = soireesAvecKm().filter((x) => x.km <= rayonAg);
     const nbType = (k) => k === 'tout' ? dansRayon.length : dansRayon.filter((x) => (x.type || 'club') === k).length;
-    const TYPES_AG = [['tout', 'Tout', '✦', '#C9CFDD'], ['club', 'Club', '🪩', '#3D8BFF'], ['festival', 'Festival', '🎪', '#FF8A3D'], ['concert', 'Concert', '🎤', '#F2C53A'], ['bar', 'Bar', '🍸', '#A77BFF'], ['resto', 'Restaurant', '🍽️', '#3DF28A']];
-    h += accRubrique('Agenda autour de moi', `Les dates à moins de ${rayonAg} km · ${esc(state.zoneGeo.nom)}`, TYPES_AG.map(([k, nom, ico, c]) => { const n = ['bar', 'resto'].includes(k) ? -1 : nbType(k);
-      return `<button class="acc-carte petite" data-ag-type="${k}"><span class="acc-art ag-pad${n < 0 ? ' eteint' : ''}" style="--pc:${c}"><i class="ag-led" aria-hidden="true"></i><span class="ag-nom">${nom}</span><span class="ag-nb">${n < 0 ? 'bientôt' : String(n).padStart(2, '0')}</span></span></button>`; }), 'data-ag-type="tout"', 6);
+    const TYPES_AG = [['tout', 'Agenda', '✦', '#C9CFDD'], ['club', 'Club', '🪩', '#3D8BFF'], ['festival', 'Festival', '🎪', '#FF8A3D'], ['concert', 'Concert', '🎤', '#F2C53A'], ['bar', 'Bar', '🍸', '#A77BFF'], ['resto', 'Restaurant', '🍽️', '#3DF28A']];
+    // Agenda autour de moi : la bannière « L'agenda » (visuel fourni par Antonio, textes dans la police de l'appli).
+    // Un appui ouvre l'Agenda, où l'on choisit Club, Festival, Concert…
+    h += `<section class="acc-rub ag-rub"><button class="ag-banniere" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
+        <img src="agenda-banniere.jpg?v=2" alt="" loading="lazy">
+        <span class="ag-txt"><small class="ag-kick">Tes prochaines sorties</small><b class="ag-titre">L'agenda</b><span class="ag-sous">Clubs, concerts &amp; festivals</span>
+          <span class="ag-btn">Voir l'agenda <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="ag-compte">${nbType('tout')} dates à moins de ${rayonAg} km · ${esc(state.zoneGeo.nom)}</span></span></button></section>`;
     // 2. Les saisons
     // En saison d'abord, puis les autres dans l'ordre du compte à rebours (la plus proche en premier)
     const rangOpening = (id) => { const e = etatOpening(id); return !e ? 9e15 : e.avant ? e.ms : -1; };
@@ -3914,8 +3919,13 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const lives = streamsActifs(), genres = [...new Set(lives.map(genreDe))];
     if (state.genreLive && !genres.includes(state.genreLive)) state.genreLive = null;
     const puces = `<div class="genre-puces">${['', ...genres].map((g) => `<button class="genre-puce${(state.genreLive || '') === g ? ' on' : ''}" data-genre-live="${esc(g)}" style="--gc:${g ? coulGenre(g) : '#C9CFDD'}">${g ? esc(g) : 'Tous'}</button>`).join('')}</div>`;
-    h += accRubrique('DJ live dans le monde', 'Touche un style, puis un DJ pour l\'écouter', lives.filter((d) => !state.genreLive || genreDe(d) === state.genreLive).map(carteLecteur), 'id="acc-voir-live"')
-      .replace('<div class="acc-rang">', puces + '<div class="acc-rang">');
+    // Bannière « Les DJ en live » (visuel fourni par Antonio, textes dans la police de l'appli) : un appui ouvre tous les lives disponibles
+    h += `<section class="acc-rub ag-rub"><button class="ag-banniere live-banniere" data-live-tous="1" aria-label="Les DJ en live : écouter un live">
+        <img src="live-banniere.jpg?v=1" alt="" loading="lazy">
+        <span class="ag-txt"><small class="ag-kick lv-kick"><i></i>En direct</small><b class="ag-titre">Les DJ<br>en live</b><span class="ag-sous">Leurs sets, où que tu sois.</span>
+          <span class="ag-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.8v14.4L19 12z" fill="currentColor"/></svg> Écouter un live</span>
+          <span class="ag-compte">${lives.length} DJ en live en ce moment</span></span></button></section>`;
+    // La rubrique « DJ live dans le monde » (titre, styles, lecteurs) est retirée de l'accueil : la bannière ci-dessus ouvre tous les lives
     // 4. Classement DJ Mag Top 100 2026, du 1er au 100e (à la place des clubs d'Ibiza)
     const TOP = window.DJMAG2026; let secTop = '';
     if (TOP) {
@@ -3990,7 +4000,12 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
 
   // L'onglet Accueil ramène toujours à la page d'accueil
   document.addEventListener('click', (e) => { if (e.target.closest('nav [data-tab="live"]')) { state.vueAcc = 'accueil'; store.set('vueAcc', 'accueil'); } }, true);
-  document.addEventListener('click', (e) => { if (e.target.closest('#acc-voir-live')) ouvrirDjLive(); });
+  document.addEventListener('click', (e) => { if (e.target.closest('#acc-voir-live') || e.target.closest('[data-live-tous]')) ouvrirDjLive(); });
+  document.addEventListener('click', (e) => {
+    const dp = e.target.closest('[data-ag-deplier]'); if (!dp || e.target.closest('[data-ag-type]')) return;
+    state.agOuvert = !state.agOuvert; dp.classList.toggle('ouvert', state.agOuvert); dp.setAttribute('aria-expanded', state.agOuvert);
+    const rang = dp.parentElement; rang.querySelectorAll('.ag-type').forEach((x, i) => { x.classList.toggle('ag-cache', !state.agOuvert); x.style.animationDelay = (i * 60) + 'ms'; });
+  });
   document.addEventListener('click', (e) => {
     const t = e.target.closest('[data-ag-type]'); if (!t) return;
     const k = t.dataset.agType;

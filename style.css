@@ -2427,3 +2427,33 @@ nav.tabs .tab.casque-banger svg.cb-svg { width: 104px !important; height: 80px !
 .nd-explic { margin: 6px 2px 12px; font-size: 14px; color: var(--muted, #9AA3B8); }
 .nd-bang { font-size: 17px; height: 54px; }
 .nd-av > .avatar, .nd-av > img { width: 100% !important; height: 100% !important; border-radius: 50%; object-fit: cover; }
+/* Essai « compact » (prototype 3 seulement) : tout un peu plus petit sur téléphone, moins chargé */
+.compact #accueil, .compact #live-list, .compact #screen-checkin, .compact #screen-agenda, .compact #chips { zoom: .84; }
+.compact .acc-rub { margin-bottom: 6px; }
+
+/* Agenda autour de moi : seule la carte « Agenda » au départ ; elle déplie Club, Festival, Concert… */
+.acc-carte.ag-type { animation: ag-sortie .32s cubic-bezier(.2,.8,.3,1) both; animation-delay: inherit; }
+.acc-carte.ag-type.ag-cache { display: none; }
+@keyframes ag-sortie { from { opacity: 0; transform: translateX(-16px) scale(.9); } to { opacity: 1; transform: none; } }
+.ag-deplier .ag-nom::after { content: ' ›'; display: inline-block; transition: transform .25s; }
+.ag-deplier.ouvert .ag-nom::after { transform: rotate(180deg); }
+
+/* Bannière « L'agenda » : l'image fournie, les textes dans les polices de l'appli */
+.ag-banniere { position: relative; display: block; width: 100%; padding: 0; border: 0; border-radius: 18px; overflow: hidden; cursor: pointer; background: #0A1226; box-shadow: 0 10px 26px rgba(0,0,0,.45); text-align: left; color: #fff; -webkit-tap-highlight-color: transparent; transition: transform .15s; }
+.ag-banniere:active { transform: scale(.985); }
+.ag-banniere img { display: block; width: 100%; height: auto; }
+.ag-txt { position: absolute; left: 5%; top: 9%; bottom: 7%; width: 52%; display: flex; flex-direction: column; align-items: flex-start; }
+.ag-kick { font: 700 10px 'DM Sans', sans-serif; letter-spacing: .2em; text-transform: uppercase; color: #3DD6C6; }
+.ag-titre { margin-top: 2px; font: 800 30px/1 'Syne', sans-serif; letter-spacing: -.01em; }
+.ag-sous { margin-top: 4px; font: 500 12.5px 'DM Sans', sans-serif; color: #9AA3C7; }
+.ag-btn { margin-top: auto; display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px 7px 14px; border-radius: 999px; background: #6CE6D2; color: #0A1226; font: 700 12.5px 'DM Sans', sans-serif; }
+.ag-btn svg { width: 15px; height: 15px; }
+.ag-compte { margin-top: 5px; font: 600 10px 'DM Sans', sans-serif; color: rgba(201,207,221,.75); }
+
+/* Bannière « Les DJ en live » */
+.live-banniere .ag-txt { width: 46%; top: 8%; }
+.live-banniere .ag-titre { font-size: 27px; line-height: .95; }
+.lv-kick { display: inline-flex; align-items: center; gap: 6px; color: #fff; }
+.lv-kick i { width: 8px; height: 8px; border-radius: 50%; background: #FF3B4E; box-shadow: 0 0 8px #FF3B4E; animation: fil-pt .8s ease-in-out infinite alternate; }
+.live-banniere .ag-btn { gap: 7px; padding-left: 12px; }
+.live-banniere .ag-btn svg { width: 13px; height: 13px; }
