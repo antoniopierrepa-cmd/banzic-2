@@ -2753,33 +2753,81 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // il est proposé d'office : il ne reste qu'à taper le nom du DJ. Sinon, on choisit juste le type d'endroit.
   let posSpot = null;
   const lieuxIci = () => state.dest === 'ibiza' ? D.lieux : Object.values(LIEUX_DEST).filter((l) => l.dest === state.dest);
+  // Tous les lieux publics référencés (clubs, beach clubs, bars, restos de l'appli et de l'agenda), pour « Un DJ joue ici »
+  function lieuxPublics() {
+    const xs = [];
+    D.lieux.forEach((l) => l.lat != null && xs.push({ id: l.id, nom: l.nom, lat: l.lat, lng: l.lng, type: l.type, zone: l.zone, src: 'ibiza', dest: 'ibiza' }));
+    Object.values(LIEUX_DEST).forEach((l) => l.lat != null && xs.push({ id: l.id, nom: l.nom, lat: l.lat, lng: l.lng, type: l.type, zone: l.zone || '', style: l.style, src: 'dest', dest: l.dest }));
+    Object.entries(SUD.lieux || {}).forEach(([id, l]) => l.lat != null && xs.push({ id, nom: l.nom, lat: l.lat, lng: l.lng, type: 'club', zone: l.ville || '', src: 'sud', dest: 'local' }));
+    const vus = new Set(); return xs.filter((l) => { const k = sansAccent(l.nom).toLowerCase() + Math.round(l.lat * 1000); if (vus.has(k)) return false; vus.add(k); return true; });
+  }
+  // Rayon : 100 m autour de la vraie position GPS ; 1,5 km en démo (sans GPS, position = centre de la carte)
+  const rayonSpot = (src) => src === 'gps' ? 0.1 : 1.5;
+  // Lieux publics réels autour (OpenStreetMap, gratuit, sans clé) : bars, restos, cafés, boîtes, beach clubs
+  const OSM_TYPES = { nightclub: ['club', 'Club'], bar: ['bar', 'Bar'], pub: ['bar', 'Pub'], biergarten: ['bar', 'Bar'], restaurant: ['bar', 'Restaurant'], cafe: ['bar', 'Café'], fast_food: ['bar', 'Snack'], beach_resort: ['beach', 'Beach club'], dance: ['club', 'Salle de danse'] };
+  function lieuxOsm(lat, lng, metres) {
+    const q = `[out:json][timeout:10];(nwr(around:${metres},${lat},${lng})[amenity~"^(bar|pub|restaurant|nightclub|cafe|biergarten|fast_food)$"][name];nwr(around:${metres},${lat},${lng})[leisure~"^(beach_resort|dance)$"][name];);out center tags 40;`;
+    return fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q), headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+      .then((r) => r.ok ? r.json() : { elements: [] })
+      .then((j) => (j.elements || []).map((x) => { const t = x.tags || {}, k = t.amenity || t.leisure, ty = OSM_TYPES[k] || ['bar', 'Lieu'];
+        const la = x.lat != null ? x.lat : x.center && x.center.lat, lo = x.lon != null ? x.lon : x.center && x.center.lon;
+        return la == null ? null : { id: 'osm-' + x.type + x.id, nom: t.name, lat: la, lng: lo, type: ty[0] === 'beach' ? 'plage' : ty[0] === 'club' ? 'club' : 'bar', genre: ty[0], lib: ty[1],
+          zone: [t['addr:street'], t['addr:city']].filter(Boolean).join(', '), horaires: t.opening_hours || '', src: 'osm', dest: state.dest === 'ibiza' ? 'ibiza' : 'local' }; }).filter(Boolean))
+      .catch(() => []);
+  }
   function formSpot() {
     $('#panel-spot').innerHTML = '<div class="ps-titre"><b>Un DJ joue ici</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div><p class="aide">Je cherche ta position…</p>';
     $('#panel-spot').hidden = false;
     positionSpot((lat, lng, src) => {
-      const proche = lieuxIci().map((l) => ({ l, km: distKm([lat, lng], [l.lat, l.lng]) })).sort((a, b) => a.km - b.km)[0];
-      const connu = proche && proche.km < 0.15 ? proche.l : null;
-      posSpot = { lat, lng, src, connu };
-      const ou = connu ? `<b>${esc(connu.nom)}</b> <small>à ${Math.round(proche.km * 1000)} m</small>`
-        : `<b>Endroit non répertorié</b> <small>${src === 'gps' ? 'ta position' : 'centre de la carte (démo)'}</small>`;
-      $('#panel-spot').innerHTML = `<form id="form-spot" novalidate>
-        <div class="ps-titre"><b>Un DJ joue ici</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div>
-        <div class="ps-ou"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Tu es à : ${ou}</span></div>
-        <div class="ps-dj-cartes">
-          <button type="button" class="ps-dj-carte" data-ps-dj="connu" style="--pc:#FF8A3D"><i aria-hidden="true"></i><b>Je connais le DJ</b><small>J'écris son nom</small></button>
-          <button type="button" class="ps-dj-carte" data-ps-dj="inconnu" style="--pc:#8A93AB"><i aria-hidden="true"></i><b>DJ inconnu</b><small>Je ne sais pas qui joue</small></button>
-        </div>
-        <input class="search ps-dj-champ" name="dj" maxlength="40" list="liste-djs-spot" placeholder="Nom du DJ" autocomplete="off" hidden>
-        <datalist id="liste-djs-spot">${state.dest === 'ibiza' ? [...tousLesDjs().values()].slice(0, 300).map((n) => `<option value="${esc(n)}">`).join('') : ''}</datalist>
-        ${connu ? '' : `<div class="ps-types">${Object.entries(TYPES_SPOT).map(([k, l], i) => `<label class="ps-type" style="--pc:${({ club: '#3D8BFF', bar: '#A77BFF', resto: '#3DF28A', plage: '#3DD6C6', rooftop: '#FF4FA3', bateau: '#FF8A3D', rue: '#F2C53A' })[k]}"><input type="radio" name="type" value="${k}" ${i === 0 ? 'checked' : ''} hidden><span><i aria-hidden="true"></i>${l}</span></label>`).join('')}<button type="button" class="ps-type ps-ajout-nom" data-ps-nom="1"><span><b aria-hidden="true">+</b>Nom de l'endroit</span></button></div>
-          <input class="search ps-nom-champ" name="nom" maxlength="40" placeholder="Nom de l'endroit : terrasse du port, catamaran…" hidden>`}
-        <!-- plus de note : on signale juste qu'un DJ joue ici -->
-        <button type="submit" class="btn-plein">Signaler</button>
-        <button type="button" class="alerte ps-retour" data-spot-fermer="1">← Annuler, retour à la carte</button>
-        <p class="aide">Visible tout de suite pour toi ; les autres le verront quand 2 personnes à côté l'auront confirmé.${connu ? '' : ' Il s\'efface 3 h après la dernière confirmation. Pas de spot dans un lieu privé.'}</p>
-      </form>`;
+      const R = rayonSpot(src), fm = (km) => km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1).replace('.', ',') + ' km';
+      const banzic = lieuxPublics().map((l) => ({ l, km: distKm([lat, lng], [l.lat, l.lng]) })).filter((o) => o.km <= R);
+      const dessiner = (proches, cherche) => {
+        proches = proches.sort((a, b) => a.km - b.km).slice(0, 12);
+        const auto = proches[0] && proches[0].km < 0.05 ? proches[0].l : null;
+        posSpot = { lat, lng, src, connu: (posSpot && posSpot.connu && proches.some((o) => o.l === posSpot.connu)) ? posSpot.connu : auto, proches };
+        const lib = (l) => l.lib || ({ club: 'Club', pool: 'Pool party', bar: 'Bar', beach: 'Beach club' })[typeLieu(l)];
+        const liste = proches.length ? proches.map(({ l, km }, i) => `<button type="button" class="ps-lieu${posSpot.connu === l ? ' on' : ''}" data-ps-lieu="${i}"><img src="${l.genre ? 'pins-lieux/' + l.genre + '.png' : pinLieu(l)}" alt=""><span><b>${esc(l.nom)}</b><small>${esc(lib(l))}${l.zone ? ' · ' + esc(String(l.zone).split('·')[0].trim()) : ''} · ${fm(km)}</small></span></button>`).join('')
+          + (cherche ? '<p class="aide ps-cherche">Je cherche d\'autres lieux autour…</p>' : '')
+          : cherche ? '<p class="aide ps-cherche">Je cherche les bars, restos et clubs autour de toi…</p>'
+          : `<div class="ps-refus"><b>Aucun lieu public à moins de ${Math.round(R * 1000)} m</b><small>On ne peut banguer que dans un lieu public : club, bar, restaurant, beach club. Pas chez un particulier.</small></div>`;
+        const deja = $('#form-spot');
+        const html = `<button type="button" class="ps-ou ps-ou-btn" data-ps-ou="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            <span id="ps-ou-txt">${posSpot.connu ? `Tu es à : <b>${esc(posSpot.connu.nom)}</b>` : proches.length ? '<b>Où es-tu ?</b> Choisis le lieu' : cherche ? '<b>Je cherche…</b>' : '<b>Lieu introuvable</b>'}</span><small>${proches.length} lieu${proches.length > 1 ? 'x' : ''} à ${Math.round(R * 1000) >= 1000 ? fm(R) : Math.round(R * 1000) + ' m'}</small></button>
+          <div class="ps-lieux" id="ps-lieux"${posSpot.connu ? ' hidden' : ''}>${liste}</div>`;
+        if (deja) { $('#ps-zone').innerHTML = html; deja.querySelector('.ps-suite').hidden = !proches.length; return; }
+        $('#panel-spot').innerHTML = `<form id="form-spot" novalidate>
+          <div class="ps-titre"><b>Un DJ joue ici</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div>
+          <div id="ps-zone">${html}</div>
+          <div class="ps-suite"${proches.length ? '' : ' hidden'}>
+          <div class="ps-dj-cartes">
+            <button type="button" class="ps-dj-carte" data-ps-dj="connu" style="--pc:#FF8A3D"><i aria-hidden="true"></i><b>Je connais le DJ</b><small>J'écris son nom</small></button>
+            <button type="button" class="ps-dj-carte" data-ps-dj="inconnu" style="--pc:#8A93AB"><i aria-hidden="true"></i><b>DJ inconnu</b><small>Je ne sais pas qui joue</small></button>
+          </div>
+          <input class="search ps-dj-champ" name="dj" maxlength="40" list="liste-djs-spot" placeholder="Nom du DJ" autocomplete="off" hidden>
+          <datalist id="liste-djs-spot">${[...tousLesDjs().values()].slice(0, 300).map((n) => `<option value="${esc(n)}">`).join('')}</datalist>
+          <button type="submit" class="btn-plein">Je bangue ici</button></div>
+          <button type="button" class="alerte ps-retour" data-spot-fermer="1">← Annuler, retour à la carte</button>
+          <p class="aide">Seulement dans un lieu public (bar, resto, club, beach club). Lieux : Banzic et OpenStreetMap. Visible tout de suite pour toi ; les autres le verront quand 2 personnes à côté l'auront confirmé.</p>
+        </form>`;
+      };
+      posSpot = null;
+      dessiner(banzic.slice(), true);
+      lieuxOsm(lat, lng, Math.round(R * 1000)).then((osm) => {
+        const tous = banzic.slice();
+        osm.forEach((l) => { const km = distKm([lat, lng], [l.lat, l.lng]); if (km > R) return; if (tous.some((o) => sansAccent(o.l.nom).toLowerCase() === sansAccent(l.nom).toLowerCase() && o.km < .3)) return; tous.push({ l, km }); });
+        if ($('#panel-spot') && !$('#panel-spot').hidden) dessiner(tous, false);
+      });
     });
   }
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-ps-ou]')) { const l = $('#ps-lieux'); if (l) l.hidden = !l.hidden; return; }
+    const b = e.target.closest('[data-ps-lieu]'); if (!b || !posSpot) return;
+    const o = posSpot.proches[+b.dataset.psLieu]; if (!o) return;
+    posSpot.connu = o.l;
+    document.querySelectorAll('.ps-lieu').forEach((x) => x.classList.toggle('on', x === b));
+    $('#ps-ou-txt').innerHTML = `Tu es à : <b>${esc(o.l.nom)}</b>`;
+    setTimeout(() => { const l = $('#ps-lieux'); if (l) l.hidden = true; }, 250);
+  });
   // Note en vinyles : les vinyles jusqu'à celui touché s'allument
   const NOTE_MOTS = ['', 'Bof', 'Moyen', 'Bien', 'Top', 'Très bien'];
   document.addEventListener('click', (e) => {
@@ -2803,7 +2851,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     navigator.geolocation.getCurrentPosition((p) => {
       const loin = Math.abs(p.coords.latitude - d.centre[0]) > .5 || Math.abs(p.coords.longitude - d.centre[1]) > .5;
       state.maPos = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy, t: Date.now() }; dessinerMoi();
-      loin ? repli() : cb(p.coords.latitude, p.coords.longitude, 'gps');
+      cb(p.coords.latitude, p.coords.longitude, 'gps'); // toujours la vraie position si le téléphone la donne
     }, repli, { timeout: 5000, maximumAge: 60000 });
   }
   document.addEventListener('submit', (e) => {
@@ -2811,9 +2859,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     e.preventDefault();
     const f = new FormData(e.target), dj = String(f.get('dj') || '').trim(), note = f.get('note') ? +f.get('note') : null;
     const { lat, lng, src, connu } = posSpot || {};
+    if (!connu) { toast('Choisis d\'abord le lieu public où tu es : on ne bangue pas chez un particulier'); const l = $('#ps-lieux'); if (l) l.hidden = false; return; }
     $('#panel-spot').hidden = true;
-    if (connu && state.dest === 'ibiza') { signaler(connu.id, dj || 'DJ inconnu'); renderMap(); return; }
-    const s = { id: 'sp' + Date.now(), dest: state.dest, type: connu ? (connu.type === 'plage' ? 'plage' : 'club') : (f.get('type') || 'bar'),
+    if (connu.src === 'ibiza' && lieux[connu.id]) { signaler(connu.id, dj || 'DJ inconnu'); renderMap(); return; }
+    const s = { id: 'sp' + Date.now(), dest: (connu && connu.dest) || state.dest, type: connu ? (connu.type === 'plage' ? 'plage' : connu.genre === 'bar' ? 'bar' : 'club') : (f.get('type') || 'bar'),
       nom: connu ? connu.nom : String(f.get('nom') || '').trim(), dj, lat: connu ? connu.lat : lat, lng: connu ? connu.lng : lng,
       t: Date.now(), maj: Date.now(), conf: 0, mien: true, trace: [], note, notes: note ? [note] : [] };
     SPOTS.push(s); sauverSpots();

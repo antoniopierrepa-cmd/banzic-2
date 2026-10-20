@@ -2594,3 +2594,16 @@ nav.tabs .tab.casque-banger svg.cb-svg { width: 104px !important; height: 80px !
 /* Rotation des lives plus douce */
 .md-av.md-live, .ck-tourne .fil-rond { animation-duration: 9s !important; }
 .ck-tourne .fil-pinbox .fil-pin { animation-duration: 7s !important; }
+
+/* Un DJ joue ici : choisir le lieu public autour de soi */
+.ps-ou-btn { width: 100%; display: flex; align-items: center; gap: 8px; text-align: left; border: 1px solid rgba(47,140,255,.5); background: rgba(47,140,255,.12); color: var(--text, #fff); border-radius: 12px; padding: 10px 12px; cursor: pointer; font: 500 13.5px 'DM Sans', sans-serif; }
+.ps-ou-btn svg { flex: none; width: 22px; height: 22px; color: #4DA3FF; }
+.ps-ou-btn span { flex: 1; } .ps-ou-btn small { flex: none; color: var(--muted, #9AA3B8); font-size: 11px; }
+.ps-lieux { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 10px; max-height: 260px; overflow-y: auto; }
+.ps-lieu { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 10px 6px 6px; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; background: #0B0F1C; color: var(--text, #fff); text-align: left; cursor: pointer; }
+.ps-lieu img { flex: none; width: 36px; height: 40px; object-fit: contain; }
+.ps-lieu span { display: flex; flex-direction: column; gap: 2px; min-width: 0; } .ps-lieu b { font-size: 14px; } .ps-lieu small { font-size: 11.5px; color: var(--muted, #9AA3B8); }
+.ps-lieu.on { border-color: #3DD6C6; background: rgba(61,214,198,.12); }
+.ps-refus { padding: 12px; border-radius: 12px; border: 1px solid rgba(255,90,95,.45); background: rgba(255,90,95,.1); display: flex; flex-direction: column; gap: 4px; }
+.ps-refus b { color: #FF7A7F; } .ps-refus small { color: #C9CFDD; font-size: 12.5px; }
+.ps-suite { display: flex; flex-direction: column; gap: 10px; } .ps-suite .btn-plein { width: 100%; }
