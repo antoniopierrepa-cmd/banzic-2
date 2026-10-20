@@ -2248,8 +2248,8 @@
   // Chaque ligne garde le bandeau tel quel ; au-dessus, la bande aéroport : heure, porte (le lieu), statut.
   const CK_RAYONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
   state.ckRayon = store.get('ckRayon', 50);
-  function renderCheckin() {
-    const box = $('#screen-checkin'); if (!box) return;
+  function renderCheckin(lignesSeules) {
+    const box = $('#screen-checkin'); if (!box && !lignesSeules) return;
     // Position : le GPS du téléphone ; pour tester ailleurs, ?position=dubai (ou ibiza, miami, mykonos, tulum) dans l'adresse
     const posTest = (location.search.match(/[?&]position=([a-z]+)/) || [])[1], destTest = posTest && DEST[posTest];
     const r = state.ckRayon, c = destTest ? destTest.centre : (state.maPos ? [state.maPos.lat, state.maPos.lng] : DEST.local.centre), now = Date.now();
@@ -2306,6 +2306,7 @@
         <div class="ck-bande"><span class="ck-h">${flap(o.heure, 5)}</span><span class="ck-porte"><small>Porte</small>${esc(o.porte)}</span><span class="ck-st ck-st-${o.st[1]}"><i></i>${esc(o.st[0])}</span></div>
         <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em><b>${esc(o.nom)}</b>${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button></div>`; };
     const i = CK_RAYONS.indexOf(r);
+    if (lignesSeules) return L.map(rangee);
     box.innerHTML = `<div class="ck-tete"><div><h2>Check-in</h2><small>Départs autour de ${esc(nomPos)} · <b>${r} km</b> · ${L.length} départ${L.length > 1 ? 's' : ''}</small></div><span class="ck-horloge">${flap(hm(now), 5)}</span></div>
       <div class="fd-rail ck-rail"><input type="range" id="fader-ck" min="0" max="${CK_RAYONS.length - 1}" step="1" value="${i}" style="--pct:${i / (CK_RAYONS.length - 1) * 100}%" aria-label="Rayon du check-in" aria-valuetext="${r} kilomètres">
         <div class="fd-graduations" aria-hidden="true">${CK_RAYONS.map((k, j) => `<span class="${j === i ? 'on' : ''}" data-ck-rayon="${j}">${k}</span>`).join('')}</div></div>
@@ -3853,6 +3854,44 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const toastFil2 = (m) => toast(m);
   let filToastT = 0; const toastFil = (m) => { if (Date.now() - filToastT > 4000) { filToastT = Date.now(); toast(m); } };
 
+  // ---- Essai (prototype) : bannières « carte satellite de jour » et « Check-in » à la place de la mini-carte de l'accueil
+  const BC_COTE = "M633.3 -9.8 L633.3 264.4 L633.3 264.4 L633.3 167.8 L610.5 170.6 L580.5 170.6 L562.5 131.0 L520.5 121.0 L466.5 124.4 L424.5 101.2 L430.5 87.9 L430.5 71.5 L436.5 61.5 L406.5 61.5 L382.5 64.8 L334.5 87.9 L358.5 97.9 L382.5 141.0 L412.5 150.8 L454.5 167.4 L436.5 183.9 L394.5 180.6 L346.5 180.6 L328.5 187.2 L292.5 236.8 L232.5 217.0 L184.5 187.2 L172.5 167.4 L202.5 147.5 L232.5 127.7 L220.5 114.4 L202.5 104.6 L172.5 97.9 L166.5 81.5 L160.5 68.1 L136.5 64.8 L100.5 64.8 L28.5 35.1 L10.5 -7.8 L8.7 -9.8 Z";
+  const BC_PTS = [["dj", "nina-sol", 420.0, 86.2, "live"], ["dj", "kenzo-b", 430.0, 96.0, "live"], ["dj", "marco-vela", 446.7, 113.6, "decl"], ["dj", "lia-k", 348.3, 166.5, "live"], ["dj", "dax-volt", 550.8, 77.2, "decl"], ["lieu", "beach", 458.3, 121.4, ""], ["lieu", "beach", 340.0, 176.2, ""], ["lieu", "beach", 566.7, 137.1, ""], ["lieu", "pool", 500.0, 127.3, ""], ["lieu", "bar", 406.7, 80.3, ""], ["lieu", "bar", 375.0, 103.8, ""], ["lieu", "club", 441.7, 72.5, ""], ["lieu", "club", 300.0, 58.8, ""], ["spot", "", 440.0, 105.8, ""], ["spot", "", 416.7, 150.8, ""]];
+  function bannieresDirect() {
+    const img = (k, n) => k === 'dj' ? `pins-dj/${n}.png` : k === 'spot' ? PIN_INCONNU : `pins-lieux/${n}.png`;
+    const halo = { live: '#F2C53A', decl: '#FF8A3D', '': '#3DD6C6' };
+    const pins = BC_PTS.slice().sort((p, q) => p[3] - q[3]).map(([k, n, x, y, s], i) => `${k === 'dj' && s === 'live' ? `<circle class="bc-onde" cx="${x}" cy="${y}" r="14" fill="none" stroke="${halo[s]}" stroke-width="2" style="animation-delay:${(i % 5) * .35}s"/>` : ''}<ellipse cx="${x}" cy="${y}" rx="8" ry="2.6" fill="${k === 'spot' ? '#B58CFF' : halo[s] || '#3DD6C6'}" opacity=".7"/><image href="${img(k, n)}" x="${x - 15}" y="${y - 33}" width="30" height="33"/>`).join('');
+    // Carte façon jeu vidéo néon, aux couleurs de Banzic : bleu nuit, routes et côte turquoise / violet / orange
+    const carte = `<svg class="bc-svg" viewBox="0 0 600 235" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <radialGradient id="bc-mer" cx="70%" cy="80%" r="90%"><stop offset="0" stop-color="#14205A"/><stop offset="1" stop-color="#070B22"/></radialGradient>
+        <pattern id="bc-grille" width="22" height="22" patternUnits="userSpaceOnUse"><path d="M22 0H0V22" fill="none" stroke="#3DD6C6" stroke-opacity=".07" stroke-width="1"/></pattern>
+        <pattern id="bc-ilots" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(18)"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#1C1F4A"/></pattern>
+        <filter id="bc-neon" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <clipPath id="bc-clip"><path d="${BC_COTE}"/></clipPath>
+      </defs>
+      <rect width="600" height="235" fill="url(#bc-mer)"/><rect width="600" height="235" fill="url(#bc-grille)"/>
+      <path d="${BC_COTE}" fill="#10132E"/>
+      <g clip-path="url(#bc-clip)"><rect width="600" height="235" fill="url(#bc-ilots)"/>
+        <g fill="none" stroke-linecap="round" filter="url(#bc-neon)">
+          <path d="M40 40 Q200 80 340 58 T620 72" stroke="#FF4FA3" stroke-width="2.6"/>
+          <path d="M120 0 Q260 90 430 30 T600 20" stroke="#B58CFF" stroke-width="1.8"/>
+          <path d="M380 0 L420 120 L470 235" stroke="#FF8A3D" stroke-width="2"/>
+          <path d="M240 235 Q300 120 380 95" stroke="#3DD6C6" stroke-width="1.4" stroke-opacity=".8"/></g></g>
+      <path d="${BC_COTE}" fill="none" stroke="#3DD6C6" stroke-width="2.2" filter="url(#bc-neon)" stroke-opacity=".9"/>
+      ${pins}</svg>`;
+    // Check-in : les vraies lignes de la page Check-in (mêmes bandes, mêmes couleurs), qui défilent
+    let rows = []; try { rows = renderCheckin(true) || []; } catch (e) { rows = []; }
+    rows = rows.map((r) => r.replace(/<button /g, '<span ').replace(/<\/button>/g, '</span>').replace(/data-(lieu|dj-pro|spot-voir)=/g, 'data-x-$1='));
+    const lignes = rows.concat(rows).join('');
+    return `<button class="ag-banniere bc-banniere" data-tab="map" aria-label="Ouvrir la carte : ce qui se passe autour de toi">${carte}
+        <span class="bc-badge"><i></i>Samedi 15 août · 16:00</span>
+        <span class="ag-txt bc-txt"><small class="ag-kick bc-kick"><span class="ico-diffusion" aria-hidden="true"><i></i><b></b><b></b></span>${esc(state.zoneGeo.nom)}</small><b class="ag-titre">Direct<br>autour de moi</b><span class="ag-sous">Toute la journée sur la carte : DJ en live, beach clubs, bars</span></span></button>
+      <button class="ag-banniere bk-banniere" data-tab="checkin" aria-label="Ouvrir le Check-in : les départs de la journée">
+        <span class="ag-txt bk-txt"><small class="ag-kick">Check-in</small><b class="ag-titre">Les départs<br>du jour</b><span class="ag-sous">${rows.length} départs autour de toi, rangés par distance</span></span>
+        <span class="bk-tableau"><span class="bk-horloge">${flap(hm(Date.now()), 5)}</span><span class="bk-piste" style="--duree:${Math.max(10, rows.length * 3.2)}s">${lignes}</span></span></button>`;
+  }
+
   function renderAccueil() {
     if (state.pageMontent) { renderPageMontent(); return; }
     if (state.pageTendance) { renderPageTendance(); return; }
@@ -3896,8 +3935,9 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         return `<button class="fil-item k-spot a-vis" data-spot-voir="${sp.id}">${visSpotC(sp)}<span class="fil-l1"><em class="fil-tag spot">Spot</em><b>${esc(sp.nom || TYPES_SPOT[sp.type])}</b><span class="fil-vaut v-${v[1]}">${v[0]}</span></span><span class="fil-l2"><span>${esc(sp.dj || 'DJ inconnu')} · ${fmtKm(dist)}</span><span>signalé à ${hm(sp.t)} par @${esc(sp.par || 'un Banger')}</span></span></button>`; }));
     coin.slice(0, 14).forEach(({ l, d }) => filItems.push(filClub(l, fmtKm(d))));
     const filInfos = filItems.length ? `<div class="fil-infos" aria-label="Fil d'actualité autour de moi"><div class="fil-fenetre"><div class="fil-piste">${filItems.join('<span class="fil-sep" aria-hidden="true"></span>')}<span class="fil-sep" aria-hidden="true"></span><span class="fil-copie" aria-hidden="true">${filItems.join('<span class="fil-sep"></span>')}<span class="fil-sep"></span></span></div></div></div>` : '';
-    h += `<section class="acc-rub"><div class="acc-tete"><div><h2 class="h-direct"><span class="ico-diffusion" aria-hidden="true"><i></i><b></b><b></b></span>Direct autour de moi</h2><small>${esc(state.zoneGeo.nom)}${state.zoneGeo.approx ? ' · position de démo' : ''} · passe le doigt sur un point</small></div></div>
-      <div class="aut-carte">${carteMiniMap(centre0, decls, spotsP, coin, infos)}</div>${legende}${filInfos}</section>`;
+    const essaiB = document.documentElement.classList.contains('essai-bannieres');
+    h += `<section class="acc-rub">${essaiB ? '' : `<div class="acc-tete"><div><h2 class="h-direct"><span class="ico-diffusion" aria-hidden="true"><i></i><b></b><b></b></span>Direct autour de moi</h2><small>${esc(state.zoneGeo.nom)}${state.zoneGeo.approx ? ' · position de démo' : ''} · passe le doigt sur un point</small></div></div>`}
+      ${essaiB ? bannieresDirect() : `<div class="aut-carte">${carteMiniMap(centre0, decls, spotsP, coin, infos)}</div>${legende}${filInfos}`}</section>`;
     // 1 bis. Agenda autour de moi : de petites cartes par type de sortie, avec le nombre de dates dans le rayon de l'Agenda
     const rayonAg = RAYONS[state.rayonIdx], dansRayon = soireesAvecKm().filter((x) => x.km <= rayonAg);
     const nbType = (k) => k === 'tout' ? dansRayon.length : dansRayon.filter((x) => (x.type || 'club') === k).length;
@@ -3922,7 +3962,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const puces = `<div class="genre-puces">${['', ...genres].map((g) => `<button class="genre-puce${(state.genreLive || '') === g ? ' on' : ''}" data-genre-live="${esc(g)}" style="--gc:${g ? coulGenre(g) : '#C9CFDD'}">${g ? esc(g) : 'Tous'}</button>`).join('')}</div>`;
     // Bannière « Les DJ en live » (visuel fourni par Antonio, textes dans la police de l'appli) : un appui ouvre tous les lives disponibles
     h += `<section class="acc-rub ag-rub"><button class="ag-banniere live-banniere" data-live-tous="1" aria-label="Les DJ en live : écouter un live">
-        <img src="live-banniere.jpg?v=1" alt="" loading="lazy">
+        <img src="live-banniere.jpg?v=3" alt="" loading="lazy">
         <span class="ag-txt"><small class="ag-kick lv-kick"><i></i>En direct</small><b class="ag-titre">Les DJ<br>en live</b><span class="ag-sous">Leurs sets, où que tu sois.</span>
           <span class="ag-compte">${lives.length} DJ en live en ce moment</span></span></button></section>`;
     // La rubrique « DJ live dans le monde » (titre, styles, lecteurs) est retirée de l'accueil : la bannière ci-dessus ouvre tous les lives

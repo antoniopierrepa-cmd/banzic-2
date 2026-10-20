@@ -2527,3 +2527,43 @@ nav.tabs .tab.casque-banger svg.cb-svg { width: 104px !important; height: 80px !
 .ag-banniere::before { content: ''; position: absolute; inset: 0; z-index: 0; background: linear-gradient(90deg, rgba(5,10,28,.85) 0%, rgba(5,10,28,.6) 38%, rgba(5,10,28,0) 58%); pointer-events: none; }
 .ag-banniere img { z-index: 0; } .ag-banniere .ag-txt { z-index: 1; }
 .ag-banniere .lv-kick { color: #fff; }
+
+/* Essai : bannière carte satellite de jour + bannière Check-in animée */
+.bc-banniere { margin-top: 8px; }
+.bc-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bc-banniere::before { background: linear-gradient(90deg, rgba(5,10,28,.78) 0%, rgba(5,10,28,.45) 32%, rgba(5,10,28,0) 52%); }
+.bc-txt { width: 40% !important; }
+.bc-banniere .ag-titre { font-size: 20px !important; }
+.bc-onde { transform-box: fill-box; transform-origin: center; animation: bc-onde 2s ease-out infinite; }
+@keyframes bc-onde { 0% { transform: scale(.4); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
+.bc-badge { position: absolute; z-index: 1; right: 10px; top: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px; background: rgba(5,10,28,.7); color: #fff; font: 700 10.5px 'DM Sans', sans-serif; backdrop-filter: blur(4px); }
+.bc-badge i { width: 7px; height: 7px; border-radius: 50%; background: #FF3B4E; animation: fil-pt .8s ease-in-out infinite alternate; }
+.bk-banniere { margin-top: 12px; background: radial-gradient(circle at 80% 20%, rgba(242,197,58,.18), transparent 50%), linear-gradient(135deg, #0B1230, #070A18); }
+.bk-txt { width: 42% !important; }
+.bk-banniere .ag-kick { color: #F2C53A; }
+.bk-tableau { position: absolute; z-index: 1; right: 8px; top: 10px; bottom: 10px; width: 54%; overflow: hidden; border-radius: 10px; background: #050812; border: 1px solid rgba(255,255,255,.08); -webkit-mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent); }
+.bk-piste { display: flex; flex-direction: column; animation: bk-defile 14s linear infinite; }
+@keyframes bk-defile { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+.bk-l { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 6px; padding: 5px 7px; border-bottom: 1px solid rgba(255,255,255,.06); font: 600 9.5px 'DM Sans', sans-serif; color: #C9CFDD; }
+.bk-h { grid-row: 1 / span 2; align-self: center; font-size: 9px; color: #F2C53A; }
+.bk-h .fl { width: .95em; }
+.bk-p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; letter-spacing: .03em; color: #fff; }
+.bk-dj { display: none; }
+.bk-l .ck-st { grid-column: 2; justify-self: start; margin-top: 2px; padding: 1px 5px; font-size: 8px; }
+@media (prefers-reduced-motion: reduce) { .bk-piste, .bc-onde { animation: none; } }
+
+.bc-banniere::before { background: linear-gradient(90deg, rgba(5,10,28,.92) 0%, rgba(5,10,28,.8) 30%, rgba(5,10,28,0) 50%) !important; }
+.bc-banniere .bc-svg { z-index: 0; } .bc-banniere::before { z-index: 1 !important; } .bc-banniere .ag-txt, .bc-banniere .bc-badge { z-index: 2; }
+
+/* Essai v2 : titre « Direct autour de moi » dans la bannière carte ; Check-in avec les vraies lignes */
+.bc-kick { display: inline-flex; align-items: center; gap: 6px; color: #fff !important; letter-spacing: .12em; }
+.bc-kick .ico-diffusion { width: 20px; height: 20px; }
+.bc-kick .ico-diffusion i { width: 7px; height: 7px; }
+.bc-banniere .ag-titre { font-size: 23px !important; }
+.bc-banniere::before { background: linear-gradient(90deg, rgba(5,8,26,.9) 0%, rgba(5,8,26,.7) 30%, rgba(5,8,26,0) 50%) !important; }
+.bk-banniere { background: linear-gradient(135deg, #0B0F1C, #070A14); border: 1px solid rgba(255,255,255,.07); }
+.bk-tableau { top: 8px; bottom: 8px; width: 56%; background: #070A14; }
+.bk-horloge { position: absolute; z-index: 2; right: 6px; top: 4px; font-size: 9px; color: #F2C53A; }
+.bk-piste { animation-duration: var(--duree, 20s); gap: 6px; padding: 18px 5px 0; }
+.bk-piste .ck-ligne { zoom: .5; flex: none; }
+.bk-piste .ck-ligne .fil-item { pointer-events: none; }
