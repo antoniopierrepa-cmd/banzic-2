@@ -1779,12 +1779,15 @@
       : tier === 'live' ? stat(c.niv.code === 'nouveau' ? '–' : c.score + ' %', 'crédibilité') + stat(pro.confirmes, 'sets confirmés') + stat(c.note ? c.note : '–', 'note /5') + stat(k(abonnes), 'abonnés')
       : stat(nbSaison, 'dates 2025') + stat(ceSoirN, 'ce soir') + stat(state.favs.includes(nom) ? 'Oui' : 'Non', 'tu le suis');
     const suivi = state.favs.includes(nom), al = !!ALERTES_DJ[sansAccent(nom)];
-    return `<div class="fp fp-${tier}"><div class="fp-cover"${img ? ` style="--fp-img:url('${img}')"` : ''}><i class="fp-lasers"></i></div>
+    const TOPM = window.DJMAG2026, iTop = TOPM ? TOPM.djs.findIndex((x) => sansAccent(x[0]) === sansAccent(nom)) : -1;
+    const mvTop = iTop >= 0 ? ({ '+': 'En hausse', '-': 'En baisse', '=': 'Stable', 'N': 'Nouveau', 'R': 'Retour' })[TOPM.djs[iTop][1]] || '' : '';
+    const medTop = iTop >= 0 ? `<button class="fp-top100 ${iTop < 10 ? 'or' : iTop < 50 ? 'argent' : 'bronze'}" data-top-info="${iTop + 1}" aria-label="Classé ${iTop + 1}e au Top 100 DJ Mag 2026"><small>TOP 100</small><b><i>N°</i>${iTop + 1}</b><em>DJ Mag 2026</em></button>` : '';
+    return `<div class="fp fp-${tier}"><div class="fp-cover"${img ? ` style="--fp-img:url('${img}')"` : ''}><i class="fp-lasers"></i>${medTop}</div>
       <div class="fp-tete"><span class="fp-av">${avatarDj(nom, 'fp-photo')}</span>
         <div class="fp-id"><div class="fp-nom">${esc(nom)}</div><div class="fp-sous">${sous}</div></div>
         ${boutonCasque(nom)}</div>
       <div class="fp-corps">
-        <div class="fp-badges">${tier === 'pro' ? '<span class="fp-badge b-pro">DJ Pro</span>' : tier === 'live' ? '<span class="fp-badge b-live">DJ Live</span>' : '<span class="fp-badge b-std">Fiche line-ups</span>'}${pro && pro.officiel ? '<span class="fp-badge b-off">Officiel</span>' : ''}</div>
+        <div class="fp-badges">${tier === 'pro' ? '<span class="fp-badge b-pro">DJ Pro</span>' : tier === 'live' ? '<span class="fp-badge b-live">DJ Live</span>' : '<span class="fp-badge b-std">Fiche line-ups</span>'}${iTop >= 0 ? `<span class="fp-badge b-top">Top 100 · ${iTop ? iTop + 1 + 'e' : '1er'}${mvTop ? ' · ' + mvTop : ''}</span>` : ''}${pro && pro.officiel ? '<span class="fp-badge b-off">Officiel</span>' : ''}</div>
         ${styles.length ? `<div class="fp-puces">${styles.map((x) => `<span class="fp-puce">${esc(x)}</span>`).join('')}</div>` : ''}
         ${live.map((x) => `<div class="fp-direct"><span class="fp-pt"></span><span><b>Mixe en ce moment</b><small>${esc(lieuDe(x).nom || 'Spot')} · depuis ${hm(x.debut)} · confirmé par ${x.conf} Banger${x.conf > 1 ? 's' : ''}</small></span></div>`).join('')}
         <div class="fp-stats">${stats}</div>
@@ -1797,6 +1800,8 @@
     const a = e.target.closest('[data-alerte-dj]');
     if (a) { const kk = sansAccent(a.dataset.alerteDj); if (ALERTES_DJ[kk]) delete ALERTES_DJ[kk]; else ALERTES_DJ[kk] = true; store.set('alertesDj', ALERTES_DJ);
       toast(ALERTES_DJ[kk] ? 'On te prévient dès que ' + a.dataset.alerteDj + ' joue près de toi' : 'Alerte retirée'); renderDj(); return; }
+    const tp = e.target.closest('[data-top-info]');
+    if (tp) { toast((tp.dataset.topInfo === '1' ? '1er' : tp.dataset.topInfo + 'e') + ' au classement Top 100 DJ Mag 2026, annoncé le 7 octobre à Ibiza'); return; }
     const b = e.target.closest('[data-booking]');
     if (b) toast('Démo : la demande de booking partira directement au DJ ou à son agent');
   });
