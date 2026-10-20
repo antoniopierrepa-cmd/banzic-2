@@ -2567,3 +2567,11 @@ nav.tabs .tab.casque-banger svg.cb-svg { width: 104px !important; height: 80px !
 .bk-piste { animation-duration: var(--duree, 20s); gap: 6px; padding: 18px 5px 0; }
 .bk-piste .ck-ligne { zoom: .5; flex: none; }
 .bk-piste .ck-ligne .fil-item { pointer-events: none; }
+
+/* Bannière « Mes DJ » plus haute ; les DJ suivis en live tournent comme un vinyle */
+.acc-mesdj.md-fin { height: 124px; background-position: 0% 22%; }
+.acc-mesdj.md-fin .md-av { width: 30px; height: 30px; }
+.md-av.md-live { box-shadow: 0 0 0 2px #FF3B4E, 0 0 10px rgba(255,59,78,.7); animation: md-tourne 3s linear infinite; }
+.md-av.md-live::after { content: ''; position: absolute; inset: 38%; border-radius: 50%; background: #0A0D16; box-shadow: 0 0 0 1px rgba(255,255,255,.4); }
+@keyframes md-tourne { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .md-av.md-live { animation: none; } }

@@ -4076,9 +4076,13 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // Bandeau « Mes DJ » en tête de l'accueil (remplace la rangée de filtres)
   function bandeauMesDj() {
     const fav = state.favs || [], ce = fav.filter((n) => passages.some((p) => p.dj === n && !p.inconnu && p.f > state.t));
-    const avs = fav.slice(0, 4).map((n, i) => fondAvatarDj(n) ? `<span class="md-av" style="--g:${fondAvatarDj(n)};z-index:${9 - i}"></span>` : `<span class="md-av" style="--g:${accGrad(n)};z-index:${9 - i}">${esc(accInit(n))}</span>`).join('');
+    // Les DJ Pro / Premium suivis qui sont en live (stream ou déclarés) passent devant et tournent comme un vinyle
+    const enLiveMd = (n) => { const pro = djProParNom(n); return !!pro && (enStream(pro) || DECLS.some((x) => x.dj === pro.id && declActive(x))); };
+    const ordre = fav.slice().sort((x, y) => (enLiveMd(y) ? 1 : 0) - (enLiveMd(x) ? 1 : 0));
+    const avs = ordre.slice(0, 4).map((n, i) => { const live = enLiveMd(n), ap = avPinDj(djProParNom(n)), g = fondAvatarDj(n) || (ap ? `url('${ap}') center / cover` : '');
+      return `<span class="md-av${live ? ' md-live' : ''}" style="--g:${g || accGrad(n)};z-index:${9 - i}" title="${esc(n)}${live ? ' · en live' : ''}">${g ? '' : esc(accInit(n))}</span>`; }).join('');
     const sous = !fav.length ? 'Touche le ♥ sur la fiche d\'un DJ pour le suivre ici'
-      : `${fav.length} DJ suivi${fav.length > 1 ? 's' : ''}${ce.length ? ` · ${ce.length} joue${ce.length > 1 ? 'nt' : ''} ce soir` : ''}`;
+      : `${fav.length} DJ suivi${fav.length > 1 ? 's' : ''}${fav.filter(enLiveMd).length ? ` · ${fav.filter(enLiveMd).length} en live` : ''}${ce.length ? ` · ${ce.length} joue${ce.length > 1 ? 'nt' : ''} ce soir` : ''}`;
     const fond = state.profil && !state.profil.photo ? 'avatars-banzic/' + avIllus(state.profil.avatar) + '-c.jpg' : '';
     const coeur = `<span class="md-coeur" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg></span>`;
     const fleche = `<svg class="md-fl" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
