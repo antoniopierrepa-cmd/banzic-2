@@ -1253,6 +1253,27 @@
   const nomNiveau = (n) => `${n.objet.nom} ${n.metal.nom}`;
 
   // Photo ou avatar du profil Banger (facultatif)
+  // Test opt-in sur test-avatar-gta : aperçu local uniquement, jamais enregistré.
+  const GTA_PREVIEW_TEST = new URLSearchParams(window.location.search).get('gtaPreview') === '1';
+  const GTA_SAMPLE = '../avatars-banzic/a_vibrant_stylized_vector_illustration_retro_video_1.png';
+  function apercuGta() {
+    const zone = document.getElementById('av-gta-apercu');
+    if (!GTA_PREVIEW_TEST || !zone) return;
+    zone.hidden = false;
+    zone.textContent = 'Chargement de l’exemple GTA…';
+    const img = new Image();
+    img.alt = 'Portrait GTA de démonstration déjà fourni';
+    img.style.cssText = 'display:block;max-width:100%;width:240px;height:auto;border-radius:12px';
+    img.onload = () => {
+      if (!zone.isConnected || zone.hidden) return;
+      zone.replaceChildren(img);
+    };
+    img.onerror = () => {
+      if (!zone.isConnected || zone.hidden) return;
+      zone.textContent = 'Exemple GTA indisponible. Ta photo reste inchangée.';
+    };
+    img.src = GTA_SAMPLE;
+  }
   const AVATARS = ['🎧', '😎', '🪩', '🌴', '🔥', '🦩', '🐬', '🌙', '🍹', '👽'];
   // Avatars illustrés Banzic : 10 hommes, 10 femmes (choix dans le profil)
   const AV_ILLUS = { h: Array.from({ length: 10 }, (_, i) => 'h' + String(i + 1).padStart(2, '0')), f: Array.from({ length: 10 }, (_, i) => 'f' + String(i + 1).padStart(2, '0')) };
@@ -1277,6 +1298,8 @@
   }
   function majApercuAvatar() {
     const f = document.getElementById('form-profil'); if (!f) return;
+    const gta = document.getElementById('av-gta-apercu');
+    if (gta) { gta.hidden = true; gta.replaceChildren(); }
     const av = (f.querySelector('input[name="avatar"]:checked') || {}).value || '';
     $('#av-apercu').innerHTML = avatarHtml(state.photoTemp, av, 72);
     $('#av-retirer').hidden = !state.photoTemp;
@@ -1297,6 +1320,9 @@
         <div class="av-zone"><span id="av-apercu">${avatarHtml(p.photo, p.avatar, 72)}</span>
           <div class="av-actions"><label class="av-btn">📷 Choisir une photo<input type="file" accept="image/*" id="av-fichier" hidden></label>
           <button type="button" class="av-retirer" id="av-retirer" data-av-retirer="1" ${p.photo ? '' : 'hidden'}>Retirer la photo</button></div></div>
+        ${GTA_PREVIEW_TEST ? `<button type="button" class="av-btn" data-av-gta="1" aria-controls="av-gta-apercu" aria-describedby="av-gta-note">Transformer en GTA</button>
+        <small class="aide" id="av-gta-note">Test gratuit : aperçu de l’exemple fourni, sans transformation de ta photo ni enregistrement.</small>
+        <div id="av-gta-apercu" role="status" aria-live="polite" hidden></div>` : ''}
         ${[['h', 'Hommes'], ['f', 'Femmes']].map(([g, t]) => `<div class="av-rang-titre">${t}</div><div class="av-rang">${AV_ILLUS[g].map((id) => { const v = 'av:' + id, on = (avIllus(p.avatar) ? p.avatar : 'av:h01') === v; return `<label class="chip av-chip av-illus-chip ${on ? 'on' : ''}"><input type="radio" name="avatar" value="${v}" ${on ? 'checked' : ''} hidden><img src="avatars-banzic/${id}.jpg" alt="" loading="lazy"></label>`; }).join('')}</div>`).join('')}
         <small class="aide">Fais défiler et touche ton avatar, ou mets ta photo à la place.</small></div>
       <div class="champ" id="champ-styles"><span>Ce que tu aimes en musique <small class="aide">(un ou plusieurs)</small></span>
@@ -1408,6 +1434,7 @@
     }
     if (e.target.closest('[data-regler-ecran]')) { if (!(window.banzicReglerEcran && window.banzicReglerEcran())) toast('Rien à régler : l\'appli est déjà en plein écran'); return true; }
     if (e.target.closest('[data-av-retirer]')) { state.photoTemp = ''; majApercuAvatar(); return true; }
+    if (e.target.closest('#form-profil [data-av-gta]')) { apercuGta(); return true; }
     if (e.target.closest('[data-plus-tard]')) { setTab('live'); toast('Tu peux créer ton compte quand tu veux, onglet Profil'); return true; }
     if (e.target.closest('[data-modifier-profil]')) { state.editProfil = true; renderProfil(); return true; }
     if (e.target.closest('[data-partager-profil]')) { toast('Démo : ta fiche Banger aura son lien à partager'); return true; }
