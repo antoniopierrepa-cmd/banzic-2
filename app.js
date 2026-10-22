@@ -1272,14 +1272,55 @@
     if (photo) return `<span class="av-rond" style="width:${taille}px;height:${taille}px"><img src="${photo}" alt=""></span>`;
     return `<span class="av-rond" style="width:${taille}px;height:${taille}px;font-size:${Math.round(taille * 0.52)}px">${avatar || '🎧'}</span>`;
   }
+  // Filtre local : aplats de couleurs et contours, sans service externe.
+  let photoLecture = 0;
+  let photoEnLecture = false;
+  let portraitPrepare = null;
+  function illustrerPortrait(ctx, taille) {
+    const image = ctx.getImageData(0, 0, taille, taille);
+    const source = new Uint8ClampedArray(image.data), pixels = image.data;
+    const luma = new Float32Array(taille * taille);
+    // Lissage qui conserve les limites du visage et réduit le bruit de la photo.
+    for (let y = 0; y < taille; y++) for (let x = 0; x < taille; x++) {
+      const i = (y * taille + x) * 4;
+      let r = 0, g = 0, b = 0, poids = 0;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const xx = Math.max(0, Math.min(taille - 1, x + dx));
+        const yy = Math.max(0, Math.min(taille - 1, y + dy));
+        const j = (yy * taille + xx) * 4;
+        const ecart = Math.abs(source[i] - source[j]) + Math.abs(source[i + 1] - source[j + 1]) + Math.abs(source[i + 2] - source[j + 2]);
+        const w = Math.exp(-ecart / 45) / (1 + dx * dx + dy * dy);
+        r += source[j] * w; g += source[j + 1] * w; b += source[j + 2] * w; poids += w;
+      }
+      r /= poids; g /= poids; b /= poids;
+      const gris = 0.299 * r + 0.587 * g + 0.114 * b;
+      luma[y * taille + x] = gris;
+      [r, g, b].forEach((v, k) => {
+        const vif = Math.max(0, Math.min(255, (gris + (v - gris) * 1.28 - 128) * 1.08 + 132));
+        pixels[i + k] = Math.round(vif / 24) * 24;
+      });
+    }
+    for (let y = 1; y < taille - 1; y++) for (let x = 1; x < taille - 1; x++) {
+      const n = y * taille + x, i = n * 4;
+      const gx = -luma[n - taille - 1] + luma[n - taille + 1] - 2 * luma[n - 1] + 2 * luma[n + 1] - luma[n + taille - 1] + luma[n + taille + 1];
+      const gy = -luma[n - taille - 1] - 2 * luma[n - taille] - luma[n - taille + 1] + luma[n + taille - 1] + 2 * luma[n + taille] + luma[n + taille + 1];
+      const contour = Math.min(0.65, Math.max(0, (Math.hypot(gx, gy) - 65) / 260));
+      for (let k = 0; k < 3; k++) pixels[i + k] *= 1 - contour;
+    }
+    ctx.putImageData(image, 0, 0);
+  }
   function photoReduite(file) {
     return new Promise((ok, ko) => {
       const url = URL.createObjectURL(file), img = new Image();
       img.onload = () => {
-        const t = 200, c = document.createElement('canvas'); c.width = c.height = t;
+        try {
+        const t = 320, c = document.createElement('canvas'); c.width = c.height = t;
         const m = Math.min(img.naturalWidth, img.naturalHeight);
         c.getContext('2d').drawImage(img, (img.naturalWidth - m) / 2, (img.naturalHeight - m) / 2, m, m, 0, 0, t, t);
-        URL.revokeObjectURL(url); ok(c.toDataURL('image/jpeg', 0.82));
+        const original = c.toDataURL('image/jpeg', 0.88);
+        illustrerPortrait(c.getContext('2d'), t);
+        ok({ original, illustree: c.toDataURL('image/jpeg', 0.88) });
+        } catch (err) { ko(err); } finally { URL.revokeObjectURL(url); }
       };
       img.onerror = () => { URL.revokeObjectURL(url); ko(); };
       img.src = url;
@@ -1294,6 +1335,7 @@
 
   function formProfil(p) {
     p = p || { pseudo: '', styles: [], langue: LANG, notifs: true, geoloc: true, presence: true, classement: true };
+    photoLecture++; photoEnLecture = false; portraitPrepare = null;
     state.photoTemp = p.photo || '';
     const coche = (id, label, aide, val) => `<label class="reglage"><span><b>${label}</b><small>${aide}</small></span>
       <input type="checkbox" name="${id}" ${val ? 'checked' : ''}><i class="interrupteur" aria-hidden="true"></i></label>`;
@@ -1416,7 +1458,7 @@
       return true;
     }
     if (e.target.closest('[data-regler-ecran]')) { if (!(window.banzicReglerEcran && window.banzicReglerEcran())) toast('Rien à régler : l\'appli est déjà en plein écran'); return true; }
-    if (e.target.closest('[data-av-retirer]')) { state.photoTemp = ''; majApercuAvatar(); return true; }
+    if (e.target.closest('[data-av-retirer]')) { photoLecture++; photoEnLecture = false; portraitPrepare = null; state.photoTemp = ''; majApercuAvatar(); return true; }
     if (e.target.closest('[data-plus-tard]')) { setTab('live'); toast('Tu peux créer ton compte quand tu veux, onglet Profil'); return true; }
     if (e.target.closest('[data-modifier-profil]')) { state.editProfil = true; renderProfil(); return true; }
     if (e.target.closest('[data-partager-profil]')) { toast('Démo : ta fiche Banger aura son lien à partager'); return true; }
@@ -1447,6 +1489,7 @@
     }
     if (e.target.id !== 'form-profil') return;
     e.preventDefault();
+    if (photoEnLecture) { toast('Préparation de la photo, réessaie dans un instant'); return; }
     const f = new FormData(e.target);
     const pseudo = String(f.get('pseudo') || '').trim();
     if (pseudo.length < 2) { $('#err-pseudo').hidden = false; e.target.pseudo.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
@@ -1464,7 +1507,7 @@
       notifs: !!f.get('notifs'), geoloc: !!f.get('geoloc'), presence: !!f.get('presence'), classement: !!f.get('classement'),
       emailInfos: !!f.get('emailInfos'), alertePepites: !!f.get('alertePepites'),
       alerteDj: !!f.get('alerteDj'), emailContact: emailC,
-      avatar: f.get('avatar') || 'av:h01', photo: state.photoTemp || ''
+      avatar: f.get('avatar') || 'av:h01', photo: (portraitPrepare && portraitPrepare.original === state.photoTemp ? portraitPrepare.illustree : state.photoTemp) || ''
     };
     // La ville choisie règle la zone « autour de moi »
     { const v = (window.VILLES || []).find((x) => sansAccent(x[0]).toLowerCase() === sansAccent(ville).toLowerCase()); if (v) { state.zoneGeo = { dest: 'local', nom: v[0], approx: false }; DEST.local.centre = [v[2], v[3]]; } }
@@ -1485,11 +1528,17 @@
   });
   document.addEventListener('change', (e) => {
     if (e.target.id === 'av-fichier' && e.target.files && e.target.files[0]) {
-      photoReduite(e.target.files[0]).then((url) => { state.photoTemp = url; majApercuAvatar(); toast('Photo ajoutée : enregistre ta fiche pour la garder'); })
-        .catch(() => toast('Impossible de lire cette photo, essaie une autre'));
+      const lecture = ++photoLecture, formulaire = e.target.closest('#form-profil');
+      photoEnLecture = true;
+      photoReduite(e.target.files[0]).then((portrait) => {
+        if (lecture !== photoLecture || !formulaire || !formulaire.isConnected) return;
+        portraitPrepare = portrait; state.photoTemp = portrait.original; majApercuAvatar();
+        toast('Photo ajoutée : enregistre ta fiche pour la garder');
+      }).catch(() => { if (lecture === photoLecture) toast('Impossible de lire cette photo, essaie une autre'); })
+        .finally(() => { if (lecture === photoLecture) photoEnLecture = false; });
       e.target.value = '';
     }
-    if (e.target.name === 'avatar' && e.target.closest('#form-profil')) { state.photoTemp = ''; majApercuAvatar(); }
+    if (e.target.name === 'avatar' && e.target.closest('#form-profil')) { photoLecture++; photoEnLecture = false; portraitPrepare = null; state.photoTemp = ''; majApercuAvatar(); }
   });
   document.addEventListener('input', (e) => {
     if (e.target.name === 'pseudo') $('#err-pseudo').hidden = true;
