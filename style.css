@@ -2627,3 +2627,52 @@ nav.tabs .tab.tab-plus.carte-banger { border: 0 !important; box-shadow: none !im
 .cbx-carte { width: 64px; height: 64px; margin-top: -26px; border-radius: 50%; font-size: 10.5px; letter-spacing: .03em; }
 .cbx-onde { width: 64px; height: 64px; border-radius: 50%; top: calc(50% - 13px); margin: -32px 0 0 -32px; }
 @keyframes cbx-onde { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.5); opacity: 0; } }
+
+/* Bannière « Mes DJ » : photo coucher de soleil, claire et réaliste, presque sans voile noir */
+.acc-mesdj.md-fin { height: 124px; background-position: 50% 50% !important; background-size: cover !important; }
+.acc-mesdj.md-fin::before { background: linear-gradient(90deg, rgba(0,0,0,0) 38%, rgba(20,8,0,.28) 70%, rgba(20,8,0,.34)); }
+.acc-mesdj.md-fin .md-ligne { width: 62%; }
+.acc-mesdj.md-fin .md-txt b, .acc-mesdj.md-fin .md-txt small { text-shadow: 0 1px 3px rgba(0,0,0,.55); }
+
+/* Bannière « Direct autour de moi » : image fournie (texte inclus dans l'image), sans voile sombre */
+.bc-banniere.bc-photo { padding: 0; background: #0B0F1C; }
+.bc-banniere.bc-photo::before, .bc-banniere.bc-photo::after { display: none !important; }
+.bc-banniere.bc-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 0% 50%; }
+
+/* Bannière « Les DJ en live » : image fournie, texte inclus, sans voile ni flèche ajoutés */
+.live-banniere.lv-photo::before, .live-banniere.lv-photo::after { display: none !important; }
+.live-banniere.lv-photo img { object-fit: cover; object-position: 50% 50%; }
+.ag-banniere.live-banniere.lv-photo { aspect-ratio: 1400 / 392 !important; height: auto !important; }
+
+/* Bannière « Agenda » : image fournie, texte inclus */
+.ag-banniere.ag-photo::before, .ag-banniere.ag-photo::after { display: none !important; }
+.ag-banniere.ag-photo { aspect-ratio: 1400 / 600 !important; height: auto !important; }
+.ag-banniere.ag-photo img { object-fit: cover; object-position: 50% 50%; }
+.acc-mesdj.md-fin { height: 96px !important; }
+.acc-carte.avec-photo .acc-art { aspect-ratio: 2.2 / 1 !important; }
+.acc-carte.avec-photo .acc-bande { top: 0; bottom: auto; background: linear-gradient(180deg, rgba(8,6,24,.55), rgba(8,6,24,0)); padding-bottom: 8px; }
+.acc-mesdj.md-fin { height: 64px !important; background-position: 50% 40% !important; } .acc-mesdj.md-fin .md-av { width: 24px; height: 24px; } .acc-mesdj.md-fin .md-coeur { width: 26px; height: 26px; } .acc-mesdj.md-fin .md-txt b { font-size: 15px; }
+.ag-banniere.bc-banniere.bc-photo { aspect-ratio: 1400 / 521 !important; height: auto !important; }
+
+/* Check-in (page et bannière d'accueil) aux couleurs de l'appli : orange, rose, corail */
+.ck-ligne { background: linear-gradient(135deg, #1E0C1F, #140819); border-color: rgba(255,79,163,.22); }
+.ck-bande { background: linear-gradient(90deg, #2A0E22, #1A0A1E); border-bottom-color: rgba(255,138,61,.18); }
+.ck-h, .ck-horloge, .bk-horloge, .bk-h { color: #FF8A3D; }
+.ck-porte small { color: #B07A9A; }
+.ck-st-vert { color: #FF9CCB; background: rgba(255,79,163,.14); }
+.ck-st-or { color: #FFB056; background: rgba(255,138,61,.18); }
+.ck-st-rouge { color: #FF4E5E; background: rgba(255,59,78,.18); }
+.ck-st-orange { color: #FF8A3D; background: rgba(255,138,61,.16); }
+.ck-st-bleu { color: #FF6FB5; background: rgba(255,79,163,.16); }
+.ck-st-violet { color: #E28BFF; background: rgba(214,110,255,.16); }
+.ck-st-gris { color: #B89AAE; background: rgba(184,154,174,.12); }
+.ck-ligne .fil-item.k-live { --fc: 255,138,61; }
+.ck-ligne .fil-item.k-decl { --fc: 255,110,90; }
+.ck-ligne .fil-item.k-spot { --fc: 230,90,200; }
+.ck-ligne .fil-item.k-club { --fc: 255,79,163; }
+.ck-ligne .fil-tag.live { background: #FF8A3D; } .ck-ligne .fil-tag.decl { background: #FF6E5A; } .ck-ligne .fil-tag.spot { background: #E65AC8; } .ck-ligne .fil-tag.club { background: #FF4FA3; }
+.ck-ligne.ck-or { border-color: rgba(255,138,61,.6); animation-name: ck-embarq2; }
+@keyframes ck-embarq2 { 0%, 100% { background: #1E0C1F; box-shadow: none; } 50% { background: #3A1A12; box-shadow: 0 0 16px rgba(255,138,61,.4); } }
+.bk-banniere { background: radial-gradient(circle at 85% 15%, rgba(255,79,163,.22), transparent 55%), linear-gradient(135deg, #2A0E26, #12081A) !important; border-color: rgba(255,79,163,.25) !important; }
+.bk-banniere .ag-kick { color: #FF8A3D; }
+.bk-tableau { background: #12071A !important; border-color: rgba(255,138,61,.2) !important; }

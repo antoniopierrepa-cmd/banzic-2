@@ -158,6 +158,31 @@ window.DESTS = [
     ]
   },
   {
+    id: 'phuket', tz: 'Asia/Bangkok', nom: 'Phuket', pays: 'Thaïlande', centre: [7.93, 98.30], zoom: 11,
+    saison: 'novembre à avril',
+    mois: [3, 2, 2, 2, 0, -1, -1, -1, -1, 0, 1, 3],
+    notes: {
+      0: 'Haute saison sèche : beach clubs pleins tout le mois.',
+      3: 'Songkran mi-avril : fête de l\'eau, soirées partout.',
+      5: 'Mousson de mai à octobre : moins de monde, beach clubs au ralenti.',
+      11: 'Noël et Nouvel An : le pic de l\'année.'
+    },
+    evenements: [
+      { nom: 'Songkran', quand: '13–15 avril', mois: 3 },
+      { nom: 'Nouvel An', quand: '31 décembre', mois: 11 }
+    ],
+    billetterie: [
+      { nom: 'Billetteries des beach clubs', affil: 'Accord direct à négocier' }
+    ],
+    // Positions approximatives (démo), à vérifier
+    lieux: [
+      { id: 'catch-phuket', nom: 'Catch Beach Club', type: 'plage', zone: 'Bang Tao', lat: 7.9990, lng: 98.2935, approx: true },
+      { id: 'cafe-del-mar-phuket', nom: 'Café del Mar Phuket', type: 'plage', zone: 'Kamala', lat: 7.9575, lng: 98.2790, approx: true },
+      { id: 'illuzion-phuket', nom: 'Illuzion', type: 'club', zone: 'Patong · Bangla Road', lat: 7.8935, lng: 98.2975, approx: true },
+      { id: 'xana-phuket', nom: 'Xana Beach Club', type: 'plage', zone: 'Bang Tao · Laguna', lat: 8.0010, lng: 98.2920, approx: true }
+    ]
+  },
+  {
     // Partout ailleurs (Toulon, Marseille, Lyon…) : pas de saison ni de line-ups officiels,
     // seulement les DJ qui se déclarent et les spots signalés autour de la position de l'utilisateur.
     id: 'local', local: true, nom: 'Autour de moi', pays: 'ta ville', centre: [43.1242, 5.9280], zoom: 13,

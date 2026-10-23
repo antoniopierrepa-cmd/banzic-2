@@ -287,7 +287,7 @@
     let h = '';
     const pr = state.profil;
     { const di = DEST.ibiza, ni = di.mois[MOIS_NOW];
-      h += `<div class="dest-banniere" style="background-image:url('ibiza-carte.jpg?v=3')"></div><div class="dest-tete"><div><h2>${esc(di.nom)}</h2><small>${esc(di.pays)} · ${T('saison')} : ${esc(di.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(di.tz) })} · ${decalage(di.tz)}</small></div>${pastilleMois(ni)}</div>${barreAnnee(di)}`
+      h += `<div class="dest-banniere" style="background-image:url('ibiza-carte.jpg?v=4');background-position:left center"></div><div class="dest-tete"><div><h2>${esc(di.nom)}</h2><small>${esc(di.pays)} · ${T('saison')} : ${esc(di.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(di.tz) })} · ${decalage(di.tz)}</small></div>${pastilleMois(ni)}</div>${barreAnnee(di)}`
         + miniCarteDest(di) + filDest() + carteIbizaGrande() + carteAgendaDest(di); }
     h += blocDecls();
     h += blocPepites();
@@ -1169,7 +1169,8 @@
     { id: 'mykonos', nom: 'Mykonos', saison: 'juin à septembre' },
     { id: 'tulum', nom: 'Tulum', saison: 'décembre à avril' },
     { id: 'miami', nom: 'Miami', saison: 'hiver et Miami Music Week en mars' },
-    { id: 'dubai', nom: 'Dubaï', saison: 'novembre à avril' }
+    { id: 'dubai', nom: 'Dubaï', saison: 'novembre à avril' },
+    { id: 'phuket', nom: 'Phuket', saison: 'novembre à avril' }
   ];
   const nomDest = (p) => p.ville ? p.ville : p.destination === 'autre' ? (p.destinationAutre || 'Ailleurs') : (DESTINATIONS.find((d) => d.id === p.destination) || {}).nom || '';
   const STYLES = ['House', 'Tech house', 'Techno', 'Afro house', 'Melodic', 'Disco & funk', 'EDM', 'Trance', 'Latino'];
@@ -2295,7 +2296,7 @@
     if (d.id === 'dubai') soireesDubai().filter((r) => r.date === auj).forEach((r) => { const dj = (r.djs || '').split(/,| b2b /i)[0].trim();
       xs.push(item('decl', 'Ce soir', `data-dj-pro="${esc(dj || r.titre)}"`, dj || r.titre, r.heure ? 'à ' + esc(r.heure) : '', [[esc(r.nomLieu)], [esc(r.titre)], ['line-up annoncé', 'fil-att']], visFil(dj || r.titre, 0, ''))); });
     // Agendas du Top 100 : les DJ qui passent dans cette destination dans les 7 jours
-    const villes = { dubai: ['dubai', 'dubaï'], miami: ['miami', 'miami beach'], mykonos: ['mykonos', 'mýkonos'], tulum: ['tulum'], ibiza: ['ibiza', 'sant antoni de portmany', 'sant josep de sa talaia', 'eivissa'] }[d.id] || [];
+    const villes = { dubai: ['dubai', 'dubaï'], miami: ['miami', 'miami beach'], mykonos: ['mykonos', 'mýkonos'], tulum: ['tulum'], phuket: ['phuket', 'patong', 'kamala'], ibiza: ['ibiza', 'sant antoni de portmany', 'sant josep de sa talaia', 'eivissa'] }[d.id] || [];
     const fin7 = iso(new Date(Date.now() + 7 * 86400000));
     Object.entries(window.AGENDA_DJS || {}).forEach(([nom, o]) => (o.avenir || []).forEach((r) => { if (r[0] >= auj && r[0] <= fin7 && villes.includes(sansAccent(String(r[3] || '')).toLowerCase())) {
       const j = Math.round((new Date(r[0] + 'T12:00') - new Date(auj + 'T12:00')) / 86400000);
@@ -2431,8 +2432,8 @@
         + `<p class="demo-note">Partout hors des grandes destinations (Toulon, Marseille, Lyon…), l'appli montre les DJ qui se déclarent avec un profil DJ et les spots signalés par les Bangers. Démo : la carte est centrée sur Toulon si ta position n'est pas disponible.</p>`;
       return;
     }
-    const FOND_DEST = { ibiza: 'ibiza-carte.jpg?v=3', mykonos: 'mykonos-carte.jpg?v=3', tulum: 'tulum-carte.jpg?v=3', miami: 'miami-carte.jpg?v=3', dubai: 'dubai-carte.jpg?v=3' };
-    let h = `${FOND_DEST[d.id] ? `<div class="dest-banniere" style="background-image:url('${FOND_DEST[d.id]}')"></div>` : ''}<div class="dest-tete"><div><h2>${esc(d.nom)}</h2><small>${esc(d.pays)} · ${T('saison')} : ${esc(d.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(d.tz) })} · ${decalage(d.tz)}</small></div>${pastilleMois(n)}</div>
+    const FOND_DEST = { ibiza: 'ibiza-carte.jpg?v=4', mykonos: 'mykonos-carte.jpg?v=4', tulum: 'tulum-carte.jpg?v=4', miami: 'miami-carte.jpg?v=4', dubai: 'dubai-carte.jpg?v=4', phuket: 'phuket-carte.jpg?v=4' };
+    let h = `${FOND_DEST[d.id] ? `<div class="dest-banniere" style="background-image:url('${FOND_DEST[d.id]}');background-position:left center"></div>` : ''}<div class="dest-tete"><div><h2>${esc(d.nom)}</h2><small>${esc(d.pays)} · ${T('saison')} : ${esc(d.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(d.tz) })} · ${decalage(d.tz)}</small></div>${pastilleMois(n)}</div>
       ${barreAnnee(d)}${miniCarteDest(d)}${filDest()}
       <p class="conseil"><b>${Maj(moisNom(m))}</b> : ${esc(d.notes[m] || (n < 0 ? 'hors saison.' : labelMois(n) + '.'))}${n < 0 ? ` ${T('reprise', { m: '<b>' + reprise(d, m) + '</b>' })}.` : ''}</p>`;
     h += (CARTES_ILLUS[d.id] ? carteIbizaGrande(d.id) : '') + carteAgendaDest(d);
@@ -2672,7 +2673,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // « Ibiza » est toujours accessible d'un toucher. « Autour de moi » prend la position du téléphone :
   // près de Mykonos, Tulum, Miami ou Dubaï, on voit cette destination ; ailleurs (Toulon, Marseille…),
   // les DJ déclarés et les spots signalés autour de soi. Démo : ?pos=mykonos|tulum|miami|dubai|toulon|ibiza
-  const POS_DEMO = { ibiza: [38.95, 1.42], mykonos: [37.44, 25.35], tulum: [20.17, -87.46], miami: [25.79, -80.15], dubai: [25.10, 55.17], toulon: [43.1242, 5.928] };
+  const POS_DEMO = { ibiza: [38.95, 1.42], mykonos: [37.44, 25.35], tulum: [20.17, -87.46], miami: [25.79, -80.15], dubai: [25.10, 55.17], phuket: [7.89, 98.30], toulon: [43.1242, 5.928] };
   const distKm = (a, b) => { const r = Math.PI / 180, x = (b[1] - a[1]) * r * Math.cos((a[0] + b[0]) / 2 * r), y = (b[0] - a[0]) * r; return Math.sqrt(x * x + y * y) * 6371; };
   state.mode = store.get('mode', 'geo');
   state.zoneGeo = { dest: 'local', nom: 'Toulon', approx: true };
@@ -3826,14 +3827,15 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const ACC_ANNEAUX = '<svg class="acc-anneaux" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="50" fill="none" stroke="#fff" stroke-width="8" stroke-dasharray="220 45"/><circle cx="60" cy="60" r="30" fill="none" stroke="#fff" stroke-width="8" stroke-dasharray="130 34"/><circle cx="60" cy="60" r="11" fill="#fff"/></svg>';
   const accInit = (n) => String(n).replace(/[^A-Za-zÀ-ÿ0-9 &]/g, '').split(/\s+/).filter(Boolean).slice(0, 2).map((m) => m[0]).join('').toUpperCase();
   const ACC_NIV = [['vert', T('pop0')], ['or', T('pop1')], ['rouge', T('pop2')], ['noir', T('pop3')]];
-  const COUL_DEST = { ibiza: ['#FF8A3D', '#6A1838'], mykonos: ['#3D8BFF', '#0B1E52'], tulum: ['#3DF28A', '#0B3A3A'], miami: ['#FF4FA3', '#3B0A4A'], dubai: ['#F2C53A', '#5A2A06'] };
+  const COUL_DEST = { ibiza: ['#FF8A3D', '#6A1838'], mykonos: ['#3D8BFF', '#0B1E52'], tulum: ['#3DF28A', '#0B3A3A'], miami: ['#FF4FA3', '#3B0A4A'], dubai: ['#F2C53A', '#5A2A06'], phuket: ['#FF8A3D', '#4A0F3A'] };
   // Compte à rebours jusqu'aux openings de la prochaine saison (dates estimées d'après les saisons précédentes)
   const OPENINGS = {
     ibiza: [['2026-04-24', '2026-10-12'], ['2027-04-23', '2027-10-11']],
     mykonos: [['2026-05-29', '2026-10-04'], ['2027-05-28', '2027-10-03']],
     tulum: [['2025-12-15', '2026-04-30'], ['2026-12-15', '2027-04-30']],
     miami: [['2025-11-06', '2026-05-15'], ['2026-11-06', '2027-05-15']],
-    dubai: [['2025-10-03', '2026-04-30'], ['2026-10-02', '2027-04-30']]
+    dubai: [['2025-10-03', '2026-04-30'], ['2026-10-02', '2027-04-30']],
+    phuket: [['2025-11-01', '2026-04-30'], ['2026-11-01', '2027-04-30']]
   };
   function etatOpening(id, maintenant) {
     const t = maintenant || Date.now();
@@ -4022,9 +4024,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     let rows = []; try { rows = renderCheckin(true) || []; } catch (e) { rows = []; }
     rows = rows.map((r) => r.replace(/<button /g, '<span ').replace(/<\/button>/g, '</span>').replace(/data-(lieu|dj-pro|spot-voir)=/g, 'data-x-$1='));
     const lignes = rows.concat(rows).join('');
-    return `<button class="ag-banniere bc-banniere" data-tab="map" aria-label="Ouvrir la carte : ce qui se passe autour de toi">${carte}
-        <span class="bc-badge"><i></i>Samedi 15 août · 16:00</span>
-        <span class="ag-txt bc-txt"><small class="ag-kick bc-kick"><span class="ico-diffusion" aria-hidden="true"><i></i><b></b><b></b></span>${esc(state.zoneGeo.nom)}</small><b class="ag-titre">Direct<br>autour de moi</b><span class="ag-sous">Toute la journée sur la carte : DJ en live, beach clubs, bars</span></span></button>
+    return `<button class="ag-banniere bc-banniere bc-photo" data-tab="map" aria-label="Ouvrir la carte : Direct autour de moi"><img src="direct-banniere.jpg?v=3" alt="" loading="lazy"></button>
       <button class="ag-banniere bk-banniere" data-tab="checkin" aria-label="Ouvrir le Check-in : les départs de la journée">
         <span class="ag-txt bk-txt"><small class="ag-kick">Check-in</small><b class="ag-titre">Les départs<br>du jour</b><span class="ag-sous">${rows.length} départs autour de toi : celui qui finit le premier en tête</span></span>
         <span class="bk-tableau"><span class="bk-horloge">${flap(hm(Date.now()), 5)}</span><span class="bk-piste" style="--duree:${Math.max(10, rows.length * 3.2)}s">${lignes}</span></span></button>`;
@@ -4082,27 +4082,23 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const TYPES_AG = [['tout', 'Agenda', '✦', '#C9CFDD'], ['club', 'Club', '🪩', '#3D8BFF'], ['festival', 'Festival', '🎪', '#FF8A3D'], ['concert', 'Concert', '🎤', '#F2C53A'], ['bar', 'Bar', '🍸', '#A77BFF'], ['resto', 'Restaurant', '🍽️', '#3DF28A']];
     // Agenda autour de moi : la bannière « L'agenda » (visuel fourni par Antonio, textes dans la police de l'appli).
     // Un appui ouvre l'Agenda, où l'on choisit Club, Festival, Concert…
-    h += `<section class="acc-rub ag-rub"><button class="ag-banniere" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
-        <img src="agenda-banniere.jpg?v=2" alt="" loading="lazy">
-        <span class="ag-txt"><small class="ag-kick">Tes prochaines sorties</small><b class="ag-titre">L'agenda</b><span class="ag-sous">Clubs, concerts &amp; festivals</span>
-          <span class="ag-compte">${nbType('tout')} dates à moins de ${rayonAg} km · ${esc(state.zoneGeo.nom)}</span></span></button></section>`;
+    h += `<section class="acc-rub ag-rub"><button class="ag-banniere ag-photo" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
+        <img src="agenda-banniere.jpg?v=3" alt="" loading="lazy"></button></section>`;
     // 2. Les saisons
     // En saison d'abord, puis les autres dans l'ordre du compte à rebours (la plus proche en premier)
     const rangOpening = (id) => { const e = etatOpening(id); return !e ? 9e15 : e.avant ? e.ms : -1; };
     h += accRubrique('Les saisons', 'En saison d\'abord, puis les prochaines openings', DESTS.filter((d) => !d.local).sort((a, b) => rangOpening(a.id) - rangOpening(b.id)).map((d) => { const n = d.mois[MOIS_NOW], c = COUL_DEST[d.id] || ['#3D8BFF', '#0A1F4A'];
       // Une image de fond par destination quand on en a une (Ibiza : visuel fourni par Antonio, démo)
-      const fond = ({ ibiza: 'ibiza-carte.jpg?v=3', mykonos: 'mykonos-carte.jpg?v=3', tulum: 'tulum-carte.jpg?v=3', miami: 'miami-carte.jpg?v=3', dubai: 'dubai-carte.jpg?v=3' })[d.id];
-      return accCarte({ cls: 'large' + (fond ? ' avec-photo' : ''), titre: d.nom + ' saison', sous: d.saison, grand: fond ? '' : (DRAPEAUX[d.id] || '') + ' ' + esc(d.nom), g: fond ? `url('${fond}') center center / cover no-repeat, linear-gradient(145deg, ${c[0]}, ${c[1]})` : `linear-gradient(145deg, ${c[0]}, ${c[1]})`, attr: `data-dest-puce="${d.id}"`,
+      const fond = ({ ibiza: 'ibiza-carte.jpg?v=4', mykonos: 'mykonos-carte.jpg?v=4', tulum: 'tulum-carte.jpg?v=4', miami: 'miami-carte.jpg?v=4', dubai: 'dubai-carte.jpg?v=4', phuket: 'phuket-carte.jpg?v=4' })[d.id];
+      return accCarte({ cls: 'large' + (fond ? ' avec-photo' : ''), titre: d.nom + ' saison', sous: d.saison, grand: fond ? '' : (DRAPEAUX[d.id] || '') + ' ' + esc(d.nom), g: fond ? `url('${fond}') left center / cover no-repeat, linear-gradient(145deg, ${c[0]}, ${c[1]})` : `linear-gradient(145deg, ${c[0]}, ${c[1]})`, attr: `data-dest-puce="${d.id}"`,
         badge: compteurOpening(d.id, n < 0 ? `<span class="acc-badge hors">${T('hors')}</span>` : `<span class="acc-badge ${ACC_NIV[n][0]}">${ACC_NIV[n][1]}</span>`) }); }));
     // 3. DJ live dans le monde
     const lives = streamsActifs(), genres = [...new Set(lives.map(genreDe))];
     if (state.genreLive && !genres.includes(state.genreLive)) state.genreLive = null;
     const puces = `<div class="genre-puces">${['', ...genres].map((g) => `<button class="genre-puce${(state.genreLive || '') === g ? ' on' : ''}" data-genre-live="${esc(g)}" style="--gc:${g ? coulGenre(g) : '#C9CFDD'}">${g ? esc(g) : 'Tous'}</button>`).join('')}</div>`;
     // Bannière « Les DJ en live » (visuel fourni par Antonio, textes dans la police de l'appli) : un appui ouvre tous les lives disponibles
-    h += `<section class="acc-rub ag-rub"><button class="ag-banniere live-banniere" data-live-tous="1" aria-label="Les DJ en live : écouter un live">
-        <img src="live-banniere.jpg?v=3" alt="" loading="lazy">
-        <span class="ag-txt"><small class="ag-kick lv-kick"><i></i>En direct</small><b class="ag-titre">Les DJ<br>en live</b><span class="ag-sous">Leurs sets, où que tu sois.</span>
-          <span class="ag-compte">${lives.length} DJ en live en ce moment</span></span></button></section>`;
+    h += `<section class="acc-rub ag-rub"><button class="ag-banniere live-banniere lv-photo" data-live-tous="1" aria-label="Les DJ en live : écouter un live">
+        <img src="live-banniere.jpg?v=4" alt="" loading="lazy"></button></section>`;
     // La rubrique « DJ live dans le monde » (titre, styles, lecteurs) est retirée de l'accueil : la bannière ci-dessus ouvre tous les lives
     // 4. Classement DJ Mag Top 100 2026, du 1er au 100e (à la place des clubs d'Ibiza)
     const TOP = window.DJMAG2026; let secTop = '';
@@ -4221,7 +4217,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       return `<span class="md-av${live ? ' md-live' : ''}" style="--g:${g || accGrad(n)};z-index:${9 - i}" title="${esc(n)}${live ? ' · en live' : ''}">${g ? '' : esc(accInit(n))}</span>`; }).join('');
     const sous = !fav.length ? 'Touche le ♥ sur la fiche d\'un DJ pour le suivre ici'
       : `${fav.length} DJ suivi${fav.length > 1 ? 's' : ''}${fav.filter(enLiveMd).length ? ` · ${fav.filter(enLiveMd).length} en live` : ''}${ce.length ? ` · ${ce.length} joue${ce.length > 1 ? 'nt' : ''} ce soir` : ''}`;
-    const fond = state.profil && !state.profil.photo ? 'avatars-banzic/' + avIllus(state.profil.avatar) + '-c.jpg' : '';
+    const fond = 'mesdj-banniere.jpg'; // bannière photo commune (DJ au coucher de soleil)
     const coeur = `<span class="md-coeur" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg></span>`;
     const fleche = `<svg class="md-fl" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
     // Avec l'illustration : la photo en bannière, le bouton « Mes DJ » incrusté à droite, là où regarde le DJ
