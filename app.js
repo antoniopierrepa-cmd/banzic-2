@@ -2754,8 +2754,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // Un bateau bouge : chaque confirmation met à jour sa position.
   const TYPES_SPOT = { club: 'Discothèque', bar: 'Bar', resto: 'Restaurant', plage: 'Plage', rooftop: 'Rooftop', bateau: 'Bateau', rue: 'Rue · place' };
   const DUREE_SPOT = 3 * 3600 * 1000, SEUIL_SPOT = 2;
+  // Test réel : la démo est coupée par défaut ; ?demo=1 dans l'adresse la remet
+  const SANS_DEMO = !/[?&]demo=1/.test(location.search);
   const SPOTS_DEMO = () => {
     const now = Date.now();
+    if (SANS_DEMO) return [];
     return [
       { id: 'demo-port', demo: true, dest: 'ibiza', type: 'bar', nom: 'Terrasse du port', dj: 'DJ local, house', lat: 38.9107, lng: 1.4372, t: now - 50 * 60000, maj: now - 12 * 60000, conf: 4, par: 'ibz_nights' },
       { id: 'demo-bateau', demo: true, dest: 'ibiza', type: 'bateau', nom: 'Catamaran sunset', dj: '', lat: 38.9185, lng: 1.4565, t: now - 35 * 60000, maj: now - 6 * 60000, conf: 2, par: 'sunset.lover',
@@ -3032,6 +3035,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     djMonde('dax-volt', 'Dax Volt', ['Électro'], 'Paris', '🇫🇷', [11, 1, 13, 8], { url: '#', titre: 'Électro warehouse, Pantin', depuis: ilYaM(9), vues: 288 })
   );
   let MON_DJ = store.get('djPro', null);
+  // Sans démo : plus aucun DJ Pro fictif (ni fiche, ni live)
+  if (SANS_DEMO) DJS_DEMO.length = 0;
   const tousDjsPro = () => DJS_DEMO.concat(MON_DJ ? [MON_DJ] : []);
   const djProParNom = (nom) => tousDjsPro().find((d) => sansAccent(d.nom) === sansAccent(nom));
 
@@ -3097,6 +3102,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // Déclarations « Je mixe maintenant »
   const DECL_DEMO = () => {
     const now = Date.now();
+    if (SANS_DEMO) return [];
     return [
       { id: 'd-nina', demo: true, dj: 'nina-sol', dest: 'ibiza', lieu: null, nomLieu: 'Terrasse du port', lat: 38.9104, lng: 1.4366, style: 'Afro house', debut: now - 40 * 60000, fin: now + 140 * 60000, conf: 5, contest: 0 },
       { id: 'd-marco', demo: true, dj: 'marco-vela', dest: 'ibiza', lieu: 'lio', style: 'Tech house', debut: now - 15 * 60000, fin: now + 165 * 60000, conf: 1, contest: 0 },
@@ -4310,8 +4316,9 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   state.notifsVues = store.get('notifsVues', false); state.msgsVus = store.get('msgsVus', false);
   function majCloche() {
     const n = $('#nb-notif'), m = $('#nb-msg');
-    if (n) n.textContent = state.notifsVues ? '' : NOTIFS.length;
-    if (m) m.textContent = state.msgsVus ? '' : MESSAGES.filter((x) => x.nonlu).length;
+    if (SANS_DEMO) { NOTIFS.length = 0; MESSAGES.length = 0; }
+    if (n) n.textContent = state.notifsVues || !NOTIFS.length ? '' : NOTIFS.length;
+    if (m) m.textContent = state.msgsVus || !MESSAGES.filter((x) => x.nonlu).length ? '' : MESSAGES.filter((x) => x.nonlu).length;
   }
   function ouvrirPanneau(quoi) {
     const p = $('#ent-panneau'), deja = !p.hidden && p.dataset.quoi === quoi;
