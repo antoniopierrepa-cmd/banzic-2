@@ -2404,12 +2404,12 @@
       const st = avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ok ? ['En cours', 'vert'] : ['Annoncé', 'orange'];
       ligne({ fin: x.fin, conf: x.conf || 0, act: `data-decl-ok="${x.id}"`, km: d, t: x.debut, heure: hm(x.debut), porte: l.nom || 'Spot', st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Déclaré', attr: `data-dj-pro="${esc(dj.nom)}"`, nom: dj.nom,
         l1: avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : reste > 0 ? 'encore ' + dur(Math.round(reste)) : 'se termine',
-        l2: [[(x.temp != null ? `<span class="temp-pil t${x.temp}">${['Froid', 'Moyen', 'Chaud'][x.temp]}</span> ` : '') + esc(l.nom || 'Spot') + ' · ' + fK(d)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']].concat(x.com ? [['« ' + esc(x.com) + ' »', 'fil-com']] : []), vol: dj.nom }); });
+        l2: [[(x.temp != null ? `<span class="thermo-mini t${x.temp}" title="Ambiance : ${['Froid', 'Moyen', 'Chaud'][x.temp]}"><i></i></span><span class="thermo-txt t${x.temp}">${['Froid', 'Moyen', 'Chaud'][x.temp]}</span> ` : '') + esc(l.nom || 'Spot') + ' · ' + fK(d)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']].concat(x.com ? [['« ' + esc(x.com) + ' »', 'fil-com']] : []), vol: dj.nom }); });
     // Spots signalés par les Bangers
     SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && s.lat != null).forEach((sp) => { const d = km(sp.lat, sp.lng); if (d > r) return;
       const n = sp.note || 0, cf = sp.conf || 0, v = n >= 4 && cf >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || cf >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
       ligne({ fin: (sp.maj || sp.t) + 3 * 3600000, sp, km: d, t: sp.t || sp.maj, heure: hm(sp.t || sp.maj), porte: sp.nom || TYPES_SPOT[sp.type] || 'Spot', st: ['Signalé', 'violet'], k: 'spot', tag: 'Spot', attr: `data-spot-voir="${sp.id}"`, nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot',
-        l1: `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, l2: [[esc(sp.dj || 'DJ inconnu') + ' · ' + fK(d)], [(sp.temp != null ? `<span class="temp-pil t${sp.temp}">${['Froid', 'Moyen', 'Chaud'][sp.temp]}</span> ` : '') + 'signalé par @' + esc(sp.par || 'un Banger')]].concat(sp.com ? [['« ' + esc(sp.com) + ' »', 'fil-com']] : []), vol: '' }); });
+        l1: `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, l2: [[esc(sp.dj || 'DJ inconnu') + ' · ' + fK(d)], [(sp.temp != null ? `<span class="thermo-mini t${sp.temp}" title="Ambiance : ${['Froid', 'Moyen', 'Chaud'][sp.temp]}"><i></i></span><span class="thermo-txt t${sp.temp}">${['Froid', 'Moyen', 'Chaud'][sp.temp]}</span> ` : '') + 'signalé par @' + esc(sp.par || 'un Banger')]].concat(sp.com ? [['« ' + esc(sp.com) + ' »', 'fil-com']] : []), vol: '' }); });
     // Soirées de l'agenda : ce soir et demain
     SUD.soirees.filter((x) => (x.date === auj || x.date === dem) && SUD.lieux[x.lieu]).forEach((x) => { const l = SUD.lieux[x.lieu], d = km(l.lat, l.lng); if (d > r) return;
       const deb = msDe(x.date, x.heure), avant = deb ? (deb - now) / 60000 : null, dj = String(x.djs || '').split(/,| b2b | & /i)[0].trim();
@@ -2913,7 +2913,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   }
   function formSpot() {
     photoSpot = '';
-    $('#panel-spot').innerHTML = '<div class="ps-titre"><b>Un DJ joue ici</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div><p class="aide">Je cherche ta position…</p>';
+    $('#panel-spot').innerHTML = '<div class="ps-titre"><b>Je bangue</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div><p class="aide">Je cherche ta position…</p>';
     $('#panel-spot').hidden = false;
     positionSpot((lat, lng, src) => {
       const R = rayonSpot(src), fm = (km) => km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1).replace('.', ',') + ' km';
@@ -2933,9 +2933,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
           <div class="ps-lieux" id="ps-lieux"${posSpot.connu ? ' hidden' : ''}>${liste}</div>`;
         if (deja) { $('#ps-zone').innerHTML = html; deja.querySelector('.ps-suite').hidden = !proches.length; majDjIci(); return; }
         $('#panel-spot').innerHTML = `<form id="form-spot" novalidate>
-          <div class="ps-titre"><b>Un DJ joue ici</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div>
+          <div class="ps-titre"><b>Je bangue</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div>
+          <div class="ps-etape">1 · Le lieu</div>
           <div id="ps-zone">${html}</div>
           <div class="ps-suite"${proches.length ? '' : ' hidden'}>
+          <div class="ps-etape">2 · Le DJ</div>
           <div class="ps-dj-ici" hidden></div>
           <div class="ps-dj-cartes">
             <button type="button" class="ps-dj-carte" data-ps-dj="connu" style="--pc:#FF8A3D"><i aria-hidden="true"></i><b>Je connais le DJ</b><small>J'écris son nom</small></button>
@@ -2943,14 +2945,16 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
           </div>
           <input class="search ps-dj-champ" name="dj" maxlength="40" list="liste-djs-spot" placeholder="Nom du DJ" autocomplete="off" hidden>
           <datalist id="liste-djs-spot">${[...tousLesDjs().values()].slice(0, 300).map((n) => `<option value="${esc(n)}">`).join('')}</datalist>
-          <div class="ps-thermo"><span class="pst-titre">L'ambiance</span>
+          <div class="ps-etape">3 · L'ambiance</div>
+          <div class="ps-thermo"><span class="pst-titre">Quelle température ?</span>
             <div class="pst-rail"><input type="range" name="temp" min="0" max="2" step="1" value="1" aria-label="Température de la soirée" aria-valuetext="Moyen"></div>
             <div class="pst-labels"><span data-pst="0">Froid</span><span data-pst="1">Moyen</span><span data-pst="2">Chaud</span></div></div>
-          <label class="ps-com"><span class="pst-titre">Un mot sur la soirée <small>(facultatif)</small></span>
+          <div class="ps-etape">4 · Un commentaire <small>(si tu veux)</small></div>
+          <label class="ps-com"><span class="pst-titre">Un mot sur la soirée</span>
             <input class="search" name="com" maxlength="80" placeholder="Gros son, ça bouge bien…" autocomplete="off">
             <small class="aide">Éphémère : il s'efface à la fin du set, quand la barre de progression arrive au bout.</small></label>
           <button type="submit" class="btn-plein">Je bangue ici</button></div>
-          <button type="button" class="alerte ps-retour" data-spot-fermer="1">← Annuler, retour à la carte</button>
+          <button type="button" class="alerte ps-retour" data-spot-fermer="1">← Annuler</button>
           <p class="aide">Seulement dans un lieu public (bar, resto, club, beach club). Lieux : Banzic et OpenStreetMap. Visible tout de suite pour toi ; les autres le verront quand 2 personnes à côté l'auront confirmé.</p>
         </form>`;
         majDjIci();

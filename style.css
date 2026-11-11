@@ -2895,3 +2895,15 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .ps-com .pst-titre small { font-weight: 400; color: #9AA3B8; }
 .fil-com { font-style: italic; color: #FFD3A8 !important; }
 .op-carte .op-kick { font-size: 10.5px !important; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #9AA3B8 !important; }
+
+/* « Je bangue » : une vraie page plein écran, en 4 étapes */
+#panel-spot.panel-spot { position: fixed !important; inset: 0 !important; left: 0; right: 0; top: 0; bottom: 0; z-index: 2500; border-radius: 0; border: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: calc(env(safe-area-inset-top, 0px) + 18px) 18px calc(env(safe-area-inset-bottom, 0px) + 120px); background: radial-gradient(circle at 100% 0, rgba(255,79,163,.16), transparent 50%), #0B0F1C !important; box-shadow: none; }
+#panel-spot .ps-titre b { font-size: 26px; }
+.ps-etape { margin: 14px 0 2px; font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #FF8A3D; }
+.ps-etape small { text-transform: none; letter-spacing: 0; font-weight: 400; color: #9AA3B8; }
+/* Mini thermomètre dans les bandeaux du Check-in */
+.thermo-mini { display: inline-block; vertical-align: middle; position: relative; width: 46px; height: 8px; border-radius: 999px; background: linear-gradient(90deg, #3D8BFF, #F2C53A 50%, #FF3B3B); margin-right: 5px; }
+.thermo-mini i { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 2px solid #12081A; transform: translate(-50%, -50%); box-shadow: 0 0 6px rgba(255,255,255,.7); }
+.thermo-mini.t0 i { left: 8%; } .thermo-mini.t1 i { left: 50%; } .thermo-mini.t2 i { left: 92%; }
+.thermo-txt { font-size: 11px; font-weight: 800; margin-right: 4px; } .thermo-txt.t0 { color: #6FA8FF; } .thermo-txt.t1 { color: #F2C53A; } .thermo-txt.t2 { color: #FF5A5A; }
