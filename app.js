@@ -1190,6 +1190,28 @@
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c[0]}"/><stop offset="1" stop-color="${c[1]}"/></linearGradient></defs><rect width="120" height="80" fill="url(#g)"/>${motif}<rect width="120" height="80" fill="url(#g)" opacity=".15"/></svg>`;
     return (_visuG[g] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
   }
+
+  // Loupe : sur les fiches profil, toucher ou survoler un petit avatar, un style ou un pin l'affiche en grand au-dessus du doigt
+  (function () {
+    let loupe = null, cible = null;
+    const SEL = '.profil-form .av-illus-chip, .profil-form .genre-carte, .profil-form .choix-pin';
+    const fermer = () => { if (loupe) { loupe.remove(); loupe = null; } cible = null; };
+    const ouvrir = (el) => {
+      if (el === cible) return; fermer(); cible = el;
+      const r = el.getBoundingClientRect(); loupe = document.createElement('div'); loupe.className = 'loupe';
+      const img = el.querySelector('img');
+      if (el.classList.contains('genre-carte')) loupe.innerHTML = `<div class="lp-genre" style="background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(5,7,15,.78)),${getComputedStyle(el).getPropertyValue('--gi')} center/cover">${esc(el.textContent.trim())}</div>`;
+      else if (el.classList.contains('choix-pin')) loupe.innerHTML = `<div class="lp-pin"><img src="${img.src}" alt=""></div>`;
+      else loupe.innerHTML = `<div class="lp-rond"><img src="${img.src}" alt=""></div>`;
+      loupe.style.left = Math.min(window.innerWidth - 100, Math.max(100, r.left + r.width / 2)) + 'px';
+      loupe.style.top = Math.max(130, r.top - 8) + 'px';
+      document.body.appendChild(loupe); requestAnimationFrame(() => loupe && loupe.classList.add('vue'));
+    };
+    document.addEventListener('pointerover', (e) => { const el = e.target.closest && e.target.closest(SEL); if (el) ouvrir(el); else if (e.pointerType === 'mouse') fermer(); });
+    document.addEventListener('pointerdown', (e) => { const el = e.target.closest && e.target.closest(SEL); if (el) ouvrir(el); });
+    ['pointerup', 'pointercancel'].forEach((ev) => document.addEventListener(ev, (e) => { if (e.pointerType !== 'mouse') setTimeout(fermer, 450); }));
+    document.addEventListener('scroll', fermer, true);
+  })();
   function cartesGenres(nom, choisis, type, liste) {
     const sel = choisis || [];
     return `<div class="genres-rang">${(liste || GENRES).map((g) => { const on = sel.includes(g);
