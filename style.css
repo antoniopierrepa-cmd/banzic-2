@@ -2786,3 +2786,7 @@ img[src$="#photo"] { width: 40px !important; height: 40px !important; border-rad
 .ech-banniere .bp-ico { flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; font-weight: 800; color: #12081A; background: linear-gradient(135deg, #FF8A3D, #FF4FA3); }
 .ech-banniere.bp-officiel .bp-ico { background: linear-gradient(135deg, #3DF28A, #3DD6C6); }
 .ech-banniere + .ech-banniere { margin-top: 10px; }
+
+/* Profil d'un DJ Banger : l'espace DJ passe en tête, juste sous la fiche */
+.espace-dj-avant { margin-top: 18px; padding: 4px 14px 14px; border-radius: 18px; border: 1px solid rgba(255,79,163,.35); background: linear-gradient(160deg, rgba(255,138,61,.08), rgba(255,79,163,.06) 60%, transparent); }
+.espace-dj-avant > .section-title:first-child { color: #FF8A3D; font-size: 22px; }
