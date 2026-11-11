@@ -1558,6 +1558,7 @@
     const ajoute = (nom) => { const k = sansAccent(nom); if (!m.has(k)) m.set(k, nom); };
     passages.filter((p) => !p.inconnu).forEach((p) => decouperDjs(p.dj).forEach(ajoute));
     SAISON.lignes.forEach((r) => decouperDjs(r.djs).forEach(ajoute));
+    (window.DJS_INDEX || []).forEach(ajoute);
     return m;
   }
   let INDEX_DJ = null, NB_DATES = null;
@@ -1791,7 +1792,7 @@
     return `<div class="section-title" id="dj-agenda">Agenda <small>${avenir.length} date${avenir.length > 1 ? 's' : ''} à venir</small></div>
       <div class="segs ag-dj" role="group" aria-label="Agenda du DJ">${b('avenir', 'À venir', avenir.length)}${ibiza.length ? b('ibiza', 'Ibiza 2026', ibiza.length) : ''}${passe.length ? b('passe', 'Déjà passées', passe.length) : ''}</div>
       ${liste.length ? rangCartes(liste.map(carte)) : '<p class="conseil">Aucune date annoncée pour l\'instant.</p>'}
-      <p class="aide">Dates relevées le ${mj.getDate()} ${MOIS[mj.getMonth()]} ${mj.getFullYear()} sur Resident Advisor, Bandsintown, Songkick et Ibiza Spotlight. Touche une date pour la page billets.</p>`;
+      <p class="aide">Les dates arrivent par le radar Banzic et par le DJ lui-même. Touche une date pour la page billets.</p>`;
   }
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-agenda-dj]'); if (!b || !state.djOuvert) return;
@@ -2053,26 +2054,7 @@
   // Carte illustrée d'Ibiza (visuel fourni par Antonio) : repères placés à la main sur l'illustration, en % de l'image.
   // Catégories : club (discothèques), plage (beach clubs), bar (sunset et bars musicaux), pool (pool clubs et autres lieux musicaux)
   const CAT_IBIZA = { club: ['Clubs', '#FF4FA3'], plage: ['Beach clubs', '#3DD6C6'], bar: ['Bars', '#F2B53A'], pool: ['Pool clubs', '#8B7BFF'] };
-  const REPERES_IBIZA = [
-    // lieux de l'appli (fiche existante)
-    ['pacha', 'club', 62, 61], ['chinois', 'club', 57.5, 65], ['lio', 'club', 72, 63.5], ['destino', 'club', 79, 57],
-    ['hi', 'club', 52, 78], ['ushuaia', 'club', 58, 78], ['dc10', 'club', 55, 72.5], ['unvrs', 'club', 49, 50], ['amnesia', 'club', 55, 51.5],
-    ['covasanta', 'club', 42, 69], ['akasha', 'club', 88, 34], ['eden', 'club', 30.5, 44.5], ['espardis', 'club', 27, 42.5], ['528', 'club', 40, 47],
-    ['borabora', 'plage', 64, 78], ['bluemarlin', 'plage', 20.5, 68.5],
-    ['mambo', 'bar', 16.5, 44], ['cafedelmar', 'bar', 20, 45.8], ['pikes', 'pool', 33, 40], ['obeach', 'pool', 22, 49.5], ['rocks', 'pool', 26, 47],
-    // autres lieux (repère seul pour la démo)
-    [null, 'plage', 70, 79, 'Nassau Beach Club', "Playa d'en Bossa"], [null, 'plage', 52, 83, 'Tanit Beach', "Playa d'en Bossa"],
-    [null, 'plage', 58, 83, 'Coco Beach', "Playa d'en Bossa"], [null, 'plage', 64, 83, 'Seahorse Ibiza', "Playa d'en Bossa"],
-    [null, 'plage', 13, 51, 'Cala Bassa Beach Club', 'Cala Bassa'], [null, 'plage', 11, 56.5, 'Cotton Beach Club', 'Cala Tarida'],
-    [null, 'plage', 63, 93, 'Experimental Beach', 'Ses Salines · Cap des Falcó'], [null, 'plage', 89, 46, 'Nikki Beach', 'Santa Eulària'],
-    [null, 'plage', 92, 40, 'Aiyanna', 'Cala Nova'], [null, 'plage', 87, 52, 'Amante', "Sol d'en Serra"],
-    [null, 'plage', 40, 24, 'Elements', 'Benirràs'], [null, 'plage', 71, 91, 'El Chiringuito', 'Es Cavallet'],
-    [null, 'bar', 18, 48.5, 'Kumharas', 'Baie de Sant Antoni'], [null, 'bar', 25, 37.5, 'Hostal La Torre', 'Cap Negret'],
-    [null, 'bar', 84, 31, 'Las Dalias', 'Sant Carles'], [null, 'bar', 70, 84, "Murphy's Ibiza", "Playa d'en Bossa"], [null, 'bar', 66, 64.5, 'Tigre Morado', 'Eivissa'],
-    [null, 'pool', 29, 47.5, 'Bam-Bu-Ku', 'Sant Antoni'], [null, 'pool', 54, 88, 'NoHo Ibiza', "Playa d'en Bossa"],
-    [null, 'pool', 60, 88, 'Zazú Ibiza', "Playa d'en Bossa"], [null, 'pool', 66, 88, 'The Beach, Unexpected Ibiza', "Playa d'en Bossa"],
-    [null, 'pool', 14, 61, 'El Silencio', 'Cala Molí']
-  ];
+  const REPERES_IBIZA = []; // vidé le 11/11/2026 : les vrais lieux arriveront par le radar
   // Fiches des lieux d'Ibiza ajoutés sur la carte (démo : descriptions courtes, horaires indicatifs à vérifier)
   const FICHES_IBIZA = {
     'Nassau Beach Club': "Beach club chic de Playa d'en Bossa : transats, cuisine méditerranéenne et DJ house au coucher du soleil.",
@@ -2103,17 +2085,7 @@
   const cleX = (n) => 'x-' + n.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   // Carte illustrée de Dubaï (visuel fourni par Antonio) : les repères tombent sur les points dessinés de l'illustration
   const CAT_DUBAI = { club: ['Clubs', '#FF4FA3'], plage: ['Beach clubs', '#3DD6C6'], event: ['Grandes soirées', '#F2B53A'] };
-  const REPERES_DUBAI = [
-    [null, 'plage', 17, 12.5, 'White Beach', 'Atlantis The Palm'], [null, 'plage', 43.9, 17.1, 'BCH:CLB', 'Palm Jumeirah'],
-    [null, 'event', 74.4, 28.2, 'Coca-Cola Arena', 'City Walk'], [null, 'plage', 30.5, 37.1, 'Zero Gravity', 'Dubai Marina'],
-    [null, 'club', 63.5, 42.1, 'Armani/Privé', 'Downtown · Burj Khalifa'], [null, 'plage', 20.1, 48.1, 'Barasti', 'Dubai Marina'],
-    [null, 'club', 91.5, 53.5, 'Sky 2.0', 'Dubai Design District'], [null, 'club', 57.2, 59.9, 'BLU Dubai', 'Downtown'],
-    [null, 'club', 79.6, 77, 'Soho Garden', 'Meydan · avec HIVE et CODE'],
-    [null, 'event', 15, 72, 'Ushuaïa Dubai Harbour Experience', 'Dubai Harbour'],
-    [null, 'plage', 32, 30, 'Bohemia Beach Club', 'Palm Jumeirah'], [null, 'plage', 26, 25, 'Playa Pacha', 'Palm Jumeirah'],
-    [null, 'plage', 37.5, 31, 'Be Beach', 'Dubai Harbour'], [null, 'club', 22, 21, 'The Penthouse', 'Palm Jumeirah'],
-    [null, 'club', 26, 43, 'Cavo Dubai', 'Dubai Marina']
-  ];
+  const REPERES_DUBAI = []; // vidé le 11/11/2026 : les vrais lieux arriveront par le radar
   const FICHES_DUBAI = {
     'White Beach': "Beach club de l'Atlantis The Palm, piscines face au golfe et DJ house l'après-midi.",
     'BCH:CLB': 'Beach club sur la Palm Jumeirah, ambiance festive et DJ au coucher du soleil.',

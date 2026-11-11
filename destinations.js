@@ -27,7 +27,7 @@ window.DESTS = [
       { nom: 'Skiddle', affil: 'Programme d\'affiliation public' },
       { nom: 'Xceed', affil: 'Pas de programme public : à négocier' }
     ],
-    lieux: [] // les 21 lieux de la démo (data.js)
+    lieux: []
   },
   {
     id: 'mykonos', tz: 'Europe/Athens', nom: 'Mykonos', pays: 'Grèce', centre: [37.43, 25.35], zoom: 12,
@@ -50,17 +50,7 @@ window.DESTS = [
       { nom: 'Billetteries et réservations des lieux (Scorpios, Cavo Paradiso…)', affil: 'Accord direct à négocier' },
       { nom: 'Fever', url: 'https://business.feverup.com', affil: 'Programme partenaires' }
     ],
-    lieux: [
-      { id: 'scorpios', img: ["https://scorpios.com/assets/Reservations-Scorpios-Mykonos-Beach_002513162513166a7b05ad.jpg", "https://scorpios.com/assets/Scorpios-Reserve-Mykonos_007414383df240657a043f.jpg"], nom: 'Scorpios', type: 'plage', zone: 'Paraga', lat: 37.4069, lng: 25.3476 },
-      { id: 'santanna', img: ["https://www.santannamykonos.com/wp-content/uploads/2026/04/Homepage-Cabanas-Lounges-1.jpg"], nom: 'SantAnna', type: 'plage', zone: 'Paraga', lat: 37.4079, lng: 25.3505 },
-      { id: 'paradise-myk', nom: 'Paradise Club', type: 'plage', zone: 'Paradise Beach', lat: 37.4103, lng: 25.3556 },
-      { id: 'cavo-paradiso', img: ["https://www.cavoparadiso.gr/assets/images/dsc08711-816x488.jpg", "https://www.cavoparadiso.gr/assets/images/dsc07687-1192x1788.jpg"], nom: 'Cavo Paradiso', type: 'club', zone: 'Paradise Beach', lat: 37.4112, lng: 25.3590 },
-      { id: 'nammos', img: ["https://www.nammos.com/sites/default/files/2021-11/nammos_mykonos_gallery_2.jpg", "https://www.nammos.com/sites/default/files/og-nammos.jpg"], nom: 'Nammos', type: 'plage', zone: 'Psarou', lat: 37.4167, lng: 25.3423 },
-      { id: 'alemagou', img: ["https://www.technoairlines.com/wp-content/uploads/2026/10/alemagou-mykonos-1024x683.jpg", "https://k-studio.gr/wp-content/uploads/2025/08/K-Studio_Alemagou_021_BillStamatopoulos-1200x800.jpg"], nom: 'Alemagou', type: 'plage', zone: 'Ftelia', lat: 37.4627, lng: 25.3760 },
-      { id: 'bonbonniere-myk', nom: 'Bonbonniere', type: 'club', zone: 'Mykonos ville', lat: 37.4462, lng: 25.3268 },
-      { id: 'void-myk', nom: 'VOID Mykonos', type: 'club', zone: 'Mykonos ville · Lakka', lat: 37.4447, lng: 25.3297, approx: true },
-      { id: 'tropicana-myk', nom: 'Tropicana Club', type: 'plage', zone: 'Paradise Beach', lat: 37.4098, lng: 25.3548, approx: true }
-    ]
+    lieux: []
   },
   {
     id: 'tulum', tz: 'America/Cancun', nom: 'Tulum', pays: 'Mexique', centre: [20.17, -87.455], zoom: 12,
@@ -87,14 +77,7 @@ window.DESTS = [
       { nom: 'Eventbrite / Posh', affil: 'Pas d\'affiliation : partenariat avec les organisateurs' },
       { nom: 'Fever', url: 'https://business.feverup.com', affil: 'Programme partenaires' }
     ],
-    lieux: [
-      { id: 'vagalume', img: ["https://images.discotech.me/venue/None/0aee050a-e56d-4bba-9651-72cf5283d8ab.jpg?auto=format&h=720&q=65&fit=fill&fill=blur", "https://media.alotea.com/vagalume-tulum-nightclubs-people-2.webp"], nom: 'Vagalume', type: 'plage', zone: 'Zone hôtelière', lat: 20.1868, lng: -87.4425 },
-      { id: 'papaya-playa', img: ["https://images.discotech.me/venue/None/19f91574-fe39-4925-9a9d-422b3da6e71c.jpg?auto=format&h=720&q=65&fit=fill&fill=blur"], nom: 'Papaya Playa Project', type: 'plage', zone: 'Zone hôtelière, km 4,5', lat: 20.1813, lng: -87.4450 },
-      { id: 'taboo-tulum', nom: 'Taboo Tulum', type: 'plage', zone: 'Zone hôtelière, km 7', lat: 20.1589, lng: -87.4555 },
-      { id: 'bonbonniere-tulum', img: ["https://images.discotech.me/venue/None/30bbbcec-38aa-4e50-a68c-af200b21532e.jpg?auto=format&h=720&q=65&fit=fill&fill=blur", "https://www.technoairlines.com/wp-content/uploads/2026/10/bonbonniere-tulum-1024x1024.jpg"], nom: 'Bonbonniere Tulum', type: 'club', zone: 'Zone hôtelière', lat: 20.1533, lng: -87.4577 },
-      { id: 'gitano-jungle', img: ["https://images.discotech.me/venue/None/80a7fece-b9d8-4ff7-8954-62e6c56f9996.jpg?auto=format&h=720&q=65&fit=fill&fill=blur"], nom: 'Gitano Jungle', type: 'club', zone: 'Zone hôtelière, km 7', lat: 20.1501, lng: -87.4591 },
-      { id: 'gitano-beach', nom: 'Gitano Beach', type: 'plage', zone: 'Zone hôtelière, km 9,5', lat: 20.1320, lng: -87.4640 }
-    ]
+    lieux: []
   },
   {
     id: 'miami', tz: 'America/New_York', nom: 'Miami', pays: 'États-Unis', centre: [25.80, -80.16], zoom: 12,
@@ -118,13 +101,7 @@ window.DESTS = [
       { nom: 'Eventbrite / Posh / Dice', affil: 'Pas d\'affiliation : partenariat avec les organisateurs' },
       { nom: 'Billetteries des clubs (Club Space, LIV, E11EVEN…)', affil: 'Accord direct à négocier' }
     ],
-    lieux: [
-      { id: 'club-space', img: ["https://www.clubspace.com/assets/og/club-space.jpg"], nom: 'Club Space', type: 'club', zone: 'Downtown', lat: 25.7847, lng: -80.1932 },
-      { id: 'e11even', img: ["https://images.discotech.me/venue/117/f9fa9f01-5a5d-4237-9356-3f5f0b8bcf78.jpg?auto=format&h=720&q=65&fit=fill&fill=blur", "https://cdn.prod.website-files.com/6377f4b5d60031cd02999855/64062331b786612cdf268d37_11-social.jpg"], nom: 'E11EVEN', type: 'club', zone: 'Downtown', lat: 25.7852, lng: -80.1940 },
-      { id: 'liv', img: ["https://images.discotech.me/venue/94/d624ae72-8389-47d0-a495-fa5c9c610754.jpg?auto=format&h=720&q=65&fit=fill&fill=blur"], nom: 'LIV', type: 'club', zone: 'Miami Beach · Fontainebleau', lat: 25.8180, lng: -80.1224 },
-      { id: 'm2', nom: 'M2', type: 'club', zone: 'South Beach', lat: 25.7835, lng: -80.1319 },
-      { id: 'dnsotf', img: ["https://images.discotech.me/venues/160/detail/5fab7f9b-75ca-472e-bb84-6f4105a94649.jpg?auto=format&h=720&q=65&fit=fill&fill=blur"], nom: 'Do Not Sit On The Furniture', type: 'club', zone: 'South Beach', lat: 25.7893, lng: -80.1323 }
-    ]
+    lieux: []
   },
   {
     id: 'dubai', tz: 'Asia/Dubai', nom: 'Dubaï', pays: 'Émirats arabes unis', centre: [25.12, 55.20], zoom: 11,
@@ -149,13 +126,7 @@ window.DESTS = [
       { nom: 'Platinumlist', url: 'https://platinumlist.net', affil: 'Programme d\'affiliation public' },
       { nom: 'Fever', url: 'https://business.feverup.com', affil: 'Programme partenaires' }
     ],
-    lieux: [
-      { id: 'ushuaia-dubai', img: ["https://platinumlist.net/guide/wp-content/uploads/2024/08/20230814_ushuaia_david_guetta_0003_6000x4000px_.jpg"], nom: 'Ushuaïa Dubai Harbour', type: 'plage', zone: 'Dubai Harbour', lat: 25.0912, lng: 55.1278 },
-      { id: 'be-beach', nom: 'Be Beach', type: 'plage', zone: 'Dubai Harbour', lat: 25.0898, lng: 55.1255 },
-      { id: 'cove-beach', nom: 'Cove Beach', type: 'plage', zone: 'Bluewaters', lat: 25.0790, lng: 55.1210 },
-      { id: 'zero-gravity', img: ["https://cdn.prod.website-files.com/68822ddcb927e3ab196ea5f9/68a708e2408d687c226379b4_home-hilite2_0.jpg"], nom: 'Zero Gravity', type: 'plage', zone: 'Dubai Marina', lat: 25.0850, lng: 55.1390 },
-      { id: 'soho-garden', img: ["https://www.technoairlines.com/wp-content/uploads/2026/09/soho-garden-dubai-club-1024x682.jpg", "https://images.discotech.me/venue/736/9847bf57-abe2-4c5f-baa0-94a47c659282.jpg?auto=format&h=720&q=65&fit=fill&fill=blur"], nom: 'Soho Garden DXB', type: 'club', zone: 'Meydan', lat: 25.1579, lng: 55.3000 }
-    ]
+    lieux: []
   },
   {
     id: 'phuket', tz: 'Asia/Bangkok', nom: 'Phuket', pays: 'Thaïlande', centre: [7.93, 98.30], zoom: 11,
@@ -175,12 +146,7 @@ window.DESTS = [
       { nom: 'Billetteries des beach clubs', affil: 'Accord direct à négocier' }
     ],
     // Positions approximatives (démo), à vérifier
-    lieux: [
-      { id: 'catch-phuket', nom: 'Catch Beach Club', type: 'plage', zone: 'Bang Tao', lat: 7.9990, lng: 98.2935, approx: true },
-      { id: 'cafe-del-mar-phuket', nom: 'Café del Mar Phuket', type: 'plage', zone: 'Kamala', lat: 7.9575, lng: 98.2790, approx: true },
-      { id: 'illuzion-phuket', nom: 'Illuzion', type: 'club', zone: 'Patong · Bangla Road', lat: 7.8935, lng: 98.2975, approx: true },
-      { id: 'xana-phuket', nom: 'Xana Beach Club', type: 'plage', zone: 'Bang Tao · Laguna', lat: 8.0010, lng: 98.2920, approx: true }
-    ]
+    lieux: []
   },
   {
     // Partout ailleurs (Toulon, Marseille, Lyon…) : pas de saison ni de line-ups officiels,
