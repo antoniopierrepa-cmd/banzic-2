@@ -1413,6 +1413,9 @@
     </form>`;
   }
 
+  // Bannière compacte du profil qui ouvre une page à part (réglages, profil officiel…)
+  const banniereProfil = (page, kick, titre, sous, ico) => `<button class="ech-banniere bp-${page}" data-page-profil="${page}"><span class="bp-ico" aria-hidden="true">${ico}</span><span class="ech-txt"><small>${kick}</small><b>${titre}</b><span>${sous}</span></span><svg class="ech-fl" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
+  const retourProfil = () => `<button class="mt-retour" data-page-profil-retour="1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Mon profil</button>`;
   // L'échelle des Bangers : page à part, ouverte depuis la bannière de la fiche profil
   function pageEchelle() {
     const i = niveauProfil(points().total);
@@ -1431,6 +1434,24 @@
     });
     return h + '</div></div>';
   }
+  function pageReglages() {
+    const p = state.profil;
+    return `<div class="mt-page">${retourProfil()}
+      <div class="section-title">Mes réglages</div>
+      <div class="jour reglages-resume">
+        <label class="langue-ligne"><span>${T('langue')}</span>${selectLangue()}</label>
+        <span>Questions sur place : <b>${p.notifs ? 'oui' : 'non'}</b> · Position : <b>${p.geoloc ? 'oui' : 'non'}</b></span>
+        <span>Présence anonyme : <b>${p.presence ? 'oui' : 'non'}</b> · Classement : <b>${p.classement ? 'oui' : 'non'}</b></span>
+        <span>Compte : <b>${FOURNISSEURS[state.compte.fournisseur]}</b> · ${esc(state.compte.email)}</span>
+        <span>Bons plans par email : <b>${p.emailInfos ? 'oui' : 'non'}</b> · Alerte pépites : <b>${p.alertePepites !== false ? 'oui' : 'non'}</b></span>
+        <span>Ville : <b>${esc(p.ville || 'à renseigner')}</b> · Alerte mes DJ : <b>${p.alerteDj ? 'oui' : 'non'}</b></span>
+        ${p.emailContact ? `<span>Email : <b>${esc(p.emailContact)}</b></span>` : ''}
+      </div>
+      <button class="alerte" data-modifier-profil="1">Modifier mon profil Banger</button>
+      <button class="alerte danger" data-supprimer-profil="1">Supprimer mon profil Banger</button>
+    </div>`;
+  }
+  const pageOfficiel = () => `<div class="mt-page">${retourProfil()}${MON_DJ ? blocVerif(MON_DJ) : ''}</div>`;
   function renderProfil() {
     const p = state.profil;
     if (!state.compte) { $('#screen-profil').innerHTML = ecranConnexion(); return; }
@@ -1441,6 +1462,8 @@
     if (state.vueDj === 'annonce' && MON_DJ) { $('#screen-profil').innerHTML = formAnnonce(); return; }
     if (state.vueDj === 'stream' && MON_DJ) { $('#screen-profil').innerHTML = formStream(); return; }
     if (state.vueEchelle) { $('#screen-profil').innerHTML = pageEchelle(); return; }
+    if (state.pageProfil === 'reglages') { $('#screen-profil').innerHTML = pageReglages(); return; }
+    if (state.pageProfil === 'officiel' && MON_DJ) { $('#screen-profil').innerHTML = pageOfficiel(); return; }
     const pt = points(), i = niveauProfil(pt.total), n = NIVEAUX_PROFIL[i], suiv = NIVEAUX_PROFIL[i + 1];
     const pct = suiv ? Math.round((pt.total - PALIERS[i]) / (PALIERS[i + 1] - PALIERS[i]) * 100) : 100;
     const stB = (v, t) => `<span class="fp-stat"><b>${v}</b><small>${t}</small></span>`;
@@ -1474,18 +1497,7 @@
       </button>`;
     h += `
       ${blocEspaceDj()}
-      <div class="section-title">Mes réglages</div>
-      <div class="jour reglages-resume">
-        <label class="langue-ligne"><span>${T('langue')}</span>${selectLangue()}</label>
-        <span>Questions sur place : <b>${p.notifs ? 'oui' : 'non'}</b> · Position : <b>${p.geoloc ? 'oui' : 'non'}</b></span>
-        <span>Présence anonyme : <b>${p.presence ? 'oui' : 'non'}</b> · Classement : <b>${p.classement ? 'oui' : 'non'}</b></span>
-        <span>Compte : <b>${FOURNISSEURS[state.compte.fournisseur]}</b> · ${esc(state.compte.email)}</span>
-        <span>Bons plans par email : <b>${p.emailInfos ? 'oui' : 'non'}</b> · Alerte pépites : <b>${p.alertePepites !== false ? 'oui' : 'non'}</b></span>
-        <span>Ville : <b>${esc(p.ville || 'à renseigner')}</b> · Alerte mes DJ : <b>${p.alerteDj ? 'oui' : 'non'}</b></span>
-        ${p.emailContact ? `<span>Email : <b>${esc(p.emailContact)}</b></span>` : ''}
-      </div>
-      <button class="alerte" data-modifier-profil="1">Modifier mon profil Banger</button>
-      <button class="alerte danger" data-supprimer-profil="1">Supprimer mon profil Banger</button>
+      ${banniereProfil('reglages', 'Mes réglages', 'Compte, alertes, confidentialité', esc(p.ville || 'Ville à renseigner') + ' · ' + FOURNISSEURS[state.compte.fournisseur], '⚙')}
       <p class="demo-note">Démo : le profil reste dans ce navigateur. Dans l'appli, il sera lié à un compte et les points viendront des contributions validées par les autres.</p>`;
     $('#screen-profil').innerHTML = h;
   }
@@ -1510,9 +1522,11 @@
     if (e.target.closest('[data-av-retirer]')) { photoLecture++; photoEnLecture = false; portraitPrepare = null; state.photoTemp = ''; majApercuAvatar(); return true; }
     if (e.target.closest('[data-plus-tard]')) { setTab('live'); toast('Tu peux créer ton compte quand tu veux, onglet Profil'); return true; }
     { const tc = e.target.closest('[data-type-compte]'); if (tc) { state.typeCompte = tc.dataset.typeCompte; store.set('typeCompte', state.typeCompte); renderProfil(); return true; } }
+    { const pp = e.target.closest('[data-page-profil]'); if (pp) { state.pageProfil = pp.dataset.pageProfil; renderProfil(); window.scrollTo(0, 0); const ec = $('#screen-profil'); if (ec) ec.scrollTop = 0; return true; } }
+    if (e.target.closest('[data-page-profil-retour]')) { state.pageProfil = null; renderProfil(); return true; }
     if (e.target.closest('[data-echelle]')) { state.vueEchelle = true; renderProfil(); window.scrollTo(0, 0); return true; }
     if (e.target.closest('[data-echelle-retour]')) { state.vueEchelle = false; renderProfil(); return true; }
-    if (e.target.closest('[data-modifier-profil]')) { state.editProfil = true; renderProfil(); return true; }
+    if (e.target.closest('[data-modifier-profil]')) { state.pageProfil = null; state.editProfil = true; renderProfil(); return true; }
     if (e.target.closest('[data-partager-profil]')) { toast('Démo : ta fiche Banger aura son lien à partager'); return true; }
     if (e.target.closest('[data-annuler-profil]')) { state.editProfil = false; renderProfil(); return true; }
     if (e.target.closest('[data-supprimer-profil]')) {
@@ -3276,7 +3290,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
             : '<button class="btn-plein btn-stream" data-djpro-stream="1"><span class="pt-rouge" aria-hidden="true"></span>Je suis en live sur YouTube</button>'}`
         : `<div class="jour upsell"><b>Passer en ${FORMULES_DJ.pro.nom} · ${FORMULES_DJ.pro.prix}</b><p class="conseil" style="margin:6px 0 10px">${FORMULES_DJ.pro.aide}</p>
           <button class="btn-plein" data-djpro-upgrade="1">Passer en DJ Pro</button></div>`}
-      ${blocVerif(MON_DJ)}
+      ${MON_DJ.officiel ? blocVerif(MON_DJ) : banniereProfil('officiel', 'Devenir profil officiel', 'Badge ✓ Officiel', 'Validé par les Bangers : ' + Math.min(etatVerif(MON_DJ).sets, VERIF.sets) + '/' + VERIF.sets + ' sets confirmés', '✓')}
       ${carteCredibilite(MON_DJ)}
       <p class="demo-note">Démo : aucun paiement. Dans l'appli, l'abonnement passera par l'App Store, Google Play ou le site.</p>`;
   }
