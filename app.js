@@ -3292,11 +3292,9 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const actif = DECLS.find((x) => x.mien && declActive(x));
     const f = formuleDe(MON_DJ), pro = MON_DJ.formule === 'pro';
     return `<div class="section-title">Espace DJ <small>${f.nom} · ${f.prix}</small></div>
-      <div class="dj-tete"><div class="dj-tete-g">
-          <label class="photo-choix" title="Changer ma photo">${MON_DJ.photo ? `<img class="avatar grand" src="${MON_DJ.photo}" alt="Ma photo">` : `<span class="avatar grand vide">+<small>Photo</small></span>`}
-            <input type="file" class="photo-dj-input" accept="image/*" hidden></label>
-          <div><h2 style="margin:0">${esc(MON_DJ.nom)} ${badgeOfficiel(MON_DJ)}</h2><div class="meta">${MON_DJ.styles.map(esc).join(' · ')} · ${esc(MON_DJ.ville)}</div>
-          <label class="lien-demo" style="display:inline-block;margin-top:4px;cursor:pointer">${MON_DJ.photo ? 'Changer ma photo' : 'Ajouter ma photo'}<input type="file" class="photo-dj-input" accept="image/*" hidden></label></div></div>${badgeCred(MON_DJ)}</div>
+      <button class="ech-banniere ma-fiche-dj" data-dj-pro="${esc(MON_DJ.nom)}" aria-label="Voir ma fiche DJ, celle que les autres voient">
+        <span class="mfd-rond"><img src="${photoProfil() || 'avatars-banzic/h01.jpg'}" alt=""></span>
+        <span class="ech-txt"><small>Ma fiche DJ</small><b>${esc(MON_DJ.nom)} ${badgeOfficiel(MON_DJ)}</b><span>${MON_DJ.styles.map(esc).join(' · ')} · ${esc(MON_DJ.ville)}</span><em class="mfd-voir">Voir ma fiche publique</em></span><svg class="ech-fl" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       ${actif ? carteDecl(actif) : `<button class="btn-plein btn-mixe" data-djpro-mixe="1">Je mixe maintenant</button>`}
       ${pro ? `${blocLiens(MON_DJ) || '<p class="conseil">Ajoute tes liens pour montrer ce que tu fais : YouTube, SoundCloud, Mixcloud, Twitch, Instagram, TikTok.</p>'}
           <button class="alerte" data-djpro-liens="1">Modifier mes liens</button>
