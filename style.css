@@ -2743,3 +2743,12 @@ img[src$="#photo"] { width: 40px !important; height: 40px !important; border-rad
 .avantages-banger li span { display: flex; flex-direction: column; font-size: 12.5px; color: #C9B3C4; line-height: 1.3; }
 .avantages-banger li b { font-size: 14px; color: #fff; }
 .avantages-banger small { display: block; font-size: 12px; color: #9AA3B8; line-height: 1.35; }
+
+.avantages-banger.av-dj { border-color: rgba(255,79,163,.4); }
+.avantages-banger.av-dj .ab-titre { color: #FF8A3D; }
+.ab-formule { padding: 10px 12px; margin-bottom: 10px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); }
+.ab-formule.pro { border-color: rgba(255,79,163,.45); background: rgba(255,79,163,.07); }
+.abf-tete { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.abf-tete b { font-size: 15px; }
+.abf-tete em { font-style: normal; font-weight: 800; font-size: 13px; color: #F2C94C; }
+.ab-formule ul { margin: 0; }
