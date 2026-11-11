@@ -1,6 +1,6 @@
 {
   "phase": "manual",
-  "updatedAt": "2026-11-11T23:47:38.004Z",
+  "updatedAt": "2026-11-11T23:57:20.044Z",
   "scope": "Var (83)",
   "note": "Répertoire initial constitué manuellement. Une présence ici confirme le lieu ou sa source, pas une soirée à une date donnée. L’automatisation générale sera activée après validation du répertoire.",
   "venues": [
@@ -179,6 +179,218 @@
       "instagram": "",
       "note": "Source officielle première soirée.",
       "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "vertigo",
+      "nom": "Le Vertigo — restaurant et club",
+      "ville": "La Londe-les-Maures",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.visitvar.fr/fiche/club-vertigo-2992364",
+      "website": "https://levertigo.eatbu.com/?lang=fr",
+      "facebook": "https://www.facebook.com/CLUB-VERTIGO-113801438712020",
+      "status": "lieu-identifie-programmation-a-relever",
+      "note": "Établissement identifié par l’office de tourisme et site du restaurant. Page Facebook découverte via VisitVar, accès limité ici. Horaires anciens à revérifier ; aucune soirée datée déduite de la seule ouverture."
+    },
+    {
+      "id": "venium",
+      "nom": "Venium",
+      "ville": "Saint-Mandrier-sur-Mer",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "absolu",
+      "nom": "L’Absolu Club House",
+      "ville": "Solliès-Pont",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "artiste",
+      "nom": "L’Artiste",
+      "ville": "Roquebrune-sur-Argens",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "rockstar",
+      "nom": "Le Rockstar",
+      "ville": "Vinon-sur-Verdon",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "qg",
+      "nom": "Le QG Famous Club",
+      "ville": "Solliès-Pont",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "belr",
+      "nom": "Bel’R",
+      "ville": "Solliès-Pont",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "latino",
+      "nom": "Le Latino",
+      "ville": "La Garde",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "hype",
+      "nom": "Hype Club",
+      "ville": "Cogolin",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "stbarth",
+      "nom": "Le St Barth Discothèque",
+      "ville": "Brignoles",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "upperside",
+      "nom": "Upperside",
+      "ville": "Brignoles",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "mambo",
+      "nom": "Le Mambo",
+      "ville": "La Londe-les-Maures",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "bus",
+      "nom": "Le Bus",
+      "ville": "Bormes-les-Mimosas",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "challenger",
+      "nom": "Le Challenger",
+      "ville": "Cavalaire-sur-Mer",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "domino",
+      "nom": "Le Domino",
+      "ville": "Hyères",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "blackjack",
+      "nom": "Le Black Jack",
+      "ville": "Bandol",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "viproom",
+      "nom": "VIP Room",
+      "ville": "Saint-Tropez",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "papagayo",
+      "nom": "Le Papagayo",
+      "ville": "Saint-Tropez",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "cavesroy",
+      "nom": "Les Caves du Roy",
+      "ville": "Saint-Tropez",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "prive",
+      "nom": "Le Privé",
+      "ville": "Saint-Cyr-sur-Mer",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
+    },
+    {
+      "id": "reserve",
+      "nom": "La Réserve",
+      "ville": "Saint-Raphaël",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
+      "status": "piste-annuaire-activite-actuelle-non-verifiee",
+      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
     }
   ]
 }
