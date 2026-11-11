@@ -1,0 +1,33 @@
+name: Vérifier le radar national
+on:
+  pull_request:
+    paths: ['app.js', 'agenda-radar.js', 'scripts/radar.mjs', 'tests/**', 'data/radar-events.json', '.github/workflows/radar.yml']
+  push:
+    branches: [main]
+    paths: ['app.js', 'agenda-radar.js', 'scripts/radar.mjs', 'tests/**', 'data/radar-events.json', '.github/workflows/radar.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/radar.test.mjs
+      - run: node --check app.js
+      - run: node --check agenda-radar.js
+      - name: Valider les annonces et le fichier livré
+        run: |
+          cp agenda-radar.js /tmp/radar-delivered.js
+          node scripts/radar.mjs
+          node --input-type=module - <<'JS'
+          import { readFileSync } from 'node:fs';
+          import assert from 'node:assert/strict';
+          const parse = p => JSON.parse(readFileSync(p, 'utf8').slice(readFileSync(p, 'utf8').indexOf('=') + 1).trim().replace(/;$/, ''));
+          const generated = parse('agenda-radar.js'), delivered = parse('/tmp/radar-delivered.js');
+          // Past events may expire between collection and CI. Compare only future events.
+          const today = new Date().toISOString().slice(0,10);
+          assert.deepEqual(generated.soirees, delivered.soirees.filter(x => x.date >= today));
+          JS
