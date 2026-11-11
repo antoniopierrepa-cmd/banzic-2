@@ -2722,3 +2722,12 @@ nav.tabs .tab.tab-plus.carte-banger { border: 0 !important; box-shadow: none !im
 .loupe .lp-pin { width: 120px; height: 120px; display: grid; place-items: center; border-radius: 18px; background: #12081A; border: 2px solid #FF8A3D; }
 .loupe .lp-pin img { width: 100px; height: auto; }
 .loupe .lp-genre { width: 180px; height: 120px; border-radius: 16px; border: 2px solid #FF8A3D; display: flex; align-items: flex-end; padding: 10px 12px; font: 800 17px/1.1 inherit; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+
+/* Tête du DJ = sa photo de profil, dans une bulle ronde avec une pointe */
+img[src$="#photo"] { width: 40px !important; height: 40px !important; border-radius: 50%; object-fit: cover; border: 3px solid #FF8A3D; background: #12081A; box-shadow: 0 0 0 2px rgba(255,79,163,.6), 0 4px 8px rgba(0,0,0,.6); }
+.pin-dj { position: relative; }
+.pin-dj img[src$="#photo"] { animation: none; }
+.tete-dj-apercu { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.tda-rond { flex: none; width: 58px; height: 58px; border-radius: 50%; overflow: hidden; border: 3px solid #FF8A3D; box-shadow: 0 0 0 2px rgba(255,79,163,.5); }
+.tda-rond img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tete-dj-apercu small { color: #C9B3C4; font-size: 12.5px; line-height: 1.35; }

@@ -3429,7 +3429,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <button type="button" class="ville-gps" data-ville-gps="1" aria-label="Utiliser ma position"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7.2 2.3L12.5 20z" fill="currentColor"/></svg>Ma position</button></span>
         <datalist id="liste-villes-dj">${(window.VILLES || []).map((v) => `<option value="${esc(v[0])}">`).join('')}</datalist></label>
       <p class="erreur" id="err-ville-dj" hidden>Indique la ville où tu mixes</p>
-      <div class="champ"><span>Ton avatar <small class="aide">ta tête sur la carte, ta fiche et le bandeau</small></span><div class="choix-pins">${PINS_TOUS.map((p, i) => `<label class="choix-pin${i === 0 ? ' on' : ''}"><input type="radio" name="pin" value="${p}" ${i === 0 ? 'checked' : ''}><img src="pins-dj/${p}.png" alt="" loading="lazy"></label>`).join('')}</div></div>
+      <div class="champ"><span>Ta tête sur la carte <small class="aide">c'est ta photo de profil, elle s'affiche dans ta bulle, ta fiche et le bandeau</small></span>
+        <div class="tete-dj-apercu"><span class="tda-rond"><img src="${photoProfil() || 'avatars-banzic/h01.jpg'}" alt=""></span><small>Pour la changer, modifie ta photo dans ton profil Banger.</small></div></div>
       <div class="champ"><span>Ta formule</span>
         ${Object.entries(FORMULES_DJ).map(([k, f], i) => `<label class="formule ${i === 0 ? 'on' : ''}"><input type="radio" name="formule" value="${k}" ${i === 0 ? 'checked' : ''}><span><b>${f.nom} · ${f.prix}</b><small>${f.aide}</small></span></label>`).join('')}
         <small class="aide">Sans engagement.</small></div>
@@ -3486,7 +3487,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       const f = new FormData(e.target), nom = String(f.get('nom') || '').trim();
       if (nom.length < 2) { $('#err-djnom').hidden = false; return; }
       if (String(f.get('ville') || '').trim().length < 2) { $('#err-ville-dj').hidden = false; $('#champ-ville-dj').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
-      MON_DJ = { id: 'moi', formule: f.get('formule') || 'live', liens: {}, annonces: [], nom, styles: f.getAll('styles'), ville: String(f.get('ville') || '').trim(), confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 }, mien: true, pin: String(f.get('pin') || '') };
+      MON_DJ = { id: 'moi', formule: f.get('formule') || 'live', liens: {}, annonces: [], nom, styles: f.getAll('styles'), ville: String(f.get('ville') || '').trim(), confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 }, mien: true };
       store.set('djPro', MON_DJ); state.vueDj = null; state.nomRevendique = null; renderProfil(); toast('Profil DJ créé · formule ' + formuleDe(MON_DJ).nom + ' (démo)');
     }
     if (e.target.id === 'form-liens') {
@@ -3625,11 +3626,13 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // Fond CSS de l'avatar illustré d'un DJ (fichier seul ou case de planche), '' s'il n'en a pas
   const fondAvatarDj = (nom) => avatarIllusDj(nom) ? `url('${avatarIllusDj(nom)}') center / cover no-repeat` : fondPlancheDj(nom);
   // Épingles GPS illustrées des DJ Pro (visuels fournis par Antonio) : la même tête sur la carte et sur la fiche
-  const PINS_DJ = new Set(['nina-sol', 'lia-k', 'lena-brandt', 'eleni-vos', 'zoe-akin', 'marco-vela', 'kenzo-b', 'tomas-reyes', 'ren-okada', 'rafa-lume', 'thabo-nkosi', 'mc-nova', 'kai-rivera', 'dax-volt']);
-  // Le DJ Pro choisit son avatar à la création de son profil (pro.pin) ; sinon celui attribué en démo
-  const PINS_TOUS = [...PINS_DJ, 'x-libre-1', 'x-libre-2', 'x-libre-3', 'x-libre-4', 'x-libre-5', 'x-trio'];
+  // Avatars créés supprimés (11/11/2026) : la tête d'un DJ sur la carte, sa fiche et le bandeau = sa photo de profil
+  const PINS_DJ = new Set();
+  const PINS_TOUS = [];
+  const photoProfil = () => { const p = state.profil; return p ? (p.photo || 'avatars-banzic/' + avIllus(p.avatar) + '.jpg') : ''; };
+  const photoDj = (pro) => !pro ? '' : pro.id === 'moi' || pro.mien ? photoProfil() : (pro.photo || '');
   const cleePin = (pro) => !pro ? '' : pro.pin && PINS_TOUS.includes(pro.pin) ? pro.pin : PINS_DJ.has(pro.id) ? pro.id : '';
-  const pinDj = (pro) => cleePin(pro) ? 'pins-dj/' + cleePin(pro) + '.png' : '';
+  const pinDj = (pro) => photoDj(pro) ? photoDj(pro) + '#photo' : cleePin(pro) ? 'pins-dj/' + cleePin(pro) + '.png' : '';
   // Compteur des Bangers par lieu (part de zéro, +1 à chaque fois qu'un Banger banguérise sur place)
   const BANG_LIEU = store.get('bangLieu', {});
   // Épingles des lieux (visuels fournis par Antonio) : club, pool party, bar, beach club
@@ -3655,7 +3658,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const filClub = (l, kmTxt) => { const ty = typeLieu(l), lib = { club: 'Club', pool: 'Pool party', bar: 'Bar', beach: 'Beach club' }[ty];
     return `<button class="fil-item k-club a-vis" data-lieu="${l.id}"><span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-lieu" src="${pinLieu(l)}" alt="">${casqueConf(BANG_LIEU[l.id] || 0)}</span><span class="fil-l1"><em class="fil-tag club">${lib}</em><b>${esc(l.nom)}</b><span class="fil-t">${esc(l.horaires || 'Horaires à venir')}</span></span><span class="fil-l2"><span>${esc(l.adresse || 'Adresse à venir')}</span>${kmTxt ? `<span>${kmTxt}</span>` : ''}${l.style ? `<span>${esc(String(l.style).split(/[,·:]/)[0].trim())}</span>` : ''}</span></button>`; };
   const visSpotC = (sp) => djInconnu(sp) ? `<span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-inconnu" src="${PIN_INCONNU}" alt="">${casqueConf(sp.conf || 0, `data-spot-ok="${sp.id}"`)}</span>` : visFil(sp.dj, sp.conf || 0, `data-spot-ok="${sp.id}"`);
-  const avPinDj = (pro) => cleePin(pro) ? 'pins-dj/' + cleePin(pro) + '-av.jpg' : '';
+  const avPinDj = (pro) => photoDj(pro) || (cleePin(pro) ? 'pins-dj/' + cleePin(pro) + '-av.jpg' : '');
   function avatarDj(nom, cls) {
     const ill = avatarIllusDj(nom);
     const apn = avPinDj(djProParNom(nom));
