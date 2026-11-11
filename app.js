@@ -1509,7 +1509,9 @@
     if (e.target.closest('[data-partager-profil]')) { toast('Démo : ta fiche Banger aura son lien à partager'); return true; }
     if (e.target.closest('[data-annuler-profil]')) { state.editProfil = false; renderProfil(); return true; }
     if (e.target.closest('[data-supprimer-profil]')) {
-      if (!confirm('Supprimer ton compte et ton profil ? Ta progression sera perdue.')) return true;
+      // Confirmation dans l'appli (les fenêtres confirm() sont bloquées dans certains navigateurs et dans l'aperçu)
+      const bt = e.target.closest('[data-supprimer-profil]');
+      if (!bt.dataset.sur) { bt.dataset.sur = '1'; bt.textContent = 'Touche encore pour tout effacer (définitif)'; bt.classList.add('confirmer'); setTimeout(() => { if (bt.isConnected) { delete bt.dataset.sur; bt.textContent = 'Supprimer mon profil Banger'; bt.classList.remove('confirmer'); } }, 5000); return true; }
       // Tout effacer : profil, compte, profil DJ, DJ suivis, déclarations… puis on repart sur l'inscription
       try { Object.keys(localStorage).filter((k) => k.startsWith('setly.')).forEach((k) => localStorage.removeItem(k)); } catch (err) { /* */ }
       location.href = location.pathname; return true;
