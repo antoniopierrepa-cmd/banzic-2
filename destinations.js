@@ -187,28 +187,7 @@ window.DESTS = [
     // seulement les DJ qui se déclarent et les spots signalés autour de la position de l'utilisateur.
     id: 'local', local: true, nom: 'Autour de moi', pays: 'ta ville', centre: [43.1242, 5.9280], zoom: 13,
     saison: 'toute l\'année', mois: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], notes: {}, evenements: [], billetterie: [],
-    // Clubs du Var (relevé du 15/10/2026 sur des guides publics). Positions approximatives, DJ à confirmer.
-    lieux: [
-      { id: 'var-809', nom: '809 Social Club', type: 'club', zone: 'La Garde', lat: 43.1256, lng: 6.0105, style: 'Rap, hip-hop, reggaeton, shatta, commercial · DJ invités (Ofenbach, Bob Sinclar, Damien N-Drix…)', saison: 'les vendredis, samedis et veilles de fériés (jeudis pendant les vacances), 23h30–5h', dep: '83', approx: true },
-      { id: 'var-box', nom: 'The Box', type: 'club', zone: 'Toulon · place de la Liberté', lat: 43.125, lng: 5.932, style: 'Club généraliste, sons actuels', saison: '', dep: '83', approx: true },
-      { id: 'var-magot', nom: 'Le Magot', type: 'club', zone: 'Toulon · Mourillon', lat: 43.11, lng: 5.944, style: 'Club et karaoké, DJ locaux', saison: '', dep: '83', approx: true },
-      { id: 'var-baraka', nom: 'La Baraka', type: 'club', zone: 'Toulon', lat: 43.123, lng: 5.93, style: 'Techno, house, underground', saison: '', dep: '83', approx: true },
-      { id: 'var-panda', nom: 'Panda Club', type: 'club', zone: 'Toulon', lat: 43.124, lng: 5.926, style: 'Urbain : rap, R&B', saison: '', dep: '83', approx: true },
-      { id: 'var-elysee', nom: 'L\'Elysée Club', type: 'club', zone: 'Toulon', lat: 43.122, lng: 5.935, style: 'Tubes et classiques', saison: '', dep: '83', approx: true },
-      { id: 'var-absolu', nom: 'L\'Absolu Club House', type: 'club', zone: 'Solliès-Pont', lat: 43.19, lng: 6.04, style: 'Électro house, afro', saison: '', dep: '83', approx: true },
-      { id: 'var-qg', nom: 'Le QG Famous Club', type: 'club', zone: 'Solliès-Pont', lat: 43.1915, lng: 6.042, style: 'Club', saison: '', dep: '83', approx: true },
-      { id: 'var-maitai', nom: 'Le Mai-Tai', type: 'club', zone: 'Sanary-sur-Mer', lat: 43.119, lng: 5.801, style: 'Club', saison: '', dep: '83', approx: true },
-      { id: 'var-blackjack', nom: 'Le Black Jack', type: 'club', zone: 'Bandol', lat: 43.136, lng: 5.753, style: 'Club', saison: '', dep: '83', approx: true },
-      { id: 'var-domino', nom: 'Le Domino', type: 'club', zone: 'Hyères', lat: 43.12, lng: 6.13, style: 'Club', saison: '', dep: '83', approx: true },
-      { id: 'var-reve', nom: 'Le Rêve', type: 'club', zone: 'Hyères', lat: 43.118, lng: 6.128, style: 'Club', saison: '', dep: '83', approx: true },
-      { id: 'var-vertigo', nom: 'Club Vertigo', type: 'club', zone: 'La Londe-les-Maures', lat: 43.138, lng: 6.234, style: 'Club', saison: '', dep: '83', approx: true },
-      { id: 'var-challenger', nom: 'Le Challenger', type: 'club', zone: 'Cavalaire-sur-Mer', lat: 43.173, lng: 6.533, style: 'Club', saison: '', dep: '83', approx: true },
-      { id: 'var-hype', nom: 'Hype Club', type: 'club', zone: 'Cogolin', lat: 43.252, lng: 6.53, style: 'Club', saison: '', dep: '83', approx: true },
-      { id: 'var-caves', nom: 'Les Caves du Roy', type: 'club', zone: 'Saint-Tropez · Byblos', lat: 43.27, lng: 6.641, style: 'Club mythique, DJ internationaux', saison: 'en saison', dep: '83', approx: true },
-      { id: 'var-papagayo', nom: 'Le Papagayo', type: 'club', zone: 'Saint-Tropez · port', lat: 43.2725, lng: 6.6385, style: 'Club', saison: 'en saison', dep: '83', approx: true },
-      { id: 'var-odyssee', nom: 'L\'Odyssée', type: 'club', zone: 'Fréjus', lat: 43.433, lng: 6.737, style: 'Club', saison: '', dep: '83', approx: true },
-      { id: 'var-palas', nom: 'Le Palas', type: 'club', zone: 'Fréjus', lat: 43.435, lng: 6.74, style: 'Club', saison: '', dep: '83', approx: true },
-      { id: 'var-reserve', nom: 'La Réserve', type: 'club', zone: 'Saint-Raphaël', lat: 43.425, lng: 6.768, style: 'Club', saison: '', dep: '83', approx: true }
-    ]
+    // Vidé le 11/11/2026 : les vrais lieux arriveront par le radar et les signalements.
+    lieux: []
   }
 ];

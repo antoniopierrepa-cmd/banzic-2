@@ -2579,7 +2579,7 @@
     document.querySelectorAll('.fd-graduations span').forEach((s, i) => s.classList.toggle('on', i === state.rayonIdx));
     const fr = $('#fader-rayon'); if (fr) fr.style.setProperty('--pct', (state.rayonIdx / (RAYONS.length - 1) * 100) + '%');
     let h = '';
-    if (!toutes.length) h += `<div class="empty">Rien d'annoncé à moins de ${r} km pour l'instant. Pousse le fader vers la droite pour voir plus loin.<br><small>L'agenda couvre la région PACA, Paris, Lyon, Lille, Bordeaux, Toulouse, Montpellier, Nantes, et les grandes villes d'Espagne et du Portugal. Ailleurs, il se remplira avec les dates des DJ et des établissements.</small></div>`;
+    if (!toutes.length) h += `<div class="empty">Rien d'annoncé à moins de ${r} km pour l'instant. Pousse le fader vers la droite pour voir plus loin.<br><small>Les soirées réelles arrivent bientôt : le radar Banzic les ajoute chaque semaine, et les DJ et les Bangers les signalent en direct.</small></div>`;
     else {
       if (!liste.length) h += `<div class="empty">Rien pour ces pads dans ce rayon.${mesdj && !state.favs.length ? ' Ajoute des DJ en favori (♥) pour utiliser « Mes DJ ».' : ''}</div>`;
       let mois = '';
@@ -2590,7 +2590,7 @@
       });
     }
     h += festivalsFrance(toutes);
-    h += `<p class="demo-note">Soirées et festivals électro relevés le ${SUD.maj.split('-').reverse().join('/')} sur des agendas publics (JDS, Fest, Resident Advisor, Shotgun, Songkick, Music Festival Wizard, Technobeatscloud, presse locale). Les programmes peuvent changer : vérifie toujours sur « Infos » avant de sortir. Dans l'appli, les DJ et les établissements ajouteront eux-mêmes leurs dates.</p>`;
+    h += `<p class="demo-note">Sources : déclarations des DJ et des Bangers, et le radar Banzic (agendas et billetteries autorisés). Vérifie toujours sur la page de la soirée avant de sortir.</p>`;
     $('#agenda-liste').innerHTML = h;
   }
   const reglerRayon = (i) => { state.rayonIdx = Math.max(0, Math.min(RAYONS.length - 1, i)); store.set('rayonIdx', state.rayonIdx);
