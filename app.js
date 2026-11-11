@@ -3040,7 +3040,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     { id: 'mixcloud', nom: 'Mixcloud', ex: 'mixcloud.com/toncompte' },
     { id: 'twitch', nom: 'Twitch', ex: 'twitch.tv/toncompte' },
     { id: 'instagram', nom: 'Instagram', ex: 'instagram.com/toncompte' },
-    { id: 'tiktok', nom: 'TikTok', ex: 'tiktok.com/@toncompte' }
+    { id: 'tiktok', nom: 'TikTok', ex: 'tiktok.com/@toncompte' },
+    { id: 'spotify', nom: 'Spotify', ex: 'open.spotify.com/artist/…' }
   ];
   const urlPropre = (u) => { u = String(u || '').trim(); if (!u) return ''; if (!/^https?:\/\//i.test(u)) u = 'https://' + u; try { const x = new URL(u); return x.protocol === 'https:' || x.protocol === 'http:' ? x.href : ''; } catch (e) { return ''; } };
   // Petits logos des réseaux sur la fiche d'un DJ : actifs (en couleur) quand le DJ a mis son lien, grisés sinon
@@ -3050,10 +3051,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     tiktok: '<svg viewBox="0 0 24 24"><path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M14 3c.5 3 2.5 4.6 5 4.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
     twitch: '<svg viewBox="0 0 24 24"><path d="M5 3h15v11l-4 4h-4l-3 3v-3H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M11 8v4M15 8v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
     soundcloud: '<svg viewBox="0 0 24 24"><path d="M9 17V9.5M6 17v-5M3 17v-3M12 17V8a5 5 0 0 1 9 3 2.8 2.8 0 0 1-.5 6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    spotify: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7 9.5c3.5-1 7.5-.6 10.5 1M7.5 12.6c3-.8 6-.4 8.5 1M8 15.5c2.3-.5 4.6-.3 6.6.8" fill="none" stroke="#0B0F1C" stroke-width="1.8" stroke-linecap="round"/></svg>',
     mixcloud: '<svg viewBox="0 0 24 24"><path d="M7 17a4 4 0 0 1-.6-8A6 6 0 0 1 18 10a3.5 3.5 0 0 1-.5 7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>'
   };
   function logosReseaux(d) {
-    const ordre = ['instagram', 'tiktok', 'youtube', 'twitch', 'soundcloud', 'mixcloud'];
+    const ordre = ['instagram', 'tiktok', 'youtube', 'spotify', 'soundcloud', 'twitch', 'mixcloud'];
     return `<div class="fp-reseaux">${ordre.map((id) => { const r = RESEAUX.find((x) => x.id === id), u = d && d.liens && d.liens[id] && !d.demo ? urlPropre(d.liens[id]) : '';
       return u ? `<a class="fr-ico r-${id}" href="${esc(u)}" target="_blank" rel="noopener" aria-label="${r.nom}">${ICO_RESEAU[id]}</a>` : `<span class="fr-ico r-${id} off" title="${r.nom} : pas encore ajouté" aria-label="${r.nom} (pas encore ajouté)">${ICO_RESEAU[id]}</span>`; }).join('')}</div>`;
   }
