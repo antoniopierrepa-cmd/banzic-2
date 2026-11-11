@@ -17,12 +17,7 @@ window.DESTS = [
       9: 'Closings jusqu\'à mi-octobre : grosses soirées, puis l\'île ferme.'
     },
     evenements: [],
-    billetterie: [
-      { nom: 'Billetteries des clubs (Ushuaïa, Hï, Pacha, Amnesia…)', affil: 'Accord direct à négocier' },
-      { nom: 'Fever', url: 'https://business.feverup.com', affil: 'Programme partenaires' },
-      { nom: 'Skiddle', affil: 'Programme d\'affiliation public' },
-      { nom: 'Xceed', affil: 'Pas de programme public : à négocier' }
-    ],
+    billetterie: [],
     lieux: []
   },
   {
@@ -38,10 +33,7 @@ window.DESTS = [
       9: 'Dernières soirées début octobre, puis l\'île ferme.'
     },
     evenements: [],
-    billetterie: [
-      { nom: 'Billetteries et réservations des lieux (Scorpios, Cavo Paradiso…)', affil: 'Accord direct à négocier' },
-      { nom: 'Fever', url: 'https://business.feverup.com', affil: 'Programme partenaires' }
-    ],
+    billetterie: [],
     lieux: []
   },
   {
@@ -58,11 +50,7 @@ window.DESTS = [
       11: 'Monte en flèche à partir de Noël.'
     },
     evenements: [],
-    billetterie: [
-      { nom: 'Sites des festivals (Zamna, Day Zero)', affil: 'Accord direct à négocier' },
-      { nom: 'Eventbrite / Posh', affil: 'Pas d\'affiliation : partenariat avec les organisateurs' },
-      { nom: 'Fever', url: 'https://business.feverup.com', affil: 'Programme partenaires' }
-    ],
+    billetterie: [],
     lieux: []
   },
   {
@@ -77,11 +65,7 @@ window.DESTS = [
       11: 'Art Basel début décembre puis le Nouvel An : tout est plein.'
     },
     evenements: [],
-    billetterie: [
-      { nom: 'Fever', url: 'https://business.feverup.com', affil: 'Programme partenaires' },
-      { nom: 'Eventbrite / Posh / Dice', affil: 'Pas d\'affiliation : partenariat avec les organisateurs' },
-      { nom: 'Billetteries des clubs (Club Space, LIV, E11EVEN…)', affil: 'Accord direct à négocier' }
-    ],
+    billetterie: [],
     lieux: []
   },
   {
@@ -97,10 +81,7 @@ window.DESTS = [
       11: 'Grand Prix de F1 à Abu Dhabi, Sole DXB, Nouvel An : le mois le plus chargé.'
     },
     evenements: [],
-    billetterie: [
-      { nom: 'Platinumlist', url: 'https://platinumlist.net', affil: 'Programme d\'affiliation public' },
-      { nom: 'Fever', url: 'https://business.feverup.com', affil: 'Programme partenaires' }
-    ],
+    billetterie: [],
     lieux: []
   },
   {
@@ -114,9 +95,7 @@ window.DESTS = [
       11: 'Noël et Nouvel An : le pic de l\'année.'
     },
     evenements: [],
-    billetterie: [
-      { nom: 'Billetteries des beach clubs', affil: 'Accord direct à négocier' }
-    ],
+    billetterie: [],
     // Positions approximatives (démo), à vérifier
     lieux: []
   },

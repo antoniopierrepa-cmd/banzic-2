@@ -288,7 +288,7 @@
     const pr = state.profil;
     { const di = DEST.ibiza, ni = di.mois[MOIS_NOW];
       h += `<div class="dest-banniere" style="background-image:url('ibiza-carte.jpg?v=4');background-position:left center"></div><div class="dest-tete"><div><h2>${esc(di.nom)}</h2><small>${esc(di.pays)} · ${T('saison')} : ${esc(di.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(di.tz) })} · ${decalage(di.tz)}</small></div>${pastilleMois(ni)}</div>${barreAnnee(di)}`
-        + miniCarteDest(di) + filDest() + carteIbizaGrande() + carteAgendaDest(di); }
+        + miniCarteDest(di) + filDest() + carteAgendaDest(di); }
     h += blocDecls();
     h += blocPepites();
     h += blocSpots();
@@ -2022,7 +2022,7 @@
   };
   const evenementsAVenir = (d, m) => d.evenements.slice().sort((a, b) => ((a.mois - m + 12) % 12) - ((b.mois - m + 12) % 12));
   const dansMois = (k, m) => { const x = (k - m + 12) % 12; return x === 0 ? 'ce mois-ci' : x === 1 ? 'le mois prochain' : 'dans ' + x + ' mois'; };
-  const listeBillets = (d) => rangCartes(d.billetterie.map((b) => vCarte({ tag: b.url ? 'a' : 'div', attr: b.url ? `href="${b.url}" target="_blank" rel="noopener"` : '', c: '#A77BFF',
+  const listeBillets = (d) => !d.billetterie.length ? '<p class="aide" style="margin:4px 0 12px">Les billetteries arrivent bientôt.</p>' : rangCartes(d.billetterie.map((b) => vCarte({ tag: b.url ? 'a' : 'div', attr: b.url ? `href="${b.url}" target="_blank" rel="noopener"` : '', c: '#A77BFF',
     badge: 'Billets', nom: esc(b.nom), lieu: esc(b.affil), bas: [b.url ? 'Voir les billets →' : 'Bientôt'] })).map((x) => x.replace('dc-carte vc', 'dc-carte vc vc-petite')));
   const barreAnnee = (d) => `<div class="barre-annee" aria-label="Affluence de ${esc(d.nom)} mois par mois">${d.mois.map((n, k) =>
     `<span class="ba ${n < 0 ? 'niv-hors' : 'niv-' + NIVEAUX[n].code} ${k === MOIS_NOW ? 'now' : ''}" title="${moisNom(k)} : ${labelMois(n)}"><i>${ABR_MOIS[k]}</i></span>`).join('')}</div>`;
@@ -2408,7 +2408,7 @@
     let h = `${FOND_DEST[d.id] ? `<div class="dest-banniere" style="background-image:url('${FOND_DEST[d.id]}');background-position:left center"></div>` : ''}<div class="dest-tete"><div><h2>${esc(d.nom)}</h2><small>${esc(d.pays)} · ${T('saison')} : ${esc(d.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(d.tz) })} · ${decalage(d.tz)}</small></div>${pastilleMois(n)}</div>
       ${barreAnnee(d)}${miniCarteDest(d)}${filDest()}
       <p class="conseil"><b>${Maj(moisNom(m))}</b> : ${esc(d.notes[m] || (n < 0 ? 'hors saison.' : labelMois(n) + '.'))}${n < 0 ? ` ${T('reprise', { m: '<b>' + reprise(d, m) + '</b>' })}.` : ''}</p>`;
-    h += (CARTES_ILLUS[d.id] ? carteIbizaGrande(d.id) : '') + carteAgendaDest(d);
+    h += carteAgendaDest(d); // cartes illustrées (Ibiza, Dubaï) retirées le 11/11/2026
     if (d.id === 'dubai') h += blocAgendaDubai();
     h += blocDecls() + blocSpots();
     const coulNiv = (k) => k < 0 ? '#5A6378' : ['#3FBF7F', '#F59E2E', '#E5484D', '#8A5CFF'][k];
