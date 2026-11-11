@@ -2838,3 +2838,14 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .live-reseaux .fr-ico { width: 30px; height: 30px; border-radius: 9px; }
 .live-reseaux .fr-ico svg { width: 17px; height: 17px; }
 .live-reseaux em { font-style: normal; font-size: 12px; font-weight: 700; color: #FF8A3D; }
+
+/* Profil : onglets Banger / Espace DJ */
+.onglets-profil { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0 14px; }
+.op-carte { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; border-radius: 16px; border: 1.5px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); color: #fff; text-align: left; cursor: pointer; }
+.op-carte b { font-size: 17px; }
+.op-carte small { font-size: 12px; color: #9AA3B8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.op-carte.on { border-color: #3DF28A; background: rgba(61,242,138,.08); }
+.op-carte.on small { color: #3DF28A; }
+.op-carte.dj.on { border-color: #FF4FA3; background: rgba(255,79,163,.10); }
+.op-carte.dj.on small { color: #FF8A3D; }
+.onglets-profil + .espace-dj-avant { margin-top: 0; }

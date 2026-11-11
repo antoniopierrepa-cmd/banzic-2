@@ -1485,7 +1485,6 @@
         <div class="fp-prog"><div class="fp-prog-top"><b>${suiv ? nomNiveau(suiv) : 'Niveau maximum'}</b><small>${suiv ? `encore ${PALIERS[i + 1] - pt.total} points` : 'tu as atteint le Graal'}</small></div><div class="bar"><i style="width:${pct}%"></i></div></div>
         <div class="fp-actions"><button class="fp-btn plein" data-modifier-profil="1">Modifier mon profil</button><button class="fp-btn" data-partager-profil="1">Partager ma fiche</button></div>
       </div></div>
-      ${MON_DJ ? '<div class="espace-dj-avant">' + blocEspaceDj() + '</div>' : ''}
       ${state.favs.length ? `<div class="section-title">Mes DJ préférés <small>${state.favs.length}</small></div><div class="fp-vins">${state.favs.slice(0, 12).map((d) => `<button class="fp-vin" data-dj-pro="${esc(d)}"><span class="fp-disque">${avatarDj(d)}</span><small>${esc(d)}</small></button>`).join('')}</div>` : ''}
       <div class="section-title">Mes contributions <small>${pt.mes.length}</small></div>
       ${pt.mes.length ? '<div class="jour">' + pt.mes.map((p) => `<div class="jl"><span class="jl-g"><span class="venue">${lienDjs(p.dj)}</span><small>${esc(lieux[p.lieu].nom)} · ${horaire(p)}</small></span>
@@ -1497,13 +1496,21 @@
         <svg class="ech-fl" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>`;
     h += `
-      ${MON_DJ ? '' : blocEspaceDj()}
       ${banniereProfil('reglages', 'Mes réglages', 'Compte, alertes, confidentialité', esc(p.ville || 'Ville à renseigner') + ' · ' + FOURNISSEURS[state.compte.fournisseur], '⚙')}
       <p class="demo-note">Démo : le profil reste dans ce navigateur. Dans l'appli, il sera lié à un compte et les points viendront des contributions validées par les autres.</p>`;
+    // Deux onglets en haut : Banger (la fiche Banger se déroule) ou Espace DJ (l'espace DJ se déroule), sur la même page
+    const og = state.ongletProfil || (MON_DJ ? 'dj' : 'banger');
+    const onglets = `<div class="onglets-profil" role="tablist">
+      <button class="op-carte ${og === 'banger' ? 'on' : ''}" role="tab" aria-selected="${og === 'banger'}" data-onglet-profil="banger"><b>Banger</b><small>${esc(nomNiveau(n))} · ${pt.total} pts</small></button>
+      <button class="op-carte dj ${og === 'dj' ? 'on' : ''}" role="tab" aria-selected="${og === 'dj'}" data-onglet-profil="dj"><b>${MON_DJ ? 'Espace DJ' : 'Devenir DJ'}</b><small>${MON_DJ ? esc(MON_DJ.nom) + ' · ' + formuleDe(MON_DJ).nom : 'DJ Live ou DJ Pro'}</small></button></div>`;
+    if (og === 'dj') h = onglets + `<div class="espace-dj-avant">${blocEspaceDj()}</div>
+      ${banniereProfil('reglages', 'Mes réglages', 'Compte, alertes, confidentialité', esc(p.ville || 'Ville à renseigner') + ' · ' + FOURNISSEURS[state.compte.fournisseur], '⚙')}`;
+    else h = onglets + h;
     $('#screen-profil').innerHTML = h;
   }
 
   function clicProfil(e) {
+    { const o = e.target.closest('[data-onglet-profil]'); if (o) { state.ongletProfil = o.dataset.ongletProfil; renderProfil(); return true; } }
     const lab = e.target.closest('#form-profil label.chip, #form-profil label.seg');
     if (lab) {
       setTimeout(() => {
