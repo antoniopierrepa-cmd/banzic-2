@@ -2886,3 +2886,12 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .ck-ligne .fil-photo { right: 10px; bottom: 10px; width: 50px; height: 50px; }
 .ck-ligne.a-photo > .fil-item { padding-right: 66px; }
 .ck-ligne.a-photo .ck-pct { right: 68px; }
+
+.ps-dj-ici { display: flex; align-items: center; gap: 12px; padding: 12px; margin: 4px 0 10px; border-radius: 14px; border: 1.5px solid #3DF28A; background: rgba(61,242,138,.08); }
+.ps-dj-ici .pdi-av .avatar { width: 46px; height: 46px; border-radius: 50%; }
+.ps-dj-ici small { display: block; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #3DF28A; }
+.ps-dj-ici b { font-size: 16px; }
+.ps-com { display: block; margin: 10px 0 12px; }
+.ps-com .pst-titre small { font-weight: 400; color: #9AA3B8; }
+.fil-com { font-style: italic; color: #FFD3A8 !important; }
+.op-carte .op-kick { font-size: 10.5px !important; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #9AA3B8 !important; }

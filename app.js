@@ -1479,7 +1479,7 @@
         <div class="fp-id"><div class="fp-nom">${esc(p.pseudo)}</div><div class="fp-sous">${sousB}</div></div></div>
 `;
     h += `      <div class="fp-corps">
-        <div class="fp-badges">${MON_DJ ? '<span class="fp-badge b-djbanger"><i class="djb-ico" aria-hidden="true"></i>DJ Banger</span>' : '<span class="fp-badge b-banger">Banger</span>'}<span class="fp-badge b-niv" style="--m:${n.metal.couleur}">${nomNiveau(n)}${i === NIVEAUX_PROFIL.length - 1 ? ' · le Graal' : ''}</span></div>
+        <div class="fp-badges"><span class="fp-badge b-banger">Banger</span><span class="fp-badge b-niv" style="--m:${n.metal.couleur}">${nomNiveau(n)}${i === NIVEAUX_PROFIL.length - 1 ? ' · le Graal' : ''}</span></div>
         <div class="fp-puces">${p.styles.map((x) => `<span class="fp-puce">${esc(x)}</span>`).join('') || '<span class="fp-puce">Aucun style choisi</span>'}</div>
         <div class="fp-stats">${stB(pt.total, 'points')}${stB(pt.confirms, 'DJ confirmés')}${stB(pt.attente, 'en attente')}${stB(state.favs.length, 'DJ suivis')}</div>
         <div class="fp-prog"><div class="fp-prog-top"><b>${suiv ? nomNiveau(suiv) : 'Niveau maximum'}</b><small>${suiv ? `encore ${PALIERS[i + 1] - pt.total} points` : 'tu as atteint le Graal'}</small></div><div class="bar"><i style="width:${pct}%"></i></div></div>
@@ -1501,8 +1501,8 @@
     // Deux onglets en haut : Banger (la fiche Banger se déroule) ou Espace DJ (l'espace DJ se déroule), sur la même page
     const og = state.ongletProfil || (MON_DJ ? 'dj' : 'banger');
     const onglets = `<div class="onglets-profil" role="tablist">
-      <button class="op-carte ${og === 'banger' ? 'on' : ''}" role="tab" aria-selected="${og === 'banger'}" data-onglet-profil="banger"><b>Banger</b><small>${esc(nomNiveau(n))} · ${pt.total} pts</small></button>
-      <button class="op-carte dj ${og === 'dj' ? 'on' : ''}" role="tab" aria-selected="${og === 'dj'}" data-onglet-profil="dj"><b>${MON_DJ ? 'Espace DJ' : 'Devenir DJ'}</b><small>${MON_DJ ? esc(MON_DJ.nom) + ' · ' + formuleDe(MON_DJ).nom : 'DJ Live ou DJ Pro'}</small></button></div>`;
+      <button class="op-carte ${og === 'banger' ? 'on' : ''}" role="tab" aria-selected="${og === 'banger'}" data-onglet-profil="banger"><small class="op-kick">Mode</small><b>Banger</b><small>${esc(nomNiveau(n))} · ${pt.total} pts</small></button>
+      <button class="op-carte dj ${og === 'dj' ? 'on' : ''}" role="tab" aria-selected="${og === 'dj'}" data-onglet-profil="dj"><small class="op-kick">${MON_DJ ? 'Mode' : 'Tu mixes ?'}</small><b>${MON_DJ ? 'DJ' : 'Devenir DJ'}</b><small>${MON_DJ ? esc(MON_DJ.nom) + ' · ' + formuleDe(MON_DJ).nom : 'DJ Live ou DJ Pro'}</small></button></div>`;
     if (og === 'dj') h = onglets + `<div class="espace-dj-avant">${blocEspaceDj()}</div>
       ${banniereProfil('reglages', 'Mes réglages', 'Compte, alertes, confidentialité', esc(p.ville || 'Ville à renseigner') + ' · ' + FOURNISSEURS[state.compte.fournisseur], '⚙')}`;
     else h = onglets + h;
@@ -2404,12 +2404,12 @@
       const st = avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ok ? ['En cours', 'vert'] : ['Annoncé', 'orange'];
       ligne({ fin: x.fin, conf: x.conf || 0, act: `data-decl-ok="${x.id}"`, km: d, t: x.debut, heure: hm(x.debut), porte: l.nom || 'Spot', st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Déclaré', attr: `data-dj-pro="${esc(dj.nom)}"`, nom: dj.nom,
         l1: avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : reste > 0 ? 'encore ' + dur(Math.round(reste)) : 'se termine',
-        l2: [[esc(l.nom || 'Spot') + ' · ' + fK(d)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']], vol: dj.nom }); });
+        l2: [[(x.temp != null ? `<span class="temp-pil t${x.temp}">${['Froid', 'Moyen', 'Chaud'][x.temp]}</span> ` : '') + esc(l.nom || 'Spot') + ' · ' + fK(d)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']].concat(x.com ? [['« ' + esc(x.com) + ' »', 'fil-com']] : []), vol: dj.nom }); });
     // Spots signalés par les Bangers
     SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && s.lat != null).forEach((sp) => { const d = km(sp.lat, sp.lng); if (d > r) return;
       const n = sp.note || 0, cf = sp.conf || 0, v = n >= 4 && cf >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || cf >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
       ligne({ fin: (sp.maj || sp.t) + 3 * 3600000, sp, km: d, t: sp.t || sp.maj, heure: hm(sp.t || sp.maj), porte: sp.nom || TYPES_SPOT[sp.type] || 'Spot', st: ['Signalé', 'violet'], k: 'spot', tag: 'Spot', attr: `data-spot-voir="${sp.id}"`, nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot',
-        l1: `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, l2: [[esc(sp.dj || 'DJ inconnu') + ' · ' + fK(d)], [(sp.temp != null ? `<span class="temp-pil t${sp.temp}">${['Froid', 'Moyen', 'Chaud'][sp.temp]}</span> ` : '') + 'signalé par @' + esc(sp.par || 'un Banger')]], vol: '', photo: sp.photo }); });
+        l1: `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, l2: [[esc(sp.dj || 'DJ inconnu') + ' · ' + fK(d)], [(sp.temp != null ? `<span class="temp-pil t${sp.temp}">${['Froid', 'Moyen', 'Chaud'][sp.temp]}</span> ` : '') + 'signalé par @' + esc(sp.par || 'un Banger')]].concat(sp.com ? [['« ' + esc(sp.com) + ' »', 'fil-com']] : []), vol: '' }); });
     // Soirées de l'agenda : ce soir et demain
     SUD.soirees.filter((x) => (x.date === auj || x.date === dem) && SUD.lieux[x.lieu]).forEach((x) => { const l = SUD.lieux[x.lieu], d = km(l.lat, l.lng); if (d > r) return;
       const deb = msDe(x.date, x.heure), avant = deb ? (deb - now) / 60000 : null, dj = String(x.djs || '').split(/,| b2b | & /i)[0].trim();
@@ -2931,11 +2931,12 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         const html = `<button type="button" class="ps-ou ps-ou-btn" data-ps-ou="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
             <span id="ps-ou-txt">${posSpot.connu ? `Tu es à : <b>${esc(posSpot.connu.nom)}</b>` : proches.length ? '<b>Où es-tu ?</b> Choisis le lieu' : cherche ? '<b>Je cherche…</b>' : '<b>Lieu introuvable</b>'}</span><small>${proches.length} lieu${proches.length > 1 ? 'x' : ''} à ${Math.round(R * 1000) >= 1000 ? fm(R) : Math.round(R * 1000) + ' m'}</small></button>
           <div class="ps-lieux" id="ps-lieux"${posSpot.connu ? ' hidden' : ''}>${liste}</div>`;
-        if (deja) { $('#ps-zone').innerHTML = html; deja.querySelector('.ps-suite').hidden = !proches.length; return; }
+        if (deja) { $('#ps-zone').innerHTML = html; deja.querySelector('.ps-suite').hidden = !proches.length; majDjIci(); return; }
         $('#panel-spot').innerHTML = `<form id="form-spot" novalidate>
           <div class="ps-titre"><b>Un DJ joue ici</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div>
           <div id="ps-zone">${html}</div>
           <div class="ps-suite"${proches.length ? '' : ' hidden'}>
+          <div class="ps-dj-ici" hidden></div>
           <div class="ps-dj-cartes">
             <button type="button" class="ps-dj-carte" data-ps-dj="connu" style="--pc:#FF8A3D"><i aria-hidden="true"></i><b>Je connais le DJ</b><small>J'écris son nom</small></button>
             <button type="button" class="ps-dj-carte" data-ps-dj="inconnu" style="--pc:#8A93AB"><i aria-hidden="true"></i><b>DJ inconnu</b><small>Je ne sais pas qui joue</small></button>
@@ -2945,13 +2946,14 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
           <div class="ps-thermo"><span class="pst-titre">L'ambiance</span>
             <div class="pst-rail"><input type="range" name="temp" min="0" max="2" step="1" value="1" aria-label="Température de la soirée" aria-valuetext="Moyen"></div>
             <div class="pst-labels"><span data-pst="0">Froid</span><span data-pst="1">Moyen</span><span data-pst="2">Chaud</span></div></div>
-          <label class="ps-photo"><input type="file" accept="image/*" capture="environment" hidden data-ps-photo="1">
-            <span class="psp-cadre" id="psp-cadre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
-            <span class="psp-txt"><b>Photo de la soirée ou du DJ</b><small>Éphémère : elle disparaît à la fin de la soirée</small></span></label>
+          <label class="ps-com"><span class="pst-titre">Un mot sur la soirée <small>(facultatif)</small></span>
+            <input class="search" name="com" maxlength="80" placeholder="Gros son, ça bouge bien…" autocomplete="off">
+            <small class="aide">Éphémère : il s'efface à la fin du set, quand la barre de progression arrive au bout.</small></label>
           <button type="submit" class="btn-plein">Je bangue ici</button></div>
           <button type="button" class="alerte ps-retour" data-spot-fermer="1">← Annuler, retour à la carte</button>
           <p class="aide">Seulement dans un lieu public (bar, resto, club, beach club). Lieux : Banzic et OpenStreetMap. Visible tout de suite pour toi ; les autres le verront quand 2 personnes à côté l'auront confirmé.</p>
         </form>`;
+        majDjIci();
       };
       posSpot = null;
       dessiner(banzic.slice(), true);
@@ -2969,6 +2971,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     posSpot.connu = o.l;
     document.querySelectorAll('.ps-lieu').forEach((x) => x.classList.toggle('on', x === b));
     $('#ps-ou-txt').innerHTML = `Tu es à : <b>${esc(o.l.nom)}</b>`;
+    majDjIci();
     setTimeout(() => { const l = $('#ps-lieux'); if (l) l.hidden = true; }, 250);
   });
   // Note en vinyles : les vinyles jusqu'à celui touché s'allument
@@ -2997,6 +3000,14 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       cb(p.coords.latitude, p.coords.longitude, 'gps'); // toujours la vraie position si le téléphone la donne
     }, repli, { timeout: 5000, maximumAge: 60000 });
   }
+  // Un DJ déjà déclaré à ce lieu (à moins de 80 m) ? Il est reconnu : on confirme simplement, sans « Je connais / DJ inconnu »
+  const declIci = (l) => !l ? null : DECLS.find((x) => declActive(x) && (() => { const ll = lieuDe(x); return ll && ll.lat != null && distKm([l.lat, l.lng], [ll.lat, ll.lng]) < 0.08; })()) || null;
+  function majDjIci() {
+    const f = $('#form-spot'); if (!f || !posSpot) return;
+    const x = declIci(posSpot.connu), d = x && djDe(x), z = f.querySelector('.ps-dj-ici'), c = f.querySelector('.ps-dj-cartes'), ch = f.querySelector('.ps-dj-champ');
+    if (x && d) { z.hidden = false; z.innerHTML = `<span class="pdi-av">${avatarDj(d.nom)}</span><span><small>Déjà annoncé ici</small><b>${esc(d.nom)} joue ici</b></span>`; c.hidden = true; ch.hidden = true; f.querySelector('[type=submit]').textContent = 'Confirmer : il joue, je bangue'; }
+    else { z.hidden = true; c.hidden = false; f.querySelector('[type=submit]').textContent = 'Je bangue ici'; }
+  }
   let photoSpot = '';
   document.addEventListener('change', (e) => {
     if (e.target.name === 'temp' && e.target.closest('#form-spot')) { const v = +e.target.value; e.target.setAttribute('aria-valuetext', ['Froid', 'Moyen', 'Chaud'][v]); e.target.closest('.ps-thermo').dataset.v = v; return; }
@@ -3015,11 +3026,13 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const { lat, lng, src, connu } = posSpot || {};
     if (!connu) { toast('Choisis d\'abord le lieu public où tu es : on ne bangue pas chez un particulier'); const l = $('#ps-lieux'); if (l) l.hidden = false; return; }
     $('#panel-spot').hidden = true;
+    { const x = declIci(connu); if (x) { x.conf = (x.conf || 0) + 1; const com = String(f.get('com') || '').trim().slice(0, 80), tp = f.get('temp') != null ? +f.get('temp') : 1;
+      (x.avisSoir = x.avisSoir || []).push({ temp: tp, com, t: Date.now() }); x.temp = tp; if (com) x.com = com; sauverDecls();
+      BANG_LIEU[connu.id] = (BANG_LIEU[connu.id] || 0) + 1; store.set('bangLieu', BANG_LIEU); renderMap(); toast('Banguérisé : tu confirmes que ' + ((djDe(x) || {}).nom || 'le DJ') + ' joue ici'); return; } }
     if (connu.src === 'ibiza' && lieux[connu.id]) { signaler(connu.id, dj || 'DJ inconnu'); renderMap(); return; }
     const s = { id: 'sp' + Date.now(), dest: (connu && connu.dest) || state.dest, type: connu ? (connu.type === 'plage' ? 'plage' : connu.genre === 'bar' ? 'bar' : 'club') : (f.get('type') || 'bar'),
       nom: connu ? connu.nom : String(f.get('nom') || '').trim(), dj, lat: connu ? connu.lat : lat, lng: connu ? connu.lng : lng,
-      t: Date.now(), maj: Date.now(), conf: 0, mien: true, trace: [], note, notes: note ? [note] : [], temp: f.get('temp') != null ? +f.get('temp') : 1, photo: photoSpot };
-    photoSpot = '';
+      t: Date.now(), maj: Date.now(), conf: 0, mien: true, trace: [], note, notes: note ? [note] : [], temp: f.get('temp') != null ? +f.get('temp') : 1, com: String(f.get('com') || '').trim().slice(0, 80) };
     SPOTS.push(s); sauverSpots();
     renderMap(); rappelCompte && rappelCompte();
     if (connu) { BANG_LIEU[connu.id] = (BANG_LIEU[connu.id] || 0) + 1; store.set('bangLieu', BANG_LIEU); }
@@ -4531,7 +4544,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   document.addEventListener('click', (e) => {
     // BANGER : un Banger n'a qu'une action, « Un DJ joue ici » ; seul un DJ inscrit (formule DJ Live ou DJ Pro) a aussi « Je mixe maintenant »
     if (e.target.closest('#tab-plus')) { const ici = djIci(); if (ici) { ouvrirNoteDj(ici); return; }
-      if (MON_DJ) ouvrirPlus(); else { setTab('map'); setTimeout(() => { const s = $('#btn-spot'); if (s) s.click(); }, 250); } return; }
+      if (MON_DJ && (state.ongletProfil || 'dj') === 'dj') { setTab('profil'); state.ongletProfil = 'dj'; state.vueDj = 'mixe'; renderProfil(); } else { setTab('map'); setTimeout(() => { const s = $('#btn-spot'); if (s) s.click(); }, 250); } return; }
     const f = $('#plus-feuille'); if (!f || f.hidden) return;
     const b = e.target.closest('[data-plus]');
     if (!b) { if (e.target === f) fermerPlus(); return; }
