@@ -1914,6 +1914,45 @@
   // Liens de diffusion en direct donnés par le DJ quand il se déclare (YouTube, Instagram, TikTok…)
   const liensLiveHtml = (x) => { const L = (x && x.liensLive) || {}; const ids = Object.keys(L); if (!ids.length) return '';
     return `<span class="fp-reseaux live-reseaux">${ids.map((id) => `<a class="fr-ico r-${id}" href="${esc(L[id])}" target="_blank" rel="noopener" aria-label="Le live sur ${(RESEAUX.find((r) => r.id === id) || {}).nom}">${ICO_RESEAU[id] || ''}</a>`).join('')}<em>Regarder en direct</em></span>`; };
+
+  // ---------- Base partagée (Supabase) : ce que déclarent les DJ et les Bangers se voit sur tous les téléphones
+  const BDD = (() => {
+    const C = window.BANZIC_DB; if (!C || !C.url) return { envoyerDecl() {}, envoyerSpot() {}, banguer() {}, charger() {} };
+    const H = { apikey: C.cle, Authorization: 'Bearer ' + C.cle, 'Content-Type': 'application/json' };
+    const req = (chemin, o) => fetch(C.url + '/rest/v1/' + chemin, Object.assign({ headers: H }, o || {})).then((r) => r.ok ? (r.status === 204 ? null : r.json().catch(() => null)) : Promise.reject(r.status));
+    const ms = (s) => s ? new Date(s).getTime() : 0, iso = (n) => new Date(n).toISOString();
+    const envoyerDecl = (x) => { if (!x || !MON_DJ) return; const l = lieuDe(x) || {};
+      req('declarations', { method: 'POST', headers: Object.assign({ Prefer: 'return=minimal' }, H), body: JSON.stringify({ id: x.id, dj_nom: MON_DJ.nom, dj_photo: (photoProfil() || '').startsWith('data:') ? null : photoProfil(), lieu_nom: (l.nom || x.nomLieu || 'Spot').slice(0, 60),
+        lat: l.lat != null ? l.lat : x.lat, lng: l.lng != null ? l.lng : x.lng, style: (x.style || '').slice(0, 30), debut: iso(x.debut), fin: iso(x.fin), liens_live: x.liensLive || {} }) }).catch(() => toast('Hors connexion : ta déclaration reste sur ton téléphone')); };
+    const envoyerSpot = (s) => req('spots', { method: 'POST', headers: Object.assign({ Prefer: 'return=minimal' }, H), body: JSON.stringify({ id: s.id, nom: (s.nom || '').slice(0, 60), type: s.type, dj: (s.dj || '').slice(0, 40), lat: s.lat, lng: s.lng,
+      par: ((state.profil && state.profil.pseudo) || '').slice(0, 30), temp: s.temp, com: s.com || null }) }).catch(() => toast('Hors connexion : ton signalement reste sur ton téléphone'));
+    const banguer = (table, id, temp, com) => req('rpc/banguer', { method: 'POST', body: JSON.stringify({ p_table: table, p_id: id, p_temp: temp == null ? null : temp, p_com: com || null }) }).catch(() => {});
+    let enCours = false;
+    function charger() {
+      if (enCours || document.hidden) return; enCours = true;
+      Promise.all([req('declarations?select=*'), req('spots?select=*'), req('soirees?select=*&order=date')]).then(([ds, ss, so]) => {
+        ds = ds || []; ss = ss || []; so = so || [];
+        // DJ en live
+        DJS_DISTANTS.length = 0;
+        ds.forEach((r) => { const id = 'r:' + sansAccent(r.dj_nom); if (!DJS_DISTANTS.some((d) => d.id === id)) DJS_DISTANTS.push({ id, nom: r.dj_nom, styles: r.style ? [r.style] : [], ville: '', formule: 'live', liens: {}, annonces: [], photo: r.dj_photo || '', confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 } }); });
+        const miens = new Set(DECLS.filter((x) => x.mien).map((x) => x.id));
+        DECLS = DECLS.filter((x) => x.mien || x.demo).concat(ds.filter((r) => !miens.has(r.id)).map((r) => ({ id: r.id, dj: 'r:' + sansAccent(r.dj_nom), dest: 'local', lieu: null, nomLieu: r.lieu_nom, lat: r.lat, lng: r.lng, style: r.style, debut: ms(r.debut), fin: ms(r.fin), conf: r.conf || 0, contest: 0, temp: r.temp, com: r.com, liensLive: r.liens_live || {}, distant: true })));
+        DECLS.forEach((x) => { const r = ds.find((y) => y.id === x.id); if (r && x.mien) { x.conf = Math.max(x.conf || 0, r.conf || 0); if (r.temp != null) x.temp = r.temp; if (r.com) x.com = r.com; } });
+        // Spots
+        const sMiens = new Set(SPOTS.filter((s) => s.mien).map((s) => s.id));
+        SPOTS = SPOTS.filter((s) => s.mien || s.demo).concat(ss.filter((r) => !sMiens.has(r.id)).map((r) => ({ id: r.id, dest: 'local', type: r.type || 'bar', nom: r.nom, dj: r.dj, lat: r.lat, lng: r.lng, t: ms(r.t), maj: ms(r.maj), conf: r.conf || 0, par: r.par, temp: r.temp, com: r.com, trace: [], distant: true })));
+        SPOTS.forEach((s) => { const r = ss.find((y) => y.id === s.id); if (r && s.mien) { s.conf = Math.max(s.conf || 0, r.conf || 0); if (r.temp != null) s.temp = r.temp; if (r.com) s.com = r.com; } });
+        // Soirées
+        SUD.soirees = SUD.soirees.filter((x) => x.src !== 'bdd').concat(so.map((r) => { const k = 'bdd-' + r.id; SUD.lieux[k] = { nom: r.lieu_nom || 'Lieu', ville: r.ville || '', dep: '', lat: r.lat, lng: r.lng };
+          return { type: r.type || 'club', date: r.date, heure: r.heure || '', nom: r.nom, djs: r.djs || '', lieu: k, url: r.url || '', src: 'bdd' }; }));
+        INDEX_DJ = null;
+        try { if (state.tab === 'checkin') renderCheckin(); else if (state.tab === 'map') renderMap(); else if (state.tab === 'live' || state.tab === 'accueil') render(); } catch (e) { /* */ }
+      }).catch(() => {}).finally(() => { enCours = false; });
+    }
+    setTimeout(charger, 800); setInterval(charger, 30000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) charger(); });
+    return { envoyerDecl, envoyerSpot, banguer, charger };
+  })();
   // Pastille « En live » sur la fiche d'un DJ : un toucher mène là où il mixe (son live YouTube, ou sa position sur la carte)
   function badgeLiveDj(pro, live) {
     if (!pro) return '';
@@ -3031,13 +3070,13 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (!connu) { toast('Choisis d\'abord le lieu public où tu es : on ne bangue pas chez un particulier'); const l = $('#ps-lieux'); if (l) l.hidden = false; return; }
     $('#panel-spot').hidden = true;
     { const x = declIci(connu); if (x) { x.conf = (x.conf || 0) + 1; const com = String(f.get('com') || '').trim().slice(0, 80), tp = f.get('temp') != null ? +f.get('temp') : 1;
-      (x.avisSoir = x.avisSoir || []).push({ temp: tp, com, t: Date.now() }); x.temp = tp; if (com) x.com = com; sauverDecls();
+      (x.avisSoir = x.avisSoir || []).push({ temp: tp, com, t: Date.now() }); x.temp = tp; if (com) x.com = com; sauverDecls(); BDD.banguer('declarations', x.id, tp, com);
       BANG_LIEU[connu.id] = (BANG_LIEU[connu.id] || 0) + 1; store.set('bangLieu', BANG_LIEU); renderMap(); toast('Banguérisé : tu confirmes que ' + ((djDe(x) || {}).nom || 'le DJ') + ' joue ici'); return; } }
     if (connu.src === 'ibiza' && lieux[connu.id]) { signaler(connu.id, dj || 'DJ inconnu'); renderMap(); return; }
     const s = { id: 'sp' + Date.now(), dest: (connu && connu.dest) || state.dest, type: connu ? (connu.type === 'plage' ? 'plage' : connu.genre === 'bar' ? 'bar' : 'club') : (f.get('type') || 'bar'),
       nom: connu ? connu.nom : String(f.get('nom') || '').trim(), dj, lat: connu ? connu.lat : lat, lng: connu ? connu.lng : lng,
       t: Date.now(), maj: Date.now(), conf: 0, mien: true, trace: [], note, notes: note ? [note] : [], temp: f.get('temp') != null ? +f.get('temp') : 1, com: String(f.get('com') || '').trim().slice(0, 80) };
-    SPOTS.push(s); sauverSpots();
+    SPOTS.push(s); sauverSpots(); BDD.envoyerSpot(s);
     renderMap(); rappelCompte && rappelCompte();
     if (connu) { BANG_LIEU[connu.id] = (BANG_LIEU[connu.id] || 0) + 1; store.set('bangLieu', BANG_LIEU); }
     toast(src === 'gps' || connu ? 'Banguérisé : tu es là, un DJ joue · visible pour toi, en attente de 2 confirmations' : 'Démo : spot placé au centre de la carte (déplace la carte avant de signaler)');
@@ -3055,7 +3094,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       surPlace({ nom: s.nomLieu || (s.type === 'bateau' ? 'ce bateau' : 'ce spot'), lat: s.lat, lng: s.lng }, (pos) => {
         const lat = pos ? pos.lat : s.lat, lng = pos ? pos.lng : s.lng, src = pos ? pos.src : 'lieu';
         if (s.type === 'bateau' && src === 'gps') { s.trace = (s.trace || []).concat([[s.lat, s.lng]]).slice(-8); s.lat = lat; s.lng = lng; }
-        if (!s.mien) s.conf += 1;
+        if (!s.mien) { s.conf += 1; BDD.banguer('spots', s.id); }
         s.maj = Date.now(); sauverSpots(); map.closePopup(); renderMap();
         toast(s.type === 'bateau' ? 'Merci ! Position du bateau mise à jour' : 'Merci, ta confirmation est enregistrée');
       }, { rayon: s.type === 'bateau' ? RAYON_BATEAU_M : RAYON_M });
@@ -3162,7 +3201,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   let MON_DJ = store.get('djPro', null);
   // Sans démo : plus aucun DJ Pro fictif (ni fiche, ni live)
   if (SANS_DEMO) DJS_DEMO.length = 0;
-  const tousDjsPro = () => DJS_DEMO.concat(MON_DJ ? [MON_DJ] : []);
+  const DJS_DISTANTS = []; // DJ en live venus de la base partagée (autres téléphones)
+  const tousDjsPro = () => DJS_DEMO.concat(MON_DJ ? [MON_DJ] : [], DJS_DISTANTS.filter((d) => !MON_DJ || sansAccent(d.nom) !== sansAccent(MON_DJ.nom)));
   const djProParNom = (nom) => tousDjsPro().find((d) => sansAccent(d.nom) === sansAccent(nom));
 
   // Crédibilité sur 100 : 70 % fiabilité (déclarations confirmées par les Bangers, lissée pour les débutants)
@@ -3635,7 +3675,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       const liensLive = {}; ['youtube', 'instagram', 'tiktok', 'twitch', 'spotify', 'soundcloud', 'mixcloud'].forEach((id) => { const champ = e.target.querySelector(`[data-mixe-champ="${id}"]`); const u = champ && !champ.hidden ? urlPropre(f.get('live_' + id)) : ''; if (u) liensLive[id] = u; });
       const cree = (lat, lng) => {
         DECLS.push({ liensLive, id: 'dc' + Date.now(), dj: 'moi', mien: true, dest: state.dest, lieu, nomLieu: String(f.get('nomLieu') || '').trim() || 'Spot', lat, lng, style: f.get('style'), debut: Date.now(), fin: fin.getTime(), conf: 0, contest: 0 });
-        sauverDecls(); state.vueDj = null; renderProfil(); toast('Tu es sur la carte : « Déclaré par le DJ »');
+        sauverDecls(); BDD.envoyerDecl(DECLS[DECLS.length - 1]); state.vueDj = null; renderProfil(); toast('Tu es sur la carte : « Déclaré par le DJ »');
       };
       if (lieu) cree(null, null);
       else if (map) positionSpot(cree);
@@ -3671,7 +3711,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (dp) { ouvrirDj(dp.dataset.djPro); return; }
     const vote = (id, v) => {
       const x = DECLS.find((y) => y.id === id); if (!x) return;
-      if (v === 'ok') x.conf += 1; else x.contest += 1;
+      if (v === 'ok') { x.conf += 1; BDD.banguer('declarations', id); } else x.contest += 1;
       state.votesDecl[id] = v; store.set('votesDecl', state.votesDecl); sauverDecls(); render();
       toast(v === 'ok' ? 'Merci : ça compte pour la crédibilité du DJ' : 'Merci : si d\'autres le confirment, la déclaration est retirée');
     };
