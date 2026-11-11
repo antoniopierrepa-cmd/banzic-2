@@ -2406,10 +2406,10 @@
         l1: avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : reste > 0 ? 'encore ' + dur(Math.round(reste)) : 'se termine',
         l2: [[esc(l.nom || 'Spot') + ' · ' + fK(d)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']], vol: dj.nom }); });
     // Spots signalés par les Bangers
-    SPOTS.filter((s) => spotActif(s) && spotPublic(s) && s.lat != null).forEach((sp) => { const d = km(sp.lat, sp.lng); if (d > r) return;
+    SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && s.lat != null).forEach((sp) => { const d = km(sp.lat, sp.lng); if (d > r) return;
       const n = sp.note || 0, cf = sp.conf || 0, v = n >= 4 && cf >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || cf >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
       ligne({ fin: (sp.maj || sp.t) + 3 * 3600000, sp, km: d, t: sp.t || sp.maj, heure: hm(sp.t || sp.maj), porte: sp.nom || TYPES_SPOT[sp.type] || 'Spot', st: ['Signalé', 'violet'], k: 'spot', tag: 'Spot', attr: `data-spot-voir="${sp.id}"`, nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot',
-        l1: `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, l2: [[esc(sp.dj || 'DJ inconnu') + ' · ' + fK(d)], ['signalé par @' + esc(sp.par || 'un Banger')]], vol: '' }); });
+        l1: `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, l2: [[esc(sp.dj || 'DJ inconnu') + ' · ' + fK(d)], [(sp.temp != null ? `<span class="temp-pil t${sp.temp}">${['Froid', 'Moyen', 'Chaud'][sp.temp]}</span> ` : '') + 'signalé par @' + esc(sp.par || 'un Banger')]], vol: '', photo: sp.photo }); });
     // Soirées de l'agenda : ce soir et demain
     SUD.soirees.filter((x) => (x.date === auj || x.date === dem) && SUD.lieux[x.lieu]).forEach((x) => { const l = SUD.lieux[x.lieu], d = km(l.lat, l.lng); if (d > r) return;
       const deb = msDe(x.date, x.heure), avant = deb ? (deb - now) / 60000 : null, dj = String(x.djs || '').split(/,| b2b | & /i)[0].trim();
@@ -2448,7 +2448,7 @@
       const tourne = o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert';
       // Tout le bandeau devient une barre de progression : du début du set (0 %) jusqu'à la fin (100 %)
       const deb0 = o.t || 0, fin0 = finDe(o), prog = deb0 && now >= deb0 ? Math.min(100, Math.round((now - deb0) / Math.max(1, fin0 - deb0) * 100)) : 0;
-      return `<div class="ck-ligne ck-${o.st[1]}${tourne ? ' ck-tourne' : ''}${prog ? ' ck-prog' : ''}${prog >= 100 ? ' ck-fini' : ''}" style="--prog:${prog}%;--ph:${Math.round(42 - prog * 0.42)}">${prog ? `<i class="ck-barre" aria-hidden="true"></i><span class="ck-pct" title="Avancement du set">${prog >= 100 ? 'Terminé' : prog + ' %'}</span>` : ''}
+      return `<div class="ck-ligne ck-${o.st[1]}${tourne ? ' ck-tourne' : ''}${prog ? ' ck-prog' : ''}${prog >= 100 ? ' ck-fini' : ''}${o.photo ? ' a-photo' : ''}" style="--prog:${prog}%;--ph:${Math.round(42 - prog * 0.42)}">${prog ? `<i class="ck-barre" aria-hidden="true"></i><span class="ck-pct" title="Avancement du set">${prog >= 100 ? 'Terminé' : prog + ' %'}</span>` : ''}${o.photo ? `<img class="fil-photo" src="${o.photo}" alt="Photo de la soirée">` : ''}
         <div class="ck-bande"><span class="ck-h">${flap(o.heure, 5)}</span><span class="ck-porte"><small>Porte</small>${esc(o.porte)}</span><span class="ck-st ck-st-${o.st[1]}"><i></i>${esc(o.st[0])}</span></div>
         <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em><b>${esc(o.nom)}</b>${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button></div>`; };
     const i = CK_RAYONS.indexOf(r);
@@ -2912,6 +2912,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     } catch (e) { return []; }
   }
   function formSpot() {
+    photoSpot = '';
     $('#panel-spot').innerHTML = '<div class="ps-titre"><b>Un DJ joue ici</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div><p class="aide">Je cherche ta position…</p>';
     $('#panel-spot').hidden = false;
     positionSpot((lat, lng, src) => {
@@ -2941,6 +2942,12 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
           </div>
           <input class="search ps-dj-champ" name="dj" maxlength="40" list="liste-djs-spot" placeholder="Nom du DJ" autocomplete="off" hidden>
           <datalist id="liste-djs-spot">${[...tousLesDjs().values()].slice(0, 300).map((n) => `<option value="${esc(n)}">`).join('')}</datalist>
+          <div class="ps-thermo"><span class="pst-titre">L'ambiance</span>
+            <div class="pst-rail"><input type="range" name="temp" min="0" max="2" step="1" value="1" aria-label="Température de la soirée" aria-valuetext="Moyen"></div>
+            <div class="pst-labels"><span data-pst="0">Froid</span><span data-pst="1">Moyen</span><span data-pst="2">Chaud</span></div></div>
+          <label class="ps-photo"><input type="file" accept="image/*" capture="environment" hidden data-ps-photo="1">
+            <span class="psp-cadre" id="psp-cadre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+            <span class="psp-txt"><b>Photo de la soirée ou du DJ</b><small>Éphémère : elle disparaît à la fin de la soirée</small></span></label>
           <button type="submit" class="btn-plein">Je bangue ici</button></div>
           <button type="button" class="alerte ps-retour" data-spot-fermer="1">← Annuler, retour à la carte</button>
           <p class="aide">Seulement dans un lieu public (bar, resto, club, beach club). Lieux : Banzic et OpenStreetMap. Visible tout de suite pour toi ; les autres le verront quand 2 personnes à côté l'auront confirmé.</p>
@@ -2990,6 +2997,17 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       cb(p.coords.latitude, p.coords.longitude, 'gps'); // toujours la vraie position si le téléphone la donne
     }, repli, { timeout: 5000, maximumAge: 60000 });
   }
+  let photoSpot = '';
+  document.addEventListener('change', (e) => {
+    if (e.target.name === 'temp' && e.target.closest('#form-spot')) { const v = +e.target.value; e.target.setAttribute('aria-valuetext', ['Froid', 'Moyen', 'Chaud'][v]); e.target.closest('.ps-thermo').dataset.v = v; return; }
+    if (!e.target.matches('[data-ps-photo]')) return;
+    const fi = e.target.files && e.target.files[0]; if (!fi) return;
+    const r = new FileReader(); r.onload = () => { const img = new Image(); img.onload = () => {
+      const k = Math.min(1, 720 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = img.width * k; c.height = img.height * k;
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); photoSpot = c.toDataURL('image/jpeg', .72);
+      const cad = $('#psp-cadre'); if (cad) cad.innerHTML = `<img src="${photoSpot}" alt="">`; }; img.src = r.result; }; r.readAsDataURL(fi);
+  });
+  document.addEventListener('input', (e) => { if (e.target.name === 'temp' && e.target.closest('#form-spot')) e.target.closest('.ps-thermo').dataset.v = e.target.value; });
   document.addEventListener('submit', (e) => {
     if (e.target.id !== 'form-spot') return;
     e.preventDefault();
@@ -3000,7 +3018,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (connu.src === 'ibiza' && lieux[connu.id]) { signaler(connu.id, dj || 'DJ inconnu'); renderMap(); return; }
     const s = { id: 'sp' + Date.now(), dest: (connu && connu.dest) || state.dest, type: connu ? (connu.type === 'plage' ? 'plage' : connu.genre === 'bar' ? 'bar' : 'club') : (f.get('type') || 'bar'),
       nom: connu ? connu.nom : String(f.get('nom') || '').trim(), dj, lat: connu ? connu.lat : lat, lng: connu ? connu.lng : lng,
-      t: Date.now(), maj: Date.now(), conf: 0, mien: true, trace: [], note, notes: note ? [note] : [] };
+      t: Date.now(), maj: Date.now(), conf: 0, mien: true, trace: [], note, notes: note ? [note] : [], temp: f.get('temp') != null ? +f.get('temp') : 1, photo: photoSpot };
+    photoSpot = '';
     SPOTS.push(s); sauverSpots();
     renderMap(); rappelCompte && rappelCompte();
     if (connu) { BANG_LIEU[connu.id] = (BANG_LIEU[connu.id] || 0) + 1; store.set('bangLieu', BANG_LIEU); }
