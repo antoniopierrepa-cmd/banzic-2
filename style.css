@@ -2907,3 +2907,5 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .thermo-mini i { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 2px solid #12081A; transform: translate(-50%, -50%); box-shadow: 0 0 6px rgba(255,255,255,.7); }
 .thermo-mini.t0 i { left: 8%; } .thermo-mini.t1 i { left: 50%; } .thermo-mini.t2 i { left: 92%; }
 .thermo-txt { font-size: 11px; font-weight: 800; margin-right: 4px; } .thermo-txt.t0 { color: #6FA8FF; } .thermo-txt.t1 { color: #F2C53A; } .thermo-txt.t2 { color: #FF5A5A; }
+
+.radar-dep{display:flex;align-items:center;gap:12px;margin:12px 0;flex-wrap:wrap}.radar-dep select{font:inherit;color:inherit;background:#151725;border:1px solid #777;border-radius:8px;padding:10px;max-width:100%}

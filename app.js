@@ -448,7 +448,7 @@
     if (state.vueCarte === 'lieux') renderGalerie();
     if (!map) return;
     layer.clearLayers();
-    if (state.dest !== 'ibiza') { marqueursDest(); marqueursSpots(); marqueursDecls(); return; }
+    if (state.dest !== 'ibiza') { marqueursDest(); marqueursSpots(); marqueursDecls(); marqueursRadar(); return; }
     const t = state.t;
     D.lieux.forEach((l) => {
       const s = statutLieu(l.id, t);
@@ -2402,7 +2402,7 @@
       xs.push(item('spot', 'Spot', `data-spot-voir="${sp.id}"`, sp.nom || TYPES_SPOT[sp.type] || 'Spot', `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, [[esc(sp.dj || 'DJ inconnu') + kmL(sp.lat, sp.lng)], ['signalé à ' + hm(sp.t || sp.maj) + ' par @' + esc(sp.par || 'un Banger')]], visSpotC(sp))); });
     const auj = isoAuj();
     if (d.id === 'dubai') soireesDubai().filter((r) => r.date === auj).forEach((r) => { const dj = (r.djs || '').split(/,| b2b /i)[0].trim();
-      xs.push(item('decl', 'Ce soir', `data-dj-pro="${esc(dj || r.titre)}"`, dj || r.titre, r.heure ? 'à ' + esc(r.heure) : '', [[esc(r.nomLieu)], [esc(r.titre)], ['line-up annoncé', 'fil-att']], visFil(dj || r.titre, 0, ''))); });
+      xs.push(item('decl', 'Ce soir', `data-dj-pro="${esc(dj || r.titre)}"`, dj || r.titre, r.heure ? 'à ' + esc(r.heure) : '', [[esc(r.nomLieu)], [esc(r.titre)], [r.djs ? 'line-up annoncé' : 'line-up non communiqué', 'fil-att']], visFil(dj || r.titre, 0, ''))); });
     // Agendas du Top 100 : les DJ qui passent dans cette destination dans les 7 jours
     const villes = { dubai: ['dubai', 'dubaï'], miami: ['miami', 'miami beach'], mykonos: ['mykonos', 'mýkonos'], tulum: ['tulum'], phuket: ['phuket', 'patong', 'kamala', 'choeng thale', 'tambon choeng thale'], ibiza: ['ibiza', 'sant antoni de portmany', 'sant josep de sa talaia', 'eivissa'] }[d.id] || [];
     const fin7 = iso(new Date(Date.now() + 7 * 86400000));
@@ -2456,7 +2456,7 @@
       if (st[0] === 'Terminé') return;
       ligne({ lieuId: x.lieu, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || '--:--', porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: dj ? `data-dj-pro="${esc(dj)}"` : '', nom: x.nom,
         l1: x.date === dem ? 'demain' + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
-        l2: [[esc(l.nom) + ' · ' + fK(d)], [esc(String(x.djs || '').slice(0, 60))], ['line-up annoncé', 'fil-att']], vol: dj }); });
+        l2: [[esc(l.nom) + ' · ' + fK(d)], [esc(String(x.djs || '').slice(0, 60))], [x.djs ? 'line-up annoncé' : 'line-up non communiqué', 'fil-att']], vol: dj }); });
     // Rangés par distance, du plus proche au plus loin (à distance égale, par heure)
     // Ibiza : les sets de ce soir dans les clubs (en cours ou dans les 2 heures)
     { const t = state.t; passages.filter((p) => !p.inconnu && p.f > t && p.d - t <= 120).forEach((p) => { const l = lieux[p.lieu]; if (!l || l.lat == null) return; const d = km(l.lat, l.lng); if (d > r) return;
@@ -2637,11 +2637,24 @@
   }
   // ---------- Agenda « Autour de moi » : soirées relevées dans le Var, les Alpes-Maritimes et les Bouches-du-Rhône
   const SUD = window.AGENDA_SUD || { lieux: {}, sources: {}, soirees: [] };
+  const RADAR = window.AGENDA_RADAR || { departments: {}, coverage: {}, lieux: {}, sources: {}, soirees: [] };
+  Object.assign(SUD.lieux, RADAR.lieux); Object.assign(SUD.sources, RADAR.sources);
+  SUD.soirees.push(...RADAR.soirees);
+  const radarUrl = (value) => { try { const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch (e) { return ''; } };
+  function marqueursRadar() {
+    if (!DEST[state.dest].local) return;
+    soireesAvecKm().filter((x) => x.km <= RAYONS[state.rayonIdx] && (!state.radarDep || x.l.dep === state.radarDep)).slice(0, 300).forEach((x) => {
+      const marker = L.marker([x.l.lat, x.l.lng], { icon: L.divIcon({ className: 'decl-pin', iconSize: [30, 30], iconAnchor: [15, 15], html: '♪' }), title: x.nom + ' · ' + x.date });
+      marker.on('click', () => { state.radarDep = x.l.dep; state.sudQuand = null; state.sudType = 'tout'; state.sudMesDj = false; setTab('agenda'); });
+      marker.addTo(layer);
+    });
+  }
+
   const NOMS_DEP = { '13': 'Bouches-du-Rhône', '83': 'Var', '06': 'Alpes-Maritimes', '75': 'Paris', '77': 'Seine-et-Marne', '92': 'Hauts-de-Seine', '93': 'Seine-Saint-Denis',
     '69': 'Rhône', '42': 'Loire', '38': 'Isère', '74': 'Haute-Savoie', '39': 'Jura', '68': 'Haut-Rhin', '59': 'Nord', '62': 'Pas-de-Calais', '33': 'Gironde',
     '31': 'Haute-Garonne', '34': 'Hérault', '44': 'Loire-Atlantique', '35': 'Ille-et-Vilaine' };
-  // Agenda autour de moi : un fader façon table de mixage règle le rayon (5 → 500 km) autour de ma position
-  const RAYONS = [5, 10, 100, 200, 500];
+  // Agenda autour de moi : un fader façon table de mixage règle le rayon (10 → 1000 km) autour de ma position
+  const RAYONS = [10, 50, 100, 200, 500, 1000];
   // 8 pads façon platine : 1re rangée le type de soirée, 2e rangée le moment (et mes DJ favoris)
   const PADS = [
     { g: 'type', k: 'tout', nom: 'Tout', c: '#C9CFDD' }, { g: 'type', k: 'club', nom: 'Clubs', c: '#3D8BFF' },
@@ -2657,7 +2670,7 @@
     'quand|soir': (x) => x.date === iso(new Date()), 'quand|weekend': (x) => x.date >= debutWeekend() && x.date <= finWeekend(), 'quand|semaine': (x) => x.date < auJour(7),
     'mesdj|oui': (x) => !!x.djs && state.favs.some((f) => sansAccent(x.djs).includes(sansAccent(f)))
   };
-  state.rayonIdx = store.get('rayonIdx', 2);
+  state.rayonIdx = Math.max(0, Math.min(RAYONS.length - 1, Number(store.get('rayonIdx', 2)) || 0));
   function soireesAvecKm() {
     const centre = DEST.local.centre, auj = iso(new Date());
     return SUD.soirees.filter((x) => x.date >= auj && SUD.lieux[x.lieu])
@@ -2672,13 +2685,15 @@
           <input type="range" id="fader-rayon" min="0" max="${RAYONS.length - 1}" step="1" value="${state.rayonIdx}" aria-label="Rayon de recherche" aria-valuetext="${r} kilomètres">
           <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k}</span>`).join('')}</div>
         </div>
+        <label class="radar-dep">Département <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>
+        <p class="demo-note">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements avec annonces.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
         <div class="pads" role="group" aria-label="Filtres">${PADS.map((x) => `<button class="pad" style="--pc:${x.c}" data-pad="${x.g}|${x.k}" aria-pressed="false"><span class="pad-nom">${x.nom}</span><small class="pad-nb"></small></button>`).join('')}</div>
       </div>
       <div id="agenda-liste"></div>`;
     listeAgendaSud();
   }
   function listeAgendaSud() {
-    const r = RAYONS[state.rayonIdx], toutes = soireesAvecKm().filter((x) => x.km <= r);
+    const r = RAYONS[state.rayonIdx], toutes = soireesAvecKm().filter((x) => state.radarDep ? x.l.dep === state.radarDep : x.km <= r);
     const typ = state.sudType || 'tout', quand = state.sudQuand || null, mesdj = !!state.sudMesDj;
     const liste = toutes.filter((x) => PAD_TEST['type|' + typ](x) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)));
     document.querySelectorAll('[data-pad]').forEach((b) => {
@@ -2691,7 +2706,7 @@
     document.querySelectorAll('.fd-graduations span').forEach((s, i) => s.classList.toggle('on', i === state.rayonIdx));
     const fr = $('#fader-rayon'); if (fr) fr.style.setProperty('--pct', (state.rayonIdx / (RAYONS.length - 1) * 100) + '%');
     let h = '';
-    if (!toutes.length) h += `<div class="empty">Rien d'annoncé à moins de ${r} km pour l'instant. Pousse le fader vers la droite pour voir plus loin.<br><small>Les soirées réelles arrivent bientôt : le radar Banzic les ajoute chaque semaine, et les DJ et les Bangers les signalent en direct.</small></div>`;
+    if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département.' : `Rien d’annoncé à moins de ${r} km. Élargis le rayon ou choisis un département.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
     else {
       if (!liste.length) h += `<div class="empty">Rien pour ces pads dans ce rayon.${mesdj && !state.favs.length ? ' Ajoute des DJ en favori (♥) pour utiliser « Mes DJ ».' : ''}</div>`;
       let mois = '';
@@ -2701,10 +2716,11 @@
         h += ligneSud(x);
       });
     }
-    h += festivalsFrance(toutes);
+    if (!state.radarDep) h += festivalsFrance(toutes);
     h += `<p class="demo-note">Sources : déclarations des DJ et des Bangers, et le radar Banzic (agendas et billetteries autorisés). Vérifie toujours sur la page de la soirée avant de sortir.</p>`;
     $('#agenda-liste').innerHTML = h;
   }
+  document.addEventListener('change', (e) => { if (e.target.id === 'radar-departement') { state.radarDep = e.target.value; listeAgendaSud(); } });
   const reglerRayon = (i) => { state.rayonIdx = Math.max(0, Math.min(RAYONS.length - 1, i)); store.set('rayonIdx', state.rayonIdx);
     const f = $('#fader-rayon'); if (f) { f.value = state.rayonIdx; f.setAttribute('aria-valuetext', RAYONS[state.rayonIdx] + ' kilomètres'); } listeAgendaSud(); };
   document.addEventListener('input', (e) => { if (e.target.id === 'fader-rayon') reglerRayon(+e.target.value); });
@@ -2753,14 +2769,14 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // Une ligne de l'agenda
   function ligneSud(x) {
       const dt = new Date(x.date + 'T12:00:00');
-      const wd = (dt.getDay() + 6) % 7, url = x.url || SUD.sources[x.src];
+      const wd = (dt.getDay() + 6) % 7, infoUrl = radarUrl(x.url || SUD.sources[x.src]), ticketUrl = radarUrl(x.ticketUrl), url = ticketUrl || infoUrl;
       return `<div class="sud-soiree ${x.gros ? 'gros' : ''}">
         <div class="sud-date" style="--tc:${TYPE_COUL[x.type || 'club']}"><b>${dt.getDate()}</b><small>${JOURS[wd]}</small><i>${TYPE_NOM[x.type || 'club']}</i></div>
         <img class="sud-affiche" src="${afficheSoiree(x)}" alt="" loading="lazy">
         <div class="sud-info"><span class="venue">${esc(x.nom)}</span>
-          ${x.djs ? `<small>${esc(x.djs)}</small>` : x.genres ? `<small class="sud-genres">${esc(x.genres)}</small>` : ''}
-          <small class="sud-lieu">${esc(x.l.nom)} · ${esc(x.l.ville)}${x.heure ? ' · ' + x.heure.replace(':', 'h') : ''}${x.prix ? ' · ' + esc(x.prix) : ''} ${/^\d+$/.test(x.l.dep) ? ' · <span class="sud-dep">' + x.l.dep + '</span>' : ''}</small></div>
-        ${url ? `<a class="badge b-soon" href="${url}" target="_blank" rel="noopener">Infos</a>` : ''}
+          ${x.djs ? `<small>Line-up : ${esc(x.djs)}</small>` : `<small>Line-up non communiqué</small>`}${x.genres ? `<small class="sud-genres">${esc(x.genres)}</small>` : ''}
+          <small class="sud-lieu">${esc(x.l.nom)} · ${esc(x.l.ville)}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}${x.prix ? ' · ' + esc(x.prix) : ''} ${/^(\d{2,3}|2[AB])$/.test(x.l.dep) ? ' · <span class="sud-dep">' + x.l.dep + '</span>' : ''}</small></div>
+        ${url ? `<a class="badge b-soon" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${ticketUrl ? 'Billets' : 'Infos'}</a>` : ''}
       </div>`;
   }
   // Les grands festivals de toute la France, même loin de toi : ils valent le déplacement
