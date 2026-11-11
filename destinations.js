@@ -16,11 +16,7 @@ window.DESTS = [
       8: 'Encore très fréquenté, premières closings fin septembre.',
       9: 'Closings jusqu\'à mi-octobre : grosses soirées, puis l\'île ferme.'
     },
-    evenements: [
-      { nom: 'Openings des clubs', quand: 'fin avril – mai', mois: 4 },
-      { nom: '15 août', quand: 'mi-août', mois: 7 },
-      { nom: 'Closings des clubs', quand: 'fin septembre – mi-octobre', mois: 9 }
-    ],
+    evenements: [],
     billetterie: [
       { nom: 'Billetteries des clubs (Ushuaïa, Hï, Pacha, Amnesia…)', affil: 'Accord direct à négocier' },
       { nom: 'Fever', url: 'https://business.feverup.com', affil: 'Programme partenaires' },
@@ -41,11 +37,7 @@ window.DESTS = [
       8: 'Encore très fréquenté la première quinzaine.',
       9: 'Dernières soirées début octobre, puis l\'île ferme.'
     },
-    evenements: [
-      { nom: 'Ouverture des beach clubs', quand: 'fin mai', mois: 4 },
-      { nom: 'Assomption (15 août)', quand: 'mi-août', mois: 7 },
-      { nom: 'Closings', quand: 'fin septembre – début octobre', mois: 8 }
-    ],
+    evenements: [],
     billetterie: [
       { nom: 'Billetteries et réservations des lieux (Scorpios, Cavo Paradiso…)', affil: 'Accord direct à négocier' },
       { nom: 'Fever', url: 'https://business.feverup.com', affil: 'Programme partenaires' }
@@ -65,13 +57,7 @@ window.DESTS = [
       10: 'La saison redémarre doucement.',
       11: 'Monte en flèche à partir de Noël.'
     },
-    evenements: [
-      { nom: 'Réveillon et semaine du Nouvel An', quand: '29 décembre – 8 janvier', mois: 11 },
-      { nom: 'Zamna Festival', quand: 'janvier', mois: 0, url: 'https://zamnafestival.com' },
-      { nom: 'Day Zero', quand: 'janvier', mois: 0, url: 'https://dayzero.events' },
-      { nom: 'Spring break', quand: 'mars', mois: 2 },
-      { nom: 'Semaine sainte', quand: 'mars ou avril', mois: 3 }
-    ],
+    evenements: [],
     billetterie: [
       { nom: 'Sites des festivals (Zamna, Day Zero)', affil: 'Accord direct à négocier' },
       { nom: 'Eventbrite / Posh', affil: 'Pas d\'affiliation : partenariat avec les organisateurs' },
@@ -90,12 +76,7 @@ window.DESTS = [
       6: 'Été chaud et humide, surtout du public local.',
       11: 'Art Basel début décembre puis le Nouvel An : tout est plein.'
     },
-    evenements: [
-      { nom: 'Miami Music Week et Ultra', quand: 'fin mars (24–29 mars en 2026)', mois: 2 },
-      { nom: 'Memorial Day', quand: 'fin mai', mois: 4 },
-      { nom: 'Art Basel Miami Beach', quand: 'début décembre', mois: 11 },
-      { nom: 'Nouvel An', quand: '31 décembre', mois: 11 }
-    ],
+    evenements: [],
     billetterie: [
       { nom: 'Fever', url: 'https://business.feverup.com', affil: 'Programme partenaires' },
       { nom: 'Eventbrite / Posh / Dice', affil: 'Pas d\'affiliation : partenariat avec les organisateurs' },
@@ -115,13 +96,7 @@ window.DESTS = [
       9: 'Réouverture des beach clubs, la saison repart.',
       11: 'Grand Prix de F1 à Abu Dhabi, Sole DXB, Nouvel An : le mois le plus chargé.'
     },
-    evenements: [
-      { nom: 'Grand Prix de F1 d\'Abu Dhabi', quand: '3–6 décembre', mois: 11 },
-      { nom: 'Sole DXB', quand: '11–13 décembre', mois: 11 },
-      { nom: 'Nouvel An', quand: '31 décembre', mois: 11 },
-      { nom: 'Ramadan (soirées calmes)', quand: 'environ 8 février – 9 mars 2027', mois: 1 },
-      { nom: 'Untold Dubai', quand: 'mars 2027 (annoncé du 19 au 22)', mois: 2 }
-    ],
+    evenements: [],
     billetterie: [
       { nom: 'Platinumlist', url: 'https://platinumlist.net', affil: 'Programme d\'affiliation public' },
       { nom: 'Fever', url: 'https://business.feverup.com', affil: 'Programme partenaires' }
@@ -138,10 +113,7 @@ window.DESTS = [
       5: 'Mousson de mai à octobre : moins de monde, beach clubs au ralenti.',
       11: 'Noël et Nouvel An : le pic de l\'année.'
     },
-    evenements: [
-      { nom: 'Songkran', quand: '13–15 avril', mois: 3 },
-      { nom: 'Nouvel An', quand: '31 décembre', mois: 11 }
-    ],
+    evenements: [],
     billetterie: [
       { nom: 'Billetteries des beach clubs', affil: 'Accord direct à négocier' }
     ],

@@ -2412,7 +2412,7 @@
     if (d.id === 'dubai') h += blocAgendaDubai();
     h += blocDecls() + blocSpots();
     const coulNiv = (k) => k < 0 ? '#5A6378' : ['#3FBF7F', '#F59E2E', '#E5484D', '#8A5CFF'][k];
-    h += `<div class="section-title">${T('temps_forts')}</div>` + rangCartes(evenementsAVenir(d, m).map((e) => vCarte({ tag: e.url ? 'a' : 'div', attr: e.url ? `href="${e.url}" target="_blank" rel="noopener"` : '', img: (photoVille(d.nom, '') || FOND_DEST[d.id] || '').split('?')[0],
+    h += `<div class="section-title">${T('temps_forts')}</div>` + (d.evenements.length ? '' : '<p class="aide" style="margin:4px 0 12px">Les temps forts arrivent bientôt.</p>') + rangCartes(evenementsAVenir(d, m).map((e) => vCarte({ tag: e.url ? 'a' : 'div', attr: e.url ? `href="${e.url}" target="_blank" rel="noopener"` : '', img: (photoVille(d.nom, '') || FOND_DEST[d.id] || '').split('?')[0],
       c: coulNiv(d.mois[e.mois]), badge: d.mois[e.mois] < 0 ? T('hors') : NIVEAUX[d.mois[e.mois]].court, type: esc(e.quand), nom: esc(e.nom), bas: [dansMois(e.mois, m), e.url ? 'Billets →' : ''] })));
     const grp = (titre, liste) => liste.length ? `<div class="section-title">${titre} <small>${liste.length}</small></div>` + rangCartes(liste.map((l) =>
       vCarte({ attr: `data-lieu="${l.id}"`, c: COUL_TYPE_LIEU[l.type] || '#FF8A3D', img: imgLieu(l), badge: n < 0 ? T('hors') : NIVEAUX[n].court, type: l.type === 'plage' ? 'Beach club' : 'Club', nom: esc(l.nom), lieu: esc(l.zone), bas: [T('lineup_bientot')] }))) : '';
@@ -2489,7 +2489,7 @@
       ${evs.length ? evs.map((e) => `<div class="mini"><span><span class="venue">${esc(e.nom)}</span><br><small>${esc(e.quand)}</small></span>${e.url ? `<a class="badge b-soon" href="${e.url}" target="_blank" rel="noopener">${T('billets')}</a>` : ''}</div>`).join('') : ''}
     </div>`;
     const avenir = evenementsAVenir(d, MOIS_NOW);
-    h += `<div class="section-title">${T('temps_forts')}</div>` + avenir.map((e) => `<button class="mini" data-an="${d.id}|${e.mois}">
+    h += `<div class="section-title">${T('temps_forts')}</div>` + (avenir.length ? '' : '<p class="aide" style="margin:4px 0 12px">Les temps forts arrivent bientôt.</p>') + avenir.map((e) => `<button class="mini" data-an="${d.id}|${e.mois}">
       <span><span class="venue">${esc(e.nom)}</span><br><small>${esc(e.quand)} · ${dansMois(e.mois, MOIS_NOW)}</small></span>${pastilleMois(d.mois[e.mois], true)}</button>`).join('');
     h += `<div class="section-title">${T('billets')}</div>${listeBillets(d)}`;
     h += `<p class="demo-note">Popularité estimée : une tendance du nombre de gens attendus, tirée de sources publiques (offices de tourisme, guides, presse, calendriers des festivals), pas une mesure. Elle sera affinée avec les données de l'appli.</p>`;
