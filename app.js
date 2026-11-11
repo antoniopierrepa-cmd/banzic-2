@@ -1904,6 +1904,9 @@
     if (on) { b.classList.remove('tourne'); void b.offsetWidth; b.classList.add('tourne'); sonBanger(); if (navigator.vibrate) navigator.vibrate(30); toast('Tu bangues ' + nom); }
   });
 
+  // Liens de diffusion en direct donnés par le DJ quand il se déclare (YouTube, Instagram, TikTok…)
+  const liensLiveHtml = (x) => { const L = (x && x.liensLive) || {}; const ids = Object.keys(L); if (!ids.length) return '';
+    return `<span class="fp-reseaux live-reseaux">${ids.map((id) => `<a class="fr-ico r-${id}" href="${esc(L[id])}" target="_blank" rel="noopener" aria-label="Le live sur ${(RESEAUX.find((r) => r.id === id) || {}).nom}">${ICO_RESEAU[id] || ''}</a>`).join('')}<em>Regarder en direct</em></span>`; };
   // Pastille « En live » sur la fiche d'un DJ : un toucher mène là où il mixe (son live YouTube, ou sa position sur la carte)
   function badgeLiveDj(pro, live) {
     if (!pro) return '';
@@ -1944,7 +1947,7 @@
         <div class="fp-badges">${pro ? '<span class="fp-badge b-djbanger"><i class="djb-ico" aria-hidden="true"></i>DJ Banger</span>' : ''}${badgeLiveDj(pro, live)}${tier === 'pro' ? '<span class="fp-badge b-pro">DJ Pro</span>' : tier === 'live' ? '<span class="fp-badge b-live">DJ Live</span>' : '<span class="fp-badge b-std">Fiche line-ups</span>'}${iTop >= 0 ? `<span class="fp-badge b-top">Top 100 · ${iTop ? iTop + 1 + 'e' : '1er'}${mvTop ? ' · ' + mvTop : ''}</span>` : ''}${pro && pro.officiel ? '<span class="fp-badge b-off">Officiel</span>' : ''}</div>
         ${styles.length ? `<div class="fp-puces">${styles.map((x) => `<span class="fp-puce">${esc(x)}</span>`).join('')}</div>` : ''}
         ${pro ? logosReseaux(pro) : ''}
-        ${live.map((x) => `<div class="fp-direct"><span class="fp-pt"></span><span><b>Mixe en ce moment</b><small>${esc(lieuDe(x).nom || 'Spot')} · depuis ${hm(x.debut)} · confirmé par ${x.conf} Banger${x.conf > 1 ? 's' : ''}</small></span></div>`).join('')}
+        ${live.map((x) => `<div class="fp-direct"><span class="fp-pt"></span><span><b>Mixe en ce moment</b><small>${esc(lieuDe(x).nom || 'Spot')} · depuis ${hm(x.debut)} · confirmé par ${x.conf} Banger${x.conf > 1 ? 's' : ''}</small>${liensLiveHtml(x)}</span></div>`).join('')}
         <div class="fp-stats">${stats}</div>
         <div class="fp-actions"><button class="fp-btn ${tier === 'pro' ? 'or' : 'plein'}" data-fav="${esc(nom)}">${suivi ? 'Suivi' : 'Suivre'}</button>
           <button class="fp-btn ${al ? 'on' : ''}" data-alerte-dj="${esc(nom)}">${al ? 'Alerte activée' : "M'alerter"}</button>
@@ -3528,11 +3531,20 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       <label class="champ"><span>Si ailleurs, le nom de l'endroit</span><input class="search" name="nomLieu" maxlength="40" placeholder="Terrasse du port, catamaran…"></label>
       <div class="champ"><span>Style joué</span>${(() => { const l = MON_DJ.styles.length ? MON_DJ.styles.concat(GENRES.filter((g) => !MON_DJ.styles.includes(g))) : GENRES; return cartesGenres('style', [l[0]], 'radio', l); })()}</div>
       <label class="champ"><span>Fin estimée</span><input class="search" type="time" name="fin" value="${hm(fin.getTime())}"></label>
+      <div class="champ"><span>Où te suivre en direct <small class="aide">(facultatif : touche un ou plusieurs réseaux et colle le lien de ton live)</small></span>
+        <div class="fp-reseaux mixe-reseaux">${['youtube', 'instagram', 'tiktok', 'twitch', 'spotify', 'soundcloud', 'mixcloud'].map((id) => `<button type="button" class="fr-ico r-${id} off" data-mixe-res="${id}" aria-pressed="false" aria-label="${(RESEAUX.find((r) => r.id === id) || {}).nom}">${ICO_RESEAU[id]}</button>`).join('')}</div>
+        <div class="mixe-liens">${['youtube', 'instagram', 'tiktok', 'twitch', 'spotify', 'soundcloud', 'mixcloud'].map((id) => { const r = RESEAUX.find((x) => x.id === id); const deja = MON_DJ.liens && MON_DJ.liens[id] ? esc(MON_DJ.liens[id]) : ''; return `<label class="champ mixe-lien" data-mixe-champ="${id}" hidden><span>${r.nom}</span><input class="search" name="live_${id}" inputmode="url" placeholder="${r.ex}" value="${deja}"></label>`; }).join('')}</div></div>
       <button type="submit" class="btn-plein">Je mixe : me mettre sur la carte</button>
       <button type="button" class="alerte" data-djpro-annuler="1">Annuler</button>
       <p class="aide">Ta position confirme que tu es bien sur place. Tu apparais tout de suite « Déclaré par le DJ » ; après 2 confirmations des Bangers, ça devient « Live confirmé ».</p>
     </form>`;
   }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-mixe-res]'); if (!b) return;
+    const id = b.dataset.mixeRes, on = b.getAttribute('aria-pressed') !== 'true';
+    b.setAttribute('aria-pressed', on); b.classList.toggle('off', !on);
+    const c = document.querySelector(`[data-mixe-champ="${id}"]`); if (c) { c.hidden = !on; if (on) c.querySelector('input').focus(); }
+  });
   state.votesDecl = store.get('votesDecl', {});
   state.vueDj = null; // null | 'creer' | 'mixe'
 
@@ -3573,8 +3585,9 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       const f = new FormData(e.target), lieu = f.get('lieu') || null;
       const [h, m] = String(f.get('fin') || '').split(':').map(Number);
       let fin = new Date(); if (!isNaN(h)) { fin.setHours(h, m || 0, 0, 0); if (fin < new Date()) fin = new Date(fin.getTime() + 86400000); } else fin = new Date(Date.now() + 2 * 3600000);
+      const liensLive = {}; ['youtube', 'instagram', 'tiktok', 'twitch', 'spotify', 'soundcloud', 'mixcloud'].forEach((id) => { const champ = e.target.querySelector(`[data-mixe-champ="${id}"]`); const u = champ && !champ.hidden ? urlPropre(f.get('live_' + id)) : ''; if (u) liensLive[id] = u; });
       const cree = (lat, lng) => {
-        DECLS.push({ id: 'dc' + Date.now(), dj: 'moi', mien: true, dest: state.dest, lieu, nomLieu: String(f.get('nomLieu') || '').trim() || 'Spot', lat, lng, style: f.get('style'), debut: Date.now(), fin: fin.getTime(), conf: 0, contest: 0 });
+        DECLS.push({ liensLive, id: 'dc' + Date.now(), dj: 'moi', mien: true, dest: state.dest, lieu, nomLieu: String(f.get('nomLieu') || '').trim() || 'Spot', lat, lng, style: f.get('style'), debut: Date.now(), fin: fin.getTime(), conf: 0, contest: 0 });
         sauverDecls(); state.vueDj = null; renderProfil(); toast('Tu es sur la carte : « Déclaré par le DJ »');
       };
       if (lieu) cree(null, null);
