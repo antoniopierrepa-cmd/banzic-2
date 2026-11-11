@@ -2384,6 +2384,8 @@
   // Chaque ligne garde le bandeau tel quel ; au-dessus, la bande aéroport : heure, porte (le lieu), statut.
   const CK_RAYONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
   state.ckRayon = store.get('ckRayon', 50);
+  // La barre de progression avance toute seule : le Check-in se redessine chaque minute quand il est affiché
+  setInterval(() => { if (state.tab === 'checkin' && !document.hidden) { try { renderCheckin(); } catch (e) { /* */ } } }, 60000);
   function renderCheckin(lignesSeules) {
     const box = $('#screen-checkin'); if (!box && !lignesSeules) return;
     // Position : le GPS du téléphone ; pour tester ailleurs, ?position=dubai (ou ibiza, miami, mykonos, tulum) dans l'adresse
@@ -2444,7 +2446,9 @@
     const rangee = (o) => { const v = o.lieuPin ? `<span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-lieu" src="${o.lieuPin}" alt="">${casqueConf(BANG_LIEU[o.lieuId] || 0)}</span>` : o.k === 'spot' ? (o.sp ? visSpotC(o.sp) : '') : o.vol ? visFil(o.vol, o.conf || 0, o.act || '') : '';
       // Tout ce qui est en live tourne : le DJ qui joue (son rond), le spot signalé (son épingle)
       const tourne = o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert';
-      return `<div class="ck-ligne ck-${o.st[1]}${tourne ? ' ck-tourne' : ''}">
+      // Tout le bandeau devient une barre de progression : du début du set (0 %) jusqu'à la fin (100 %)
+      const deb0 = o.t || 0, fin0 = finDe(o), prog = deb0 && now >= deb0 ? Math.min(100, Math.round((now - deb0) / Math.max(1, fin0 - deb0) * 100)) : 0;
+      return `<div class="ck-ligne ck-${o.st[1]}${tourne ? ' ck-tourne' : ''}${prog ? ' ck-prog' : ''}${prog >= 100 ? ' ck-fini' : ''}" style="--prog:${prog}%">${prog ? `<i class="ck-barre" aria-hidden="true"></i><span class="ck-pct" title="Avancement du set">${prog >= 100 ? 'Terminé' : prog + ' %'}</span>` : ''}
         <div class="ck-bande"><span class="ck-h">${flap(o.heure, 5)}</span><span class="ck-porte"><small>Porte</small>${esc(o.porte)}</span><span class="ck-st ck-st-${o.st[1]}"><i></i>${esc(o.st[0])}</span></div>
         <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em><b>${esc(o.nom)}</b>${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button></div>`; };
     const i = CK_RAYONS.indexOf(r);
