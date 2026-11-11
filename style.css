@@ -2676,3 +2676,8 @@ nav.tabs .tab.tab-plus.carte-banger { border: 0 !important; box-shadow: none !im
 .bk-banniere { background: radial-gradient(circle at 85% 15%, rgba(255,79,163,.22), transparent 55%), linear-gradient(135deg, #2A0E26, #12081A) !important; border-color: rgba(255,79,163,.25) !important; }
 .bk-banniere .ag-kick { color: #FF8A3D; }
 .bk-tableau { background: #12071A !important; border-color: rgba(255,138,61,.2) !important; }
+
+/* Accueil : plus d'espace entre les bannières */
+.compact .acc-rub { margin-top: 30px; margin-bottom: 0; }
+.compact .acc-mesdj + .acc-rub { margin-top: 26px; }
+.ag-banniere + .ag-banniere { margin-top: 22px; }
