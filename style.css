@@ -2752,3 +2752,14 @@ img[src$="#photo"] { width: 40px !important; height: 40px !important; border-rad
 .abf-tete b { font-size: 15px; }
 .abf-tete em { font-style: normal; font-weight: 800; font-size: 13px; color: #F2C94C; }
 .ab-formule ul { margin: 0; }
+
+/* Deux colonnes : DJ Live à gauche, DJ Pro à droite */
+.ab-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.ab-cols .ab-formule { margin: 0; padding: 10px 9px; }
+.ab-cols .abf-tete { flex-direction: column; align-items: flex-start; gap: 2px; }
+.ab-cols .abf-tete em { font-size: 12px; }
+.ab-cols ul { gap: 7px; }
+.ab-cols li { gap: 6px; }
+.ab-cols li i { width: 20px; height: 20px; font-size: 10px; }
+.ab-cols li b { font-size: 12.5px; }
+.ab-cols li span { font-size: 11px; }

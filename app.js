@@ -1238,7 +1238,7 @@
       </div>
       ${state.typeCompte === 'dj'
         ? `<div class="avantages-banger av-dj"><b class="ab-titre">Tes avantages DJ</b>
-          <div class="ab-formule"><div class="abf-tete"><b>DJ Live</b><em>${FORMULES_DJ.live.prix}</em></div>
+          <div class="ab-cols"><div class="ab-formule"><div class="abf-tete"><b>DJ Live</b><em>${FORMULES_DJ.live.prix}</em></div>
             <ul><li><i>●</i><span><b>Je mixe maintenant</b>tu te déclares en un geste quand tu joues</span></li>
               <li><i>⌖</i><span><b>Ta tête sur la carte en direct</b>les Bangers autour te voient et viennent</span></li>
               <li><i>✓</i><span><b>Ta note de crédibilité</b>elle grandit à chaque set confirmé par le public</span></li></ul></div>
@@ -1246,7 +1246,7 @@
             <ul><li><i>+</i><span><b>Tout DJ Live</b>plus les options ci-dessous</span></li>
               <li><i>▦</i><span><b>Tes dates à l'avance</b>annonce tes soirées dans ton agenda</span></li>
               <li><i>♫</i><span><b>Tes liens sur ta fiche</b>YouTube, SoundCloud, Mixcloud, Twitch, Instagram, TikTok</span></li>
-              <li><i>▶</i><span><b>Tes lives diffusés</b>dans « Les DJ en live » de l'accueil</span></li></ul></div>
+              <li><i>▶</i><span><b>Tes lives diffusés</b>dans « Les DJ en live » de l'accueil</span></li></ul></div></div>
           <small>Sans engagement. Tu crées d'abord ton profil de base, puis ta fiche DJ, et tu choisis ta formule.</small></div>`
         : `<div class="avantages-banger"><b class="ab-titre">Tes avantages Banger</b>
           <ul><li><i>%</i><span><b>Promos sur les soirées</b>préventes et réductions sur les entrées</span></li>
