@@ -1927,6 +1927,7 @@
       <div class="fp-corps">
         <div class="fp-badges">${pro ? '<span class="fp-badge b-djbanger"><i class="djb-ico" aria-hidden="true"></i>DJ Banger</span>' : ''}${tier === 'pro' ? '<span class="fp-badge b-pro">DJ Pro</span>' : tier === 'live' ? '<span class="fp-badge b-live">DJ Live</span>' : '<span class="fp-badge b-std">Fiche line-ups</span>'}${iTop >= 0 ? `<span class="fp-badge b-top">Top 100 · ${iTop ? iTop + 1 + 'e' : '1er'}${mvTop ? ' · ' + mvTop : ''}</span>` : ''}${pro && pro.officiel ? '<span class="fp-badge b-off">Officiel</span>' : ''}</div>
         ${styles.length ? `<div class="fp-puces">${styles.map((x) => `<span class="fp-puce">${esc(x)}</span>`).join('')}</div>` : ''}
+        ${pro ? logosReseaux(pro) : ''}
         ${live.map((x) => `<div class="fp-direct"><span class="fp-pt"></span><span><b>Mixe en ce moment</b><small>${esc(lieuDe(x).nom || 'Spot')} · depuis ${hm(x.debut)} · confirmé par ${x.conf} Banger${x.conf > 1 ? 's' : ''}</small></span></div>`).join('')}
         <div class="fp-stats">${stats}</div>
         <div class="fp-actions"><button class="fp-btn ${tier === 'pro' ? 'or' : 'plein'}" data-fav="${esc(nom)}">${suivi ? 'Suivi' : 'Suivre'}</button>
@@ -3026,6 +3027,20 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     { id: 'tiktok', nom: 'TikTok', ex: 'tiktok.com/@toncompte' }
   ];
   const urlPropre = (u) => { u = String(u || '').trim(); if (!u) return ''; if (!/^https?:\/\//i.test(u)) u = 'https://' + u; try { const x = new URL(u); return x.protocol === 'https:' || x.protocol === 'http:' ? x.href : ''; } catch (e) { return ''; } };
+  // Petits logos des réseaux sur la fiche d'un DJ : actifs (en couleur) quand le DJ a mis son lien, grisés sinon
+  const ICO_RESEAU = {
+    instagram: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.3" fill="currentColor"/></svg>',
+    youtube: '<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="4" fill="currentColor"/><path d="M10 9l5 3-5 3z" fill="#0B0F1C"/></svg>',
+    tiktok: '<svg viewBox="0 0 24 24"><path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M14 3c.5 3 2.5 4.6 5 4.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+    twitch: '<svg viewBox="0 0 24 24"><path d="M5 3h15v11l-4 4h-4l-3 3v-3H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M11 8v4M15 8v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    soundcloud: '<svg viewBox="0 0 24 24"><path d="M9 17V9.5M6 17v-5M3 17v-3M12 17V8a5 5 0 0 1 9 3 2.8 2.8 0 0 1-.5 6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    mixcloud: '<svg viewBox="0 0 24 24"><path d="M7 17a4 4 0 0 1-.6-8A6 6 0 0 1 18 10a3.5 3.5 0 0 1-.5 7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>'
+  };
+  function logosReseaux(d) {
+    const ordre = ['instagram', 'tiktok', 'youtube', 'twitch', 'soundcloud', 'mixcloud'];
+    return `<div class="fp-reseaux">${ordre.map((id) => { const r = RESEAUX.find((x) => x.id === id), u = d && d.liens && d.liens[id] && !d.demo ? urlPropre(d.liens[id]) : '';
+      return u ? `<a class="fr-ico r-${id}" href="${esc(u)}" target="_blank" rel="noopener" aria-label="${r.nom}">${ICO_RESEAU[id]}</a>` : `<span class="fr-ico r-${id} off" title="${r.nom} : pas encore ajouté" aria-label="${r.nom} (pas encore ajouté)">${ICO_RESEAU[id]}</span>`; }).join('')}</div>`;
+  }
   function blocLiens(d) {
     const ls = RESEAUX.filter((r) => d.liens && d.liens[r.id]);
     if (!ls.length) return '';
