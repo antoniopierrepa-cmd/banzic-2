@@ -1480,9 +1480,9 @@
     if (e.target.closest('[data-annuler-profil]')) { state.editProfil = false; renderProfil(); return true; }
     if (e.target.closest('[data-supprimer-profil]')) {
       if (!confirm('Supprimer ton compte et ton profil ? Ta progression sera perdue.')) return true;
-      state.profil = null; state.compte = null;
-      try { localStorage.removeItem('setly.profil'); localStorage.removeItem('setly.compte'); } catch (err) { /* */ }
-      renderProfil(); majPortails(); toast('Profil supprimé'); return true;
+      // Tout effacer : profil, compte, profil DJ, DJ suivis, déclarations… puis on repart sur l'inscription
+      try { Object.keys(localStorage).filter((k) => k.startsWith('setly.')).forEach((k) => localStorage.removeItem(k)); } catch (err) { /* */ }
+      location.href = location.pathname; return true;
     }
     return false;
   }
