@@ -2859,3 +2859,10 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .ck-ligne .ck-pct { position: absolute; right: 10px; bottom: 6px; z-index: 2; font-size: 10.5px; font-weight: 800; color: #FFB37A; letter-spacing: .04em; pointer-events: none; }
 .ck-ligne.ck-fini .ck-pct { color: #9AA3B8; }
 .ck-prog .ck-bande { background: rgba(26,10,30,.45) !important; }
+
+/* Progression plus visible : bandeaux tous de la même couleur sombre, la barre passe de l'orange au rouge vers la fin */
+.ck-ligne.ck-prog { background: #120A16 !important; }
+.ck-ligne .ck-barre { background: linear-gradient(90deg, hsla(var(--ph), 95%, 52%, .30), hsla(var(--ph), 95%, 55%, .62)); border-right: 3px solid hsl(var(--ph), 100%, 58%); box-shadow: 8px 0 18px -6px hsl(var(--ph), 100%, 55%); }
+.ck-ligne .ck-pct { color: #fff; font-size: 12px; background: hsl(var(--ph), 90%, 45%); padding: 2px 7px; border-radius: 8px; }
+.ck-ligne.ck-fini .ck-pct { background: #3A3F52; color: #C9CFDD; }
+.ck-prog > .fil-item { background: transparent !important; }
