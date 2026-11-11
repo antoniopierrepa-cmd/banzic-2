@@ -1,1 +1,141 @@
-{"sources":[],"events":[]}
+{
+  "sources": [
+    {
+      "id": "shotgun",
+      "homepage": "https://shotgun.live"
+    },
+    {
+      "id": "2mil3",
+      "homepage": "https://www.2mil3.com"
+    }
+  ],
+  "events": [
+    {
+      "id": "lost-paradise-20261113",
+      "src": "shotgun",
+      "nom": "Lost Paradise — Bouillotte Klub / FORNAP",
+      "date": "2026-11-13",
+      "heure": "18:00",
+      "lieu": "Fort Napoléon",
+      "ville": "La Seyne-sur-Mer",
+      "lat": 43.0942399,
+      "lng": 5.8933014,
+      "type": "club",
+      "lineup": [
+        "Alisonn (La Clap)",
+        "Sam aka Asan Ikki",
+        "Bill Rosdeld",
+        "Cami",
+        "Fartlek",
+        "Jefferson Xplane",
+        "Josh Carter",
+        "Kiara TK",
+        "Klang Kitzel",
+        "Late AM",
+        "Less Is More",
+        "Lou Faedda & Magimix",
+        "Nahra",
+        "Nino & KDS"
+      ],
+      "genres": "Deep house, downtempo, indie dance, techno",
+      "url": "https://shotgun.live/fr/events/lost-paradise-by-bouillotte-klub-fornap",
+      "ticketUrl": "https://shotgun.live/fr/events/lost-paradise-by-bouillotte-klub-fornap",
+      "prix": "Tarifs sur billetterie",
+      "evidence": "Page Shotgun de FORNAP : 13.11.2026, 18 h–3 h, Fort Napoléon, programmation annoncée dans le texte. Coordonnées reprises du lien de localisation fourni par cette page.",
+      "dep": "83",
+      "verifiedAt": "2026-11-11T23:30:25.872Z"
+    },
+    {
+      "id": "inda-house-20261113",
+      "src": "shotgun",
+      "nom": "INDA HOUSE — Bloody, Mathias D. et Dorjàn",
+      "date": "2026-11-13",
+      "heure": "23:30",
+      "lieu": "INDA HOUSE",
+      "ville": "Carqueiranne",
+      "lat": 43.0974914,
+      "lng": 6.0678497,
+      "type": "club",
+      "lineup": [
+        "BLOODY",
+        "Mathias D.",
+        "Dorjàn"
+      ],
+      "genres": "House, deep house, tech house",
+      "url": "https://r.shotgun.live/fr/events/opening-inda-house-13-11-26",
+      "ticketUrl": "https://r.shotgun.live/fr/events/opening-inda-house-13-11-26",
+      "prix": "Tarifs sur billetterie",
+      "evidence": "Page officielle INDA HOUSE sur Shotgun : 13.11.26, 23 h 30–5 h, Boulevard Jules Arpinetti et trois artistes. Localisation reprise du lien de la page, précision au boulevard plutôt qu’à une entrée numérotée.",
+      "dep": "83",
+      "verifiedAt": "2026-11-11T23:30:25.872Z"
+    },
+    {
+      "id": "cut-killer-ora-20261114",
+      "src": "shotgun",
+      "nom": "Cut Killer & DJ Clam — ORA",
+      "date": "2026-11-14",
+      "heure": "21:00",
+      "lieu": "ORA CLUB",
+      "ville": "La Valette-du-Var",
+      "lat": 43.1375438,
+      "lng": 6.0023425,
+      "type": "club",
+      "lineup": [
+        "Cut Killer",
+        "DJ Clam"
+      ],
+      "genres": "Hip-hop, rap, R&B",
+      "url": "https://shtgn.live/fr/events/cut-killer-ora",
+      "ticketUrl": "https://shtgn.live/fr/events/cut-killer-ora",
+      "prix": "Tarifs sur billetterie",
+      "evidence": "Page ORA CLUB sur Shotgun : samedi 14 novembre 2026, 21 h–2 h, 3 avenue Maréchal Alphonse Juin ; Cut Killer et première partie DJ Clam. Coordonnées du lien de localisation de la page.",
+      "dep": "83",
+      "verifiedAt": "2026-11-11T23:30:25.872Z"
+    },
+    {
+      "id": "this-is-house-20261128",
+      "src": "shotgun",
+      "nom": "This Is House — Papeguay & Lydia Scarfo",
+      "date": "2026-11-28",
+      "heure": "20:00",
+      "lieu": "Le Baraza",
+      "ville": "Hyères",
+      "lat": 43.1189805,
+      "lng": 6.1310489,
+      "type": "bar",
+      "lineup": [
+        "PAPEGUAY",
+        "Lydia Scarfo"
+      ],
+      "genres": "House, tech house, techno, acid house",
+      "url": "https://r.shotgun.live/fr/events/this-is-house",
+      "ticketUrl": "https://r.shotgun.live/fr/events/this-is-house",
+      "prix": "Tarifs sur billetterie",
+      "evidence": "Page de l’organisateur Thierry Papeguay sur Shotgun : samedi 28 novembre, 20 h–2 h, 2 avenue Ambroise Thomas, programmation Papeguay et Lydia Scarfo. Année 2026 recoupée avec l’agenda courant. Coordonnées du lien de localisation.",
+      "dep": "83",
+      "verifiedAt": "2026-11-11T23:30:25.872Z"
+    },
+    {
+      "id": "david-vendetta-2mil3-20261205",
+      "src": "2mil3",
+      "nom": "David Vendetta — 23 ans du 2MIL3 · Club libertin",
+      "date": "2026-12-05",
+      "heure": "22:00",
+      "lieu": "2MIL3 — club libertin",
+      "ville": "Hyères",
+      "lat": 43.109473,
+      "lng": 6.1079355,
+      "type": "club",
+      "lineup": [
+        "David Vendetta"
+      ],
+      "genres": "DJ set · Club libertin · Soirée mixte",
+      "url": "https://www.2mil3.com/evenement/%F0%9F%94%A5-david-vendetta-fete-les-23-ans-du-2mil3-%F0%9F%94%A5/",
+      "ticketUrl": "",
+      "prix": "Couple 40 € · Homme 70 € · Femme 10 € · Réservation sur le site",
+      "evidence": "Site officiel 2mil3 : DJ set David Vendetta, samedi 5 décembre 2026, 22 h–5 h, soirée mixte, tarifs affichés. Adresse 548 chemin de la Source à Hyères ; coordonnées exactes du repère Google Maps lié depuis la page Contact du club. Aucun renseignement de participant collecté.",
+      "dep": "83",
+      "verifiedAt": "2026-11-11T23:30:25.872Z"
+    }
+  ]
+}
