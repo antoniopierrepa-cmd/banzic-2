@@ -2296,7 +2296,7 @@
     if (d.id === 'dubai') soireesDubai().filter((r) => r.date === auj).forEach((r) => { const dj = (r.djs || '').split(/,| b2b /i)[0].trim();
       xs.push(item('decl', 'Ce soir', `data-dj-pro="${esc(dj || r.titre)}"`, dj || r.titre, r.heure ? 'à ' + esc(r.heure) : '', [[esc(r.nomLieu)], [esc(r.titre)], ['line-up annoncé', 'fil-att']], visFil(dj || r.titre, 0, ''))); });
     // Agendas du Top 100 : les DJ qui passent dans cette destination dans les 7 jours
-    const villes = { dubai: ['dubai', 'dubaï'], miami: ['miami', 'miami beach'], mykonos: ['mykonos', 'mýkonos'], tulum: ['tulum'], phuket: ['phuket', 'patong', 'kamala'], ibiza: ['ibiza', 'sant antoni de portmany', 'sant josep de sa talaia', 'eivissa'] }[d.id] || [];
+    const villes = { dubai: ['dubai', 'dubaï'], miami: ['miami', 'miami beach'], mykonos: ['mykonos', 'mýkonos'], tulum: ['tulum'], phuket: ['phuket', 'patong', 'kamala', 'choeng thale', 'tambon choeng thale'], ibiza: ['ibiza', 'sant antoni de portmany', 'sant josep de sa talaia', 'eivissa'] }[d.id] || [];
     const fin7 = iso(new Date(Date.now() + 7 * 86400000));
     Object.entries(window.AGENDA_DJS || {}).forEach(([nom, o]) => (o.avenir || []).forEach((r) => { if (r[0] >= auj && r[0] <= fin7 && villes.includes(sansAccent(String(r[3] || '')).toLowerCase())) {
       const j = Math.round((new Date(r[0] + 'T12:00') - new Date(auj + 'T12:00')) / 86400000);
@@ -4097,7 +4097,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       // Une image de fond par destination quand on en a une (Ibiza : visuel fourni par Antonio, démo)
       const fond = ({ ibiza: 'ibiza-carte.jpg?v=4', mykonos: 'mykonos-carte.jpg?v=4', tulum: 'tulum-carte.jpg?v=4', miami: 'miami-carte.jpg?v=4', dubai: 'dubai-carte.jpg?v=4', phuket: 'phuket-carte.jpg?v=4' })[d.id];
       return accCarte({ cls: 'large' + (fond ? ' avec-photo' : ''), titre: d.nom + ' saison', sous: d.saison, grand: fond ? '' : (DRAPEAUX[d.id] || '') + ' ' + esc(d.nom), g: fond ? `url('${fond}') left center / cover no-repeat, linear-gradient(145deg, ${c[0]}, ${c[1]})` : `linear-gradient(145deg, ${c[0]}, ${c[1]})`, attr: `data-dest-puce="${d.id}"`,
-        badge: compteurOpening(d.id, n < 0 ? `<span class="acc-badge hors">${T('hors')}</span>` : `<span class="acc-badge ${ACC_NIV[n][0]}">${ACC_NIV[n][1]}</span>`) }); }));
+        badge: compteurOpening(d.id, n < 0 ? `<span class="acc-badge hors">${T('hors')}</span>` : `<span class="acc-badge ${ACC_NIV[n][0]}">${ACC_NIV[n][1]}</span>`) }); }), '', 6);
     // 3. DJ live dans le monde
     const lives = streamsActifs(), genres = [...new Set(lives.map(genreDe))];
     if (state.genreLive && !genres.includes(state.genreLive)) state.genreLive = null;
