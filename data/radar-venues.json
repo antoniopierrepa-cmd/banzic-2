@@ -1,0 +1,184 @@
+{
+  "phase": "manual",
+  "updatedAt": "2026-11-11T23:47:38.004Z",
+  "scope": "Var (83)",
+  "note": "Répertoire initial constitué manuellement. Une présence ici confirme le lieu ou sa source, pas une soirée à une date donnée. L’automatisation générale sera activée après validation du répertoire.",
+  "venues": [
+    {
+      "id": "petit-bain",
+      "nom": "Le Petit Bain",
+      "ville": "Hyères",
+      "dep": "83",
+      "type": "restaurant",
+      "sourceUrl": "https://lepetitbainhyeres.fr/soirees",
+      "instagram": "https://www.instagram.com/lepetitbain83/",
+      "note": "Activité festive récurrente ; nouvelles dates à contrôler.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "mojito",
+      "nom": "Mojito Café",
+      "ville": "Hyères",
+      "dep": "83",
+      "type": "bar",
+      "sourceUrl": "https://www.lemojitocafe.fr/",
+      "instagram": "",
+      "note": "DJ le week-end indiqué par le site et l’office de tourisme ; programmation datée à relever.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "eden",
+      "nom": "L’Eden Bar",
+      "ville": "Six-Fours-les-Plages",
+      "dep": "83",
+      "type": "bar",
+      "sourceUrl": "https://www.eden-fregate.com/",
+      "instagram": "https://www.instagram.com/eden_six_fours_officiel/",
+      "note": "Lieu identifié ; ne pas réutiliser les anciennes annonces 2025.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "mafana",
+      "nom": "Mafana Zen Café",
+      "ville": "Six-Fours-les-Plages",
+      "dep": "83",
+      "type": "bar",
+      "sourceUrl": "https://www.visitvar.fr/fiche/mafana-zen-cafe-4783630",
+      "instagram": "https://www.instagram.com/mafanazencafe/",
+      "note": "Animations confirmées ; calendrier courant à relever.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "vague",
+      "nom": "La Vague",
+      "ville": "Six-Fours-les-Plages",
+      "dep": "83",
+      "type": "restaurant",
+      "sourceUrl": "https://www.lavague-sixfours.fr/",
+      "instagram": "https://www.instagram.com/lavaguesixfours/",
+      "note": "Piste issue de Moya Conciergerie ; dates à confirmer.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "k27",
+      "nom": "Le K27",
+      "ville": "Six-Fours-les-Plages",
+      "dep": "83",
+      "type": "bar",
+      "sourceUrl": "https://salsa.faurax.fr/index.php/Six-Fours-les-Plages",
+      "instagram": "",
+      "note": "Soirées danse recensées ; pages parfois anciennes, contrôler chaque date.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "marina",
+      "nom": "La Marina — Coudoulière",
+      "ville": "Six-Fours-les-Plages",
+      "dep": "83",
+      "type": "restaurant",
+      "sourceUrl": "https://salsa.faurax.fr/index.php/Six-Fours-les-Plages",
+      "instagram": "",
+      "note": "SBKR annoncée par un agenda ; date courante à recouper avec organisateurs.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "halles-victoria",
+      "nom": "Halles Victoria",
+      "ville": "Hyères",
+      "dep": "83",
+      "type": "restaurant",
+      "sourceUrl": "https://gestionhallesvictoria.com/public/",
+      "instagram": "",
+      "note": "Agenda officiel daté disponible.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "cicada",
+      "nom": "CICADA",
+      "ville": "La Garde",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/en/venues/cicada",
+      "instagram": "https://www.instagram.com/_cicada_techno/",
+      "note": "Billetterie officielle et Instagram annoncé dans la description.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "calypso",
+      "nom": "Le Calypso",
+      "ville": "Fréjus",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://shtgn.live/fr/venues/par4tekevents",
+      "instagram": "",
+      "note": "Source organisateur Par4tek pour les soirées au Calypso.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "switch",
+      "nom": "SWITCH CLUB",
+      "ville": "Roquebrune-sur-Argens",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://lupop.fr/sortir/roquebrune-sur-argens/evenement/switch-to-new-blood",
+      "instagram": "https://www.instagram.com/switch.place/",
+      "note": "Dates trouvées ; liens officiels à revalider avant import.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "barathym",
+      "nom": "Le Barathym",
+      "ville": "Toulon",
+      "dep": "83",
+      "type": "bar",
+      "sourceUrl": "https://teufyparty.com/soirees-toulon/",
+      "instagram": "",
+      "note": "Source de découverte ; publications originales à vérifier.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "2mil3",
+      "nom": "2MIL3 — club libertin",
+      "ville": "Hyères",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.2mil3.com/",
+      "instagram": "",
+      "note": "Agenda officiel disponible ; distinguer club libertin.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "inda",
+      "nom": "INDA HOUSE",
+      "ville": "Carqueiranne",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://r.shotgun.live/fr/events/opening-inda-house-13-11-26",
+      "instagram": "",
+      "note": "Source officielle première soirée.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "baraza",
+      "nom": "Le Baraza",
+      "ville": "Hyères",
+      "dep": "83",
+      "type": "bar",
+      "sourceUrl": "https://r.shotgun.live/fr/events/this-is-house",
+      "instagram": "",
+      "note": "Source organisateur sur Shotgun.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "ora",
+      "nom": "ORA CLUB",
+      "ville": "La Valette-du-Var",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://shtgn.live/fr/events/cut-killer-ora",
+      "instagram": "",
+      "note": "Source officielle première soirée.",
+      "status": "a-verifier-manuellement"
+    }
+  ]
+}

@@ -1,3 +1,9 @@
+# Évolution du 12 novembre 2026 — soirées généralistes
+
+Le périmètre inclut désormais les soirées sans DJ : animations festives, karaokés, blind tests, concerts, afterworks et soirées à thème. Une date et une source restent nécessaires ; ne pas remplir artificiellement le calendrier à partir des horaires d’ouverture. `djSet` distingue une soirée avec DJ explicitement annoncé (même sans nom), et le filtre « Avec DJ uniquement » est facultatif.
+
+`data/radar-venues.json` est le répertoire initial des établissements et sources. Son état `phase: manual` indique que la constitution et les vérifications sont manuelles. Après validation explicite du répertoire par l’utilisateur, passer à `active` pour permettre le contrôle hebdomadaire des sources par la tâche ChatGPT existante. Les alertes quotidiennes Hugel/house du Var sont conservées. Le répertoire ne signifie pas qu’un événement daté est confirmé pour chaque établissement.
+
 # Radar IA gratuit — BANZIC-2
 
 Le site reste statique sur Vercel. Aucun appel à Apify, aucune API payante ni clé n’est nécessaire. La recherche est exécutée par une tâche ChatGPT séparée, soumise aux limites du compte ; ce dépôt ne contient pas de moteur IA autonome.
@@ -18,7 +24,7 @@ L’automatisation doit lire le dernier état du dépôt avant chaque écriture 
 
 ## Couverture
 
-Les 101 départements sont sélectionnables, y compris la Corse et les cinq départements d’outre-mer. Une sélection de département ignore la limite de distance. Une couverture technique de 101 départements ne garantit pas des annonces partout ni l’exhaustivité. La tâche explore les départements par rotation pour une couverture hebdomadaire, avec priorité au Var.
+Les 101 départements sont sélectionnables, y compris la Corse et les cinq départements d’outre-mer. Une sélection de département ignore la limite de distance. Une couverture technique de 101 départements ne garantit pas des annonces partout ni l’exhaustivité. Après activation de la phase automatique, la tâche explorera les sources par rotation pour une couverture hebdomadaire, avec priorité au Var.
 
 La carte locale affiche jusqu’à 300 événements à venir dans le rayon de 10 à 1000 km. Un repère ouvre l’agenda du département. Les line-ups absents sont indiqués comme non communiqués. « Billets » ouvre le lien de billetterie ; « Infos » ouvre la page officielle pour les événements sans billetterie. Aucune affiliation n’est configurée.
 
