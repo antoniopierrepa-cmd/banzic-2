@@ -1904,6 +1904,20 @@
     if (on) { b.classList.remove('tourne'); void b.offsetWidth; b.classList.add('tourne'); sonBanger(); if (navigator.vibrate) navigator.vibrate(30); toast('Tu bangues ' + nom); }
   });
 
+  // Pastille « En live » sur la fiche d'un DJ : un toucher mène là où il mixe (son live YouTube, ou sa position sur la carte)
+  function badgeLiveDj(pro, live) {
+    if (!pro) return '';
+    if (enStream(pro) && pro.stream.url && pro.stream.url !== '#') return `<a class="fp-badge b-enlive" href="${esc(urlPropre(pro.stream.url))}" target="_blank" rel="noopener"><i class="enl-pt" aria-hidden="true"></i>En live</a>`;
+    const x = (live || [])[0], l = x && lieuDe(x);
+    if (l && l.lat != null) return `<button class="fp-badge b-enlive" data-live-carte="${l.lat},${l.lng}" aria-label="En live : voir où il mixe sur la carte"><i class="enl-pt" aria-hidden="true"></i>En live</button>`;
+    return '<span class="fp-badge b-horslive"><i class="enl-pt" aria-hidden="true"></i>Pas en live</span>';
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-live-carte]'); if (!b) return;
+    const [la, lo] = b.dataset.liveCarte.split(',').map(Number); if (isNaN(la)) return;
+    if (state.djOuvert) fermerDj();
+    setTab('map'); setTimeout(() => { if (map) { map.setView([la, lo], 16); renderMap(); } }, 80);
+  });
   function ficheTeteDj(nom, pro, ceSoirN, nbSaison) {
     const tier = pro ? (pro.formule === 'pro' ? 'pro' : 'live') : 'std';
     const live = pro ? DECLS.filter((x) => x.dj === pro.id && declActive(x)) : [];
@@ -1927,7 +1941,7 @@
         <div class="fp-id"><div class="fp-nom">${esc(nom)}</div><div class="fp-sous">${sous}</div></div>
         ${boutonCasque(nom)}</div>
       <div class="fp-corps">
-        <div class="fp-badges">${pro ? '<span class="fp-badge b-djbanger"><i class="djb-ico" aria-hidden="true"></i>DJ Banger</span>' : ''}${tier === 'pro' ? '<span class="fp-badge b-pro">DJ Pro</span>' : tier === 'live' ? '<span class="fp-badge b-live">DJ Live</span>' : '<span class="fp-badge b-std">Fiche line-ups</span>'}${iTop >= 0 ? `<span class="fp-badge b-top">Top 100 · ${iTop ? iTop + 1 + 'e' : '1er'}${mvTop ? ' · ' + mvTop : ''}</span>` : ''}${pro && pro.officiel ? '<span class="fp-badge b-off">Officiel</span>' : ''}</div>
+        <div class="fp-badges">${pro ? '<span class="fp-badge b-djbanger"><i class="djb-ico" aria-hidden="true"></i>DJ Banger</span>' : ''}${badgeLiveDj(pro, live)}${tier === 'pro' ? '<span class="fp-badge b-pro">DJ Pro</span>' : tier === 'live' ? '<span class="fp-badge b-live">DJ Live</span>' : '<span class="fp-badge b-std">Fiche line-ups</span>'}${iTop >= 0 ? `<span class="fp-badge b-top">Top 100 · ${iTop ? iTop + 1 + 'e' : '1er'}${mvTop ? ' · ' + mvTop : ''}</span>` : ''}${pro && pro.officiel ? '<span class="fp-badge b-off">Officiel</span>' : ''}</div>
         ${styles.length ? `<div class="fp-puces">${styles.map((x) => `<span class="fp-puce">${esc(x)}</span>`).join('')}</div>` : ''}
         ${pro ? logosReseaux(pro) : ''}
         ${live.map((x) => `<div class="fp-direct"><span class="fp-pt"></span><span><b>Mixe en ce moment</b><small>${esc(lieuDe(x).nom || 'Spot')} · depuis ${hm(x.debut)} · confirmé par ${x.conf} Banger${x.conf > 1 ? 's' : ''}</small></span></div>`).join('')}
