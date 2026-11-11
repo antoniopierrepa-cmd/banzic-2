@@ -1200,7 +1200,7 @@
     c.closest('.genres-rang').querySelectorAll('.genre-carte').forEach((l) => l.classList.toggle('on', l.querySelector('input').checked));
   });
 
-  Object.assign(state, { profil: store.get('profil', null), compte: store.get('compte', null), editProfil: false, modeEmail: false, rappelCompte: store.get('rappelCompte', false) });
+  Object.assign(state, { typeCompte: store.get('typeCompte', 'banger'), profil: store.get('profil', null), compte: store.get('compte', null), editProfil: false, modeEmail: false, rappelCompte: store.get('rappelCompte', false) });
   const FOURNISSEURS = { apple: 'Apple', google: 'Google', email: 'email' };
 
   // Écran de connexion : Apple, Google, ou email. Démo : la connexion est simulée.
@@ -1208,8 +1208,15 @@
     return `<div class="connexion">
       <label class="langue-ligne"><span>${T('langue')}</span>${selectLangue()}</label>
       <div class="section-title">${T('creer_compte')}</div>
-      <div class="carte-banger"><div class="cb-tete"><span class="cb-titre">Profil Banger</span></div>
-      <p class="conseil spotters" style="margin:6px 0 0"><b>Deviens Banger.</b> Les Bangers, c'est la communauté qui fait vivre la carte : ils repèrent qui joue, confirment sur place et notent les sets. Chaque contribution te fait monter, de Disque bronze jusqu'au Graal.</p></div>
+      <div class="choix-compte" role="group" aria-label="Type de profil">
+        <button type="button" class="cc-carte ${state.typeCompte !== 'dj' ? 'on' : ''}" data-type-compte="banger" aria-pressed="${state.typeCompte !== 'dj'}">
+          <b>Profil Banger</b><small>Je sors, je repère qui joue et je bangue sur place</small><em>Gratuit</em></button>
+        <button type="button" class="cc-carte dj ${state.typeCompte === 'dj' ? 'on' : ''}" data-type-compte="dj" aria-pressed="${state.typeCompte === 'dj'}">
+          <b>Profil DJ</b><small>Je mixe, je me signale en live et je gère ma fiche</small><em>Formule DJ</em></button>
+      </div>
+      ${state.typeCompte === 'dj'
+        ? '<p class="conseil spotters" style="margin:6px 0 14px"><b>Profil DJ.</b> Tu crées d\'abord ton compte et ton profil de base, puis ta fiche DJ : ton nom de scène, tes styles, et la formule pour te signaler en live. Ta crédibilité grandit à chaque set confirmé par le public.</p>'
+        : '<p class="conseil spotters" style="margin:6px 0 14px"><b>Deviens Banger.</b> Les Bangers, c\'est la communauté qui fait vivre la carte : ils repèrent qui joue, confirment sur place et notent les sets. Chaque contribution te fait monter, de Disque bronze jusqu\'au Graal.</p>'}
       <p class="conseil">Un compte garde tes DJ, tes alertes et ta progression, même si tu changes de téléphone. Un seul toucher, pas de mot de passe.</p>
       <button class="btn-compte apple" data-connexion="apple">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.5 2-3.6 2.1-3.7-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.1 2.5-1.8 3.1-.5 7.6 1.3 10.1.8 1.2 1.8 2.6 3.1 2.5 1.3-.1 1.7-.8 3.3-.8s1.9.8 3.3.8c1.4 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.6-1-2.6-4.2zM14 5.1c.7-.8 1.1-1.9 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z"/></svg>
@@ -1341,7 +1348,7 @@
     const coche = (id, label, aide, val) => `<label class="reglage"><span><b>${label}</b><small>${aide}</small></span>
       <input type="checkbox" name="${id}" ${val ? 'checked' : ''}><i class="interrupteur" aria-hidden="true"></i></label>`;
     return `<form id="form-profil" class="profil-form" novalidate>
-      <div class="carte-banger"><div class="cb-tete"><span class="cb-titre">${state.profil ? 'Modifier mon profil Banger' : 'Créer mon profil Banger'}</span></div>
+      <div class="carte-banger"><div class="cb-tete"><span class="cb-titre">${state.profil ? 'Modifier mon profil Banger' : state.typeCompte === 'dj' ? 'Profil DJ · étape 1 sur 2 : ton profil de base' : 'Créer mon profil Banger'}</span></div>
       ${state.profil ? '' : '<p class="conseil" style="margin:6px 0 0">Ton profil de Banger garde tes DJ, tes alertes et ta progression, de Disque bronze jusqu\'au Graal : Cabine or.</p>'}</div>
       <label class="champ"><span>Pseudo</span>
         <input class="search" name="pseudo" maxlength="20" value="${esc(p.pseudo)}" placeholder="nightowl_ibz" autocomplete="nickname"></label>
@@ -1372,7 +1379,7 @@
       <label class="champ"><span>Ton email</span>
         <input class="search" type="email" name="emailContact" value="${esc(p.emailContact || (state.compte && /@/.test(state.compte.email) ? state.compte.email : ''))}" placeholder="toi@exemple.com" autocomplete="email" inputmode="email"></label>
       <p class="erreur" id="err-emailc" hidden>Entre ton email pour recevoir les bons plans et les alertes</p>
-      <button type="submit" class="btn-plein">${state.profil ? 'Enregistrer' : 'Créer mon profil Banger'}</button>
+      <button type="submit" class="btn-plein">${state.profil ? 'Enregistrer' : state.typeCompte === 'dj' ? 'Continuer : ma fiche DJ' : 'Créer mon profil Banger'}</button>
       ${state.profil ? '<button type="button" class="alerte" data-annuler-profil="1">Annuler</button>' : ''}
     </form>`;
   }
@@ -1473,6 +1480,7 @@
     if (e.target.closest('[data-regler-ecran]')) { if (!(window.banzicReglerEcran && window.banzicReglerEcran())) toast('Rien à régler : l\'appli est déjà en plein écran'); return true; }
     if (e.target.closest('[data-av-retirer]')) { photoLecture++; photoEnLecture = false; portraitPrepare = null; state.photoTemp = ''; majApercuAvatar(); return true; }
     if (e.target.closest('[data-plus-tard]')) { setTab('live'); toast('Tu peux créer ton compte quand tu veux, onglet Profil'); return true; }
+    { const tc = e.target.closest('[data-type-compte]'); if (tc) { state.typeCompte = tc.dataset.typeCompte; store.set('typeCompte', state.typeCompte); renderProfil(); return true; } }
     if (e.target.closest('[data-echelle]')) { state.vueEchelle = true; renderProfil(); window.scrollTo(0, 0); return true; }
     if (e.target.closest('[data-echelle-retour]')) { state.vueEchelle = false; renderProfil(); return true; }
     if (e.target.closest('[data-modifier-profil]')) { state.editProfil = true; renderProfil(); return true; }
@@ -1530,6 +1538,7 @@
     state.editProfil = false;
     renderProfil();
     const ecran = $('#screen-profil'); if (ecran) ecran.scrollTop = 0;
+    if (nouveau && state.typeCompte === 'dj' && !MON_DJ) { state.vueDj = 'creer'; renderProfil(); toast('Étape 2 sur 2 : crée ta fiche DJ'); return; }
     toast(nouveau ? 'Bienvenue chez les Bangers, ' + pseudo + ' : te voilà ' + nomNiveau(NIVEAUX_PROFIL[niveauProfil(points().total)]) : 'Profil enregistré');
   });
   document.addEventListener('click', (e) => {

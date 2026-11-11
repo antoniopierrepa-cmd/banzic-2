@@ -2691,3 +2691,14 @@ nav.tabs .tab.tab-plus.carte-banger { border: 0 !important; box-shadow: none !im
 .ech-banniere .ech-txt span { font-size: 12.5px; color: #C9B3C4; }
 .ech-banniere .ech-fl { width: 22px; height: 22px; flex: none; color: #FF8A3D; }
 .echelle-pas .ech-pts { opacity: .6; font-size: 10px; }
+
+/* Création de compte : choix Profil Banger / Profil DJ */
+.choix-compte { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0 10px; }
+.cc-carte { display: flex; flex-direction: column; gap: 4px; padding: 14px 12px; border: 1.5px solid rgba(255,255,255,.14); border-radius: 16px; background: rgba(255,255,255,.04); color: #fff; text-align: left; cursor: pointer; }
+.cc-carte b { font-size: 16px; }
+.cc-carte small { font-size: 12.5px; color: #C9B3C4; line-height: 1.35; }
+.cc-carte em { margin-top: 4px; font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #9AA3B8; }
+.cc-carte.on { border-color: #F2C94C; background: rgba(242,201,76,.08); }
+.cc-carte.on em { color: #F2C94C; }
+.cc-carte.dj.on { border-color: #FF4FA3; background: rgba(255,79,163,.10); }
+.cc-carte.dj.on em { color: #FF8A3D; }
