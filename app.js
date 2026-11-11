@@ -1628,6 +1628,7 @@
     passages.filter((p) => !p.inconnu).forEach((p) => decouperDjs(p.dj).forEach(ajoute));
     SAISON.lignes.forEach((r) => decouperDjs(r.djs).forEach(ajoute));
     (window.DJS_INDEX || []).forEach(ajoute);
+    tousDjsPro().forEach((d) => ajoute(d.nom)); // les DJ inscrits sur Banzic
     return m;
   }
   let INDEX_DJ = null, NB_DATES = null;
@@ -3511,7 +3512,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       const f = new FormData(e.target), nom = String(f.get('nom') || '').trim();
       if (nom.length < 2) { $('#err-djnom').hidden = false; return; }
       if (String(f.get('ville') || '').trim().length < 2) { $('#err-ville-dj').hidden = false; $('#champ-ville-dj').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
-      MON_DJ = { id: 'moi', formule: f.get('formule') || 'live', liens: {}, annonces: [], nom, styles: f.getAll('styles'), ville: String(f.get('ville') || '').trim(), confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 }, mien: true };
+      MON_DJ = { id: 'moi', formule: f.get('formule') || 'live', liens: {}, annonces: [], nom, styles: f.getAll('styles'), ville: String(f.get('ville') || '').trim(), confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 }, mien: true }; INDEX_DJ = null;
       store.set('djPro', MON_DJ); state.vueDj = null; state.nomRevendique = null; renderProfil(); toast('Profil DJ créé · formule ' + formuleDe(MON_DJ).nom + ' (démo)');
     }
     if (e.target.id === 'form-liens') {
