@@ -2778,3 +2778,7 @@ img[src$="#photo"] { width: 40px !important; height: 40px !important; border-rad
 .tab-formules tfoot th, .tab-formules tfoot td { padding: 10px 4px 4px; border-top: 1.5px solid rgba(242,201,76,.5); font-weight: 800; font-size: 13.5px; color: #F2C94C; text-align: center; }
 .tab-formules tfoot th { text-align: left; color: #fff; font-size: 12.5px; }
 .tab-formules tfoot td.pro { color: #F2C94C; background: rgba(255,79,163,.07); }
+
+/* Badge « DJ Banger » : le DJ est d'abord un Banger (vert, comme le bouton BANGER) */
+.fp-badge.b-djbanger { display: inline-flex; align-items: center; gap: 6px; background: rgba(61,242,138,.14); color: #3DF28A; border: 1px solid rgba(61,242,138,.5); }
+.djb-ico { width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle, #3DF28A 0 35%, transparent 36%), radial-gradient(circle, transparent 0 55%, #3DF28A 56% 70%, transparent 71%); box-shadow: 0 0 6px rgba(61,242,138,.8); }

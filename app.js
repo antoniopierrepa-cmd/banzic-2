@@ -1456,7 +1456,7 @@
         <div class="fp-id"><div class="fp-nom">${esc(p.pseudo)}</div><div class="fp-sous">${sousB}</div></div></div>
 `;
     h += `      <div class="fp-corps">
-        <div class="fp-badges"><span class="fp-badge b-banger">Banger</span><span class="fp-badge b-niv" style="--m:${n.metal.couleur}">${nomNiveau(n)}${i === NIVEAUX_PROFIL.length - 1 ? ' · le Graal' : ''}</span></div>
+        <div class="fp-badges">${MON_DJ ? '<span class="fp-badge b-djbanger"><i class="djb-ico" aria-hidden="true"></i>DJ Banger</span>' : '<span class="fp-badge b-banger">Banger</span>'}<span class="fp-badge b-niv" style="--m:${n.metal.couleur}">${nomNiveau(n)}${i === NIVEAUX_PROFIL.length - 1 ? ' · le Graal' : ''}</span></div>
         <div class="fp-puces">${p.styles.map((x) => `<span class="fp-puce">${esc(x)}</span>`).join('') || '<span class="fp-puce">Aucun style choisi</span>'}</div>
         <div class="fp-stats">${stB(pt.total, 'points')}${stB(pt.confirms, 'DJ confirmés')}${stB(pt.attente, 'en attente')}${stB(state.favs.length, 'DJ suivis')}</div>
         <div class="fp-prog"><div class="fp-prog-top"><b>${suiv ? nomNiveau(suiv) : 'Niveau maximum'}</b><small>${suiv ? `encore ${PALIERS[i + 1] - pt.total} points` : 'tu as atteint le Graal'}</small></div><div class="bar"><i style="width:${pct}%"></i></div></div>
@@ -1909,7 +1909,7 @@
         <div class="fp-id"><div class="fp-nom">${esc(nom)}</div><div class="fp-sous">${sous}</div></div>
         ${boutonCasque(nom)}</div>
       <div class="fp-corps">
-        <div class="fp-badges">${tier === 'pro' ? '<span class="fp-badge b-pro">DJ Pro</span>' : tier === 'live' ? '<span class="fp-badge b-live">DJ Live</span>' : '<span class="fp-badge b-std">Fiche line-ups</span>'}${iTop >= 0 ? `<span class="fp-badge b-top">Top 100 · ${iTop ? iTop + 1 + 'e' : '1er'}${mvTop ? ' · ' + mvTop : ''}</span>` : ''}${pro && pro.officiel ? '<span class="fp-badge b-off">Officiel</span>' : ''}</div>
+        <div class="fp-badges">${pro ? '<span class="fp-badge b-djbanger"><i class="djb-ico" aria-hidden="true"></i>DJ Banger</span>' : ''}${tier === 'pro' ? '<span class="fp-badge b-pro">DJ Pro</span>' : tier === 'live' ? '<span class="fp-badge b-live">DJ Live</span>' : '<span class="fp-badge b-std">Fiche line-ups</span>'}${iTop >= 0 ? `<span class="fp-badge b-top">Top 100 · ${iTop ? iTop + 1 + 'e' : '1er'}${mvTop ? ' · ' + mvTop : ''}</span>` : ''}${pro && pro.officiel ? '<span class="fp-badge b-off">Officiel</span>' : ''}</div>
         ${styles.length ? `<div class="fp-puces">${styles.map((x) => `<span class="fp-puce">${esc(x)}</span>`).join('')}</div>` : ''}
         ${live.map((x) => `<div class="fp-direct"><span class="fp-pt"></span><span><b>Mixe en ce moment</b><small>${esc(lieuDe(x).nom || 'Spot')} · depuis ${hm(x.debut)} · confirmé par ${x.conf} Banger${x.conf > 1 ? 's' : ''}</small></span></div>`).join('')}
         <div class="fp-stats">${stats}</div>
