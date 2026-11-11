@@ -2763,3 +2763,18 @@ img[src$="#photo"] { width: 40px !important; height: 40px !important; border-rad
 .ab-cols li i { width: 20px; height: 20px; font-size: 10px; }
 .ab-cols li b { font-size: 12.5px; }
 .ab-cols li span { font-size: 11px; }
+
+/* Tableau comparatif des formules DJ */
+.tab-formules { width: 100%; border-collapse: separate; border-spacing: 0; margin: 2px 0 10px; font-size: 12px; }
+.tab-formules thead th { font-size: 13px; padding: 6px 4px 8px; color: #fff; text-align: center; }
+.tab-formules thead th.pro, .tab-formules td.pro { color: #FF6FB5; }
+.tab-formules tbody th { text-align: left; padding: 7px 6px 7px 0; font-weight: 400; border-top: 1px solid rgba(255,255,255,.07); }
+.tab-formules tbody th b { display: block; font-size: 12.5px; color: #fff; }
+.tab-formules tbody th small { display: block; font-size: 10.5px; color: #9AA3B8; line-height: 1.25; }
+.tab-formules td { width: 64px; text-align: center; border-top: 1px solid rgba(255,255,255,.07); }
+.tab-formules td.oui { color: #FF8A3D; font-size: 14px; }
+.tab-formules tbody td:last-child { background: rgba(255,79,163,.07); }
+.tab-formules td.non { color: #5A6278; }
+.tab-formules tfoot th, .tab-formules tfoot td { padding: 10px 4px 4px; border-top: 1.5px solid rgba(242,201,76,.5); font-weight: 800; font-size: 13.5px; color: #F2C94C; text-align: center; }
+.tab-formules tfoot th { text-align: left; color: #fff; font-size: 12.5px; }
+.tab-formules tfoot td.pro { color: #F2C94C; background: rgba(255,79,163,.07); }

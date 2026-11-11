@@ -1238,15 +1238,7 @@
       </div>
       ${state.typeCompte === 'dj'
         ? `<div class="avantages-banger av-dj"><b class="ab-titre">Tes avantages DJ</b>
-          <div class="ab-cols"><div class="ab-formule"><div class="abf-tete"><b>DJ Live</b><em>${FORMULES_DJ.live.prix}</em></div>
-            <ul><li><i>●</i><span><b>Je mixe maintenant</b>tu te déclares en un geste quand tu joues</span></li>
-              <li><i>⌖</i><span><b>Ta tête sur la carte en direct</b>les Bangers autour te voient et viennent</span></li>
-              <li><i>✓</i><span><b>Ta note de crédibilité</b>elle grandit à chaque set confirmé par le public</span></li></ul></div>
-          <div class="ab-formule pro"><div class="abf-tete"><b>DJ Pro</b><em>${FORMULES_DJ.pro.prix}</em></div>
-            <ul><li><i>+</i><span><b>Tout DJ Live</b>plus les options ci-dessous</span></li>
-              <li><i>▦</i><span><b>Tes dates à l'avance</b>annonce tes soirées dans ton agenda</span></li>
-              <li><i>♫</i><span><b>Tes liens sur ta fiche</b>YouTube, SoundCloud, Mixcloud, Twitch, Instagram, TikTok</span></li>
-              <li><i>▶</i><span><b>Tes lives diffusés</b>dans « Les DJ en live » de l'accueil</span></li></ul></div></div>
+          <table class="tab-formules"><thead><tr><th></th><th>DJ Live</th><th class="pro">DJ Pro</th></tr></thead><tbody><tr><th><b>Je mixe maintenant</b><small>te déclarer en un geste quand tu joues</small></th><td class="oui">●</td><td class="oui">●</td></tr><tr><th><b>Ta tête sur la carte en direct</b><small>les Bangers autour te voient</small></th><td class="oui">●</td><td class="oui">●</td></tr><tr><th><b>Bandeau et Check-in</b><small>ton set dans le fil et les départs</small></th><td class="oui">●</td><td class="oui">●</td></tr><tr><th><b>Note de crédibilité</b><small>grandit à chaque set confirmé</small></th><td class="oui">●</td><td class="oui">●</td></tr><tr><th><b>Tes dates à l'avance</b><small>annonce tes soirées dans ton agenda</small></th><td class="non">–</td><td class="oui">●</td></tr><tr><th><b>Tes liens sur ta fiche</b><small>YouTube, SoundCloud, Mixcloud, Twitch, Instagram, TikTok</small></th><td class="non">–</td><td class="oui">●</td></tr><tr><th><b>Tes lives diffusés</b><small>dans « Les DJ en live » de l'accueil</small></th><td class="non">–</td><td class="oui">●</td></tr></tbody><tfoot><tr><th>Par mois</th><td>${FORMULES_DJ.live.prix.replace(' / mois', '')}</td><td class="pro">${FORMULES_DJ.pro.prix.replace(' / mois', '')}</td></tr></tfoot></table>
           <small>Sans engagement. Tu crées d'abord ton profil de base, puis ta fiche DJ, et tu choisis ta formule.</small></div>`
         : `<div class="avantages-banger"><b class="ab-titre">Tes avantages Banger</b>
           <ul><li><i>%</i><span><b>Promos sur les soirées</b>préventes et réductions sur les entrées</span></li>
