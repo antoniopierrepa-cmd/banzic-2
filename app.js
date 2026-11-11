@@ -1811,7 +1811,8 @@
     const agenda = (SUD.soirees || []).filter((x) => x.djs && SUD.lieux[x.lieu] && decouperDjs(x.djs).some((n) => sansAccent(n) === k))
       .map((x) => { const l = SUD.lieux[x.lieu]; return { date: x.date, lieu: x.nom, ville: l.ville, pays: PAYS_DEP[l.dep] || 'France' }; });
     soireesDubai().filter((r) => decouperDjs(r.djs || '').some((n) => sansAccent(n) === k)).forEach((r) => agenda.push({ date: r.date, lieu: r.nomLieu, ville: 'Dubaï', pays: 'Émirats arabes unis' }));
-    if (!cle && !agenda.length) return titre + (carteResident(nom) ? `<div class="acc-rang pays-rang">${carteResident(nom)}</div>` : '') + `<p class="conseil">Sa tournée hors Ibiza n'est pas encore relevée. Pour voir où il joue :</p>` + chercher;
+    if (!cle && !agenda.length && djProParNom(nom)) return `<div class="section-title">Où le voir</div><p class="conseil">Pas encore de date annoncée. Suis-le pour être prévenu de ses prochaines soirées.</p>`;
+    if (!cle && !agenda.length) return titre + (carteResident(nom) ? `<div class="acc-rang pays-rang">${carteResident(nom)}</div>` : '') + `<p class="conseil">Pas encore de date relevée. Pour voir où il joue :</p>` + chercher;
     const d = cle ? T.djs[cle] : { dates: [], sources: {} };
     const auj = new Date(); auj.setHours(0, 0, 0, 0);
     const toutes = d.dates.concat(agenda.filter((a) => !d.dates.some((b) => b.date === a.date && b.ville === a.ville)));
@@ -1874,7 +1875,8 @@
   const ALERTES_DJ = store.get('alertesDj', {});
   // Le casque « Banger » : le bouton pour dire qu'on aime le DJ. Un toucher : il fait deux tours rapides et un son de basse.
   const LIKES_DJ = store.get('likesDj', {});
-  const baseLikes = (nom) => { let g = 7; for (const ch of nom) g = (g * 31 + ch.charCodeAt(0)) >>> 0; const r = window.DJMAG2026 ? DJMAG2026.djs.findIndex((x) => sansAccent(x[0]) === sansAccent(nom)) + 1 : 0; return r ? 2000 + (101 - r) * 180 + g % 900 : 40 + g % 600; };
+  const baseLikes = (nom) => { if (SANS_DEMO) return 0; // test réel : plus de faux chiffres
+ let g = 7; for (const ch of nom) g = (g * 31 + ch.charCodeAt(0)) >>> 0; const r = window.DJMAG2026 ? DJMAG2026.djs.findIndex((x) => sansAccent(x[0]) === sansAccent(nom)) + 1 : 0; return r ? 2000 + (101 - r) * 180 + g % 900 : 40 + g % 600; };
   const nbLikes = (nom) => baseLikes(nom) + (LIKES_DJ[sansAccent(nom)] ? 1 : 0);
   const fmtLikes = (n) => n >= 10000 ? (n / 1000).toFixed(0) + 'k' : n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',') + 'k' : String(n);
   const boutonCasque = (nom) => { const on = !!LIKES_DJ[sansAccent(nom)];
@@ -1908,7 +1910,7 @@
     const c = pro ? credibilite(pro) : null;
     const img = avatarIllusDj(nom) || avPinDj(pro) || (pro && pro.photo) || (photoLibre(nom) && photoLibre(nom).f) || '';
     let g = 7; for (const ch of nom) g = (g * 31 + ch.charCodeAt(0)) >>> 0;
-    const abonnes = pro ? (pro.abonnes || (tier === 'pro' ? 1200 + g % 9000 : 40 + g % 400)) : 0;
+    const abonnes = pro ? (pro.abonnes || (SANS_DEMO ? 0 : tier === 'pro' ? 1200 + g % 9000 : 40 + g % 400)) : 0;
     const k = (n) => n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',').replace(',0', '') + 'k' : n;
     const sous = pro ? [pro.ville, ...(pro.residences || [])].filter(Boolean).map(esc).join(' · ') : (ceSoirN ? 'Joue ce soir' : 'Ne joue pas ce soir') + ' · ' + nbSaison + ' date' + (nbSaison > 1 ? 's' : '') + ' à Ibiza en 2025';
     const styles = pro ? pro.styles : [];
@@ -3804,7 +3806,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     return `<form class="form-com" data-com-cle="${esc(k)}" ${parent ? `data-com-parent="${parent}"` : ''} novalidate>
       <textarea class="search" name="texte" maxlength="280" rows="2" placeholder="${parent ? 'Ta réponse…' : 'Ton commentaire sur ce DJ, un set, une soirée…'}"></textarea>
       <div class="form-com-bas">
-        ${MON_DJ ? `<label class="com-en-dj"><input type="checkbox" name="enDj" checked> En tant que DJ ${esc(MON_DJ.nom)}</label>` : `<small>Publié en tant que ${esc(state.profil.pseudo)}</small>`}
+        ${MON_DJ ? `<label class="com-en-dj"><input type="checkbox" name="enDj" checked> En tant que ${/^dj\b/i.test(MON_DJ.nom) ? esc(MON_DJ.nom) : 'DJ ' + esc(MON_DJ.nom)}</label>` : `<small>Publié en tant que ${esc(state.profil.pseudo)}</small>`}
         <button type="submit" class="btn-plein petit">${parent ? 'Répondre' : 'Publier'}</button>
       </div>
     </form>`;
