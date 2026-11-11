@@ -43,7 +43,8 @@
       "prix": "Tarifs sur billetterie",
       "evidence": "Page Shotgun de FORNAP : 13.11.2026, 18 h–3 h, Fort Napoléon, programmation annoncée dans le texte. Coordonnées reprises du lien de localisation fourni par cette page.",
       "dep": "83",
-      "verifiedAt": "2026-11-11T23:30:25.872Z"
+      "verifiedAt": "2026-11-11T23:30:25.872Z",
+      "flyerUrl": "https://assets.shotgun.live/image/upload/c_limit,ar_16:9,w_3840,fl_lossy,f_webp,q_auto/production/artworks/BAN_13_NOV_nnja70.png"
     },
     {
       "id": "inda-house-20261113",
@@ -67,7 +68,8 @@
       "prix": "Tarifs sur billetterie",
       "evidence": "Page officielle INDA HOUSE sur Shotgun : 13.11.26, 23 h 30–5 h, Boulevard Jules Arpinetti et trois artistes. Localisation reprise du lien de la page, précision au boulevard plutôt qu’à une entrée numérotée.",
       "dep": "83",
-      "verifiedAt": "2026-11-11T23:30:25.872Z"
+      "verifiedAt": "2026-11-11T23:30:25.872Z",
+      "flyerUrl": "https://assets.shotgun.live/image/upload/c_limit,ar_16:9,w_3840,fl_lossy,f_webp,q_auto/production/artworks/Affiche_INDA___Weekend_et_portraits_%C3%A9toil%C3%A9s_vzlmdp.png"
     },
     {
       "id": "cut-killer-ora-20261114",
@@ -90,7 +92,8 @@
       "prix": "Tarifs sur billetterie",
       "evidence": "Page ORA CLUB sur Shotgun : samedi 14 novembre 2026, 21 h–2 h, 3 avenue Maréchal Alphonse Juin ; Cut Killer et première partie DJ Clam. Coordonnées du lien de localisation de la page.",
       "dep": "83",
-      "verifiedAt": "2026-11-11T23:30:25.872Z"
+      "verifiedAt": "2026-11-11T23:30:25.872Z",
+      "flyerUrl": "https://assets.shotgun.live/image/upload/c_limit,ar_16:9,w_3840,fl_lossy,f_webp,q_auto/production/artworks/Affiche_Cut_Killer_et_DJ_Clam-3_fkqvbk.png"
     },
     {
       "id": "this-is-house-20261128",
@@ -113,7 +116,8 @@
       "prix": "Tarifs sur billetterie",
       "evidence": "Page de l’organisateur Thierry Papeguay sur Shotgun : samedi 28 novembre, 20 h–2 h, 2 avenue Ambroise Thomas, programmation Papeguay et Lydia Scarfo. Année 2026 recoupée avec l’agenda courant. Coordonnées du lien de localisation.",
       "dep": "83",
-      "verifiedAt": "2026-11-11T23:30:25.872Z"
+      "verifiedAt": "2026-11-11T23:30:25.872Z",
+      "flyerUrl": "https://assets.shotgun.live/image/upload/c_limit,ar_16:9,w_3840,fl_lossy,f_webp,q_auto/production/artworks/Affiche_disco_r%C3%A9tro-futuriste_28_11_pus3ew.png"
     },
     {
       "id": "david-vendetta-2mil3-20261205",
@@ -135,7 +139,8 @@
       "prix": "Couple 40 € · Homme 70 € · Femme 10 € · Réservation sur le site",
       "evidence": "Site officiel 2mil3 : DJ set David Vendetta, samedi 5 décembre 2026, 22 h–5 h, soirée mixte, tarifs affichés. Adresse 548 chemin de la Source à Hyères ; coordonnées exactes du repère Google Maps lié depuis la page Contact du club. Aucun renseignement de participant collecté.",
       "dep": "83",
-      "verifiedAt": "2026-11-11T23:30:25.872Z"
+      "verifiedAt": "2026-11-11T23:30:25.872Z",
+      "flyerUrl": "https://www.2mil3.eu/images/2026/12/05/flyer.jpg"
     }
   ]
 }

@@ -27,7 +27,7 @@ export function normalize(row, source, today) {
     heure: /^([01]\d|2[0-3]):[0-5]\d$/.test(row.heure || '') ? row.heure : '',
     djs: Array.isArray(row.lineup) ? row.lineup.map(text).filter(Boolean).join(', ') : text(row.djs),
     type: ['club', 'festival', 'concert', 'bar', 'restaurant'].includes(row.type) ? row.type : 'club',
-    genres: text(row.genres), prix: text(row.prix), url, ticketUrl: safeUrl(row.ticketUrl),
+    genres: text(row.genres), prix: text(row.prix), url, ticketUrl: safeUrl(row.ticketUrl), flyerUrl: safeUrl(row.flyerUrl),
     venue: { nom: text(row.lieu), ville: text(row.ville), dep, lat, lng } };
 }
 export function snapshot(rows, sources, now = new Date()) {

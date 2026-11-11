@@ -2772,7 +2772,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       const wd = (dt.getDay() + 6) % 7, infoUrl = radarUrl(x.url || SUD.sources[x.src]), ticketUrl = radarUrl(x.ticketUrl), url = ticketUrl || infoUrl;
       return `<div class="sud-soiree ${x.gros ? 'gros' : ''}">
         <div class="sud-date" style="--tc:${TYPE_COUL[x.type || 'club']}"><b>${dt.getDate()}</b><small>${JOURS[wd]}</small><i>${TYPE_NOM[x.type || 'club']}</i></div>
-        <img class="sud-affiche" src="${afficheSoiree(x)}" alt="" loading="lazy">
+        <img class="sud-affiche" src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : ''}" style="object-fit:contain" loading="lazy" referrerpolicy="no-referrer">
         <div class="sud-info"><span class="venue">${esc(x.nom)}</span>
           ${x.djs ? `<small>Line-up : ${esc(x.djs)}</small>` : `<small>Line-up non communiqué</small>`}${x.genres ? `<small class="sud-genres">${esc(x.genres)}</small>` : ''}
           <small class="sud-lieu">${esc(x.l.nom)} · ${esc(x.l.ville)}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}${x.prix ? ' · ' + esc(x.prix) : ''} ${/^(\d{2,3}|2[AB])$/.test(x.l.dep) ? ' · <span class="sud-dep">' + x.l.dep + '</span>' : ''}</small></div>
