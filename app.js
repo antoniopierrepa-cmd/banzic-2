@@ -1377,6 +1377,24 @@
     </form>`;
   }
 
+  // L'échelle des Bangers : page à part, ouverte depuis la bannière de la fiche profil
+  function pageEchelle() {
+    const i = niveauProfil(points().total);
+    let h = `<div class="mt-page"><button class="mt-retour" data-echelle-retour="1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Mon profil</button>
+      <div class="section-title">L'échelle des Bangers <small>de Disque bronze au Graal</small></div>
+      <p class="conseil">Tout le monde commence Disque bronze. Pour monter, confirme sur place le DJ qui joue : chaque confirmation validée par d'autres te rapporte +10 points.</p>
+      <div class="echelle">`;
+    OBJETS.forEach((o, oi) => {
+      h += `<div class="echelle-ligne"><span class="echelle-obj">${o.nom}</span>`;
+      METAUX.forEach((m, mi) => {
+        const r = oi * 3 + mi, atteint = r <= i;
+        h += `<span class="echelle-pas ${atteint ? 'ok' : ''} ${r === i ? 'actuel' : ''}" title="${o.nom} ${m.nom} : ${PALIERS[r]} points">
+          ${badgeNiveau(NIVEAUX_PROFIL[r], 34)}<small>${m.nom}</small><small class="ech-pts">${PALIERS[r]} pts</small></span>`;
+      });
+      h += '</div>';
+    });
+    return h + '</div></div>';
+  }
   function renderProfil() {
     const p = state.profil;
     if (!state.compte) { $('#screen-profil').innerHTML = ecranConnexion(); return; }
@@ -1386,6 +1404,7 @@
     if (state.vueDj === 'liens' && MON_DJ) { $('#screen-profil').innerHTML = formLiens(); return; }
     if (state.vueDj === 'annonce' && MON_DJ) { $('#screen-profil').innerHTML = formAnnonce(); return; }
     if (state.vueDj === 'stream' && MON_DJ) { $('#screen-profil').innerHTML = formStream(); return; }
+    if (state.vueEchelle) { $('#screen-profil').innerHTML = pageEchelle(); return; }
     const pt = points(), i = niveauProfil(pt.total), n = NIVEAUX_PROFIL[i], suiv = NIVEAUX_PROFIL[i + 1];
     const pct = suiv ? Math.round((pt.total - PALIERS[i]) / (PALIERS[i + 1] - PALIERS[i]) * 100) : 100;
     const stB = (v, t) => `<span class="fp-stat"><b>${v}</b><small>${t}</small></span>`;
@@ -1408,23 +1427,16 @@
         <div class="fp-actions"><button class="fp-btn plein" data-modifier-profil="1">Modifier mon profil</button><button class="fp-btn" data-partager-profil="1">Partager ma fiche</button></div>
       </div></div>
       ${state.favs.length ? `<div class="section-title">Mes DJ préférés <small>${state.favs.length}</small></div><div class="fp-vins">${state.favs.slice(0, 12).map((d) => `<button class="fp-vin" data-dj-pro="${esc(d)}"><span class="fp-disque">${avatarDj(d)}</span><small>${esc(d)}</small></button>`).join('')}</div>` : ''}
-      <p class="conseil" style="margin-top:12px">Tout le monde commence Disque bronze. Pour monter, confirme sur place le DJ qui joue : chaque confirmation validée par d'autres te rapporte +10 points.</p>
       <div class="section-title">Mes contributions <small>${pt.mes.length}</small></div>
       ${pt.mes.length ? '<div class="jour">' + pt.mes.map((p) => `<div class="jl"><span class="jl-g"><span class="venue">${lienDjs(p.dj)}</span><small>${esc(lieux[p.lieu].nom)} · ${horaire(p)}</small></span>
         ${monVoteValide(p) ? '<span class="badge b-ok">Validée · visible par tous</span>' : `<span class="badge b-attente">En attente ${Math.min(autresConf(p), SEUIL_AUTRES)}/${SEUIL_AUTRES}</span>`}</div>`).join('') + '</div>'
         : '<p class="conseil">Pas encore de contribution. Sur place, confirme le DJ qui joue : tu le vois tout de suite, les autres le voient dès que d\'autres personnes l\'ont confirmé.</p>'}
-      <div class="section-title">L'échelle des Bangers <small>de Disque bronze au Graal</small></div>
-      <div class="echelle">`;
-    OBJETS.forEach((o, oi) => {
-      h += `<div class="echelle-ligne"><span class="echelle-obj">${o.nom}</span>`;
-      METAUX.forEach((m, mi) => {
-        const r = oi * 3 + mi, atteint = r <= i;
-        h += `<span class="echelle-pas ${atteint ? 'ok' : ''} ${r === i ? 'actuel' : ''}" title="${o.nom} ${m.nom} : ${PALIERS[r]} points">
-          ${badgeNiveau(NIVEAUX_PROFIL[r], 34)}<small>${m.nom}</small></span>`;
-      });
-      h += '</div>';
-    });
-    h += `</div>
+      <button class="ech-banniere" data-echelle="1" aria-label="Voir l'échelle des Bangers">
+        <span class="ech-med">${badgeNiveau(n, 44)}</span>
+        <span class="ech-txt"><small>L'échelle des Bangers</small><b>Tu es ${nomNiveau(n)}</b><span>De Disque bronze au Graal · ${NIVEAUX_PROFIL.length} niveaux</span></span>
+        <svg class="ech-fl" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>`;
+    h += `
       ${blocEspaceDj()}
       <div class="section-title">Mes réglages</div>
       <div class="jour reglages-resume">
@@ -1461,6 +1473,8 @@
     if (e.target.closest('[data-regler-ecran]')) { if (!(window.banzicReglerEcran && window.banzicReglerEcran())) toast('Rien à régler : l\'appli est déjà en plein écran'); return true; }
     if (e.target.closest('[data-av-retirer]')) { photoLecture++; photoEnLecture = false; portraitPrepare = null; state.photoTemp = ''; majApercuAvatar(); return true; }
     if (e.target.closest('[data-plus-tard]')) { setTab('live'); toast('Tu peux créer ton compte quand tu veux, onglet Profil'); return true; }
+    if (e.target.closest('[data-echelle]')) { state.vueEchelle = true; renderProfil(); window.scrollTo(0, 0); return true; }
+    if (e.target.closest('[data-echelle-retour]')) { state.vueEchelle = false; renderProfil(); return true; }
     if (e.target.closest('[data-modifier-profil]')) { state.editProfil = true; renderProfil(); return true; }
     if (e.target.closest('[data-partager-profil]')) { toast('Démo : ta fiche Banger aura son lien à partager'); return true; }
     if (e.target.closest('[data-annuler-profil]')) { state.editProfil = false; renderProfil(); return true; }
