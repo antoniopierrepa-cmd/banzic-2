@@ -1238,7 +1238,12 @@
       </div>
       ${state.typeCompte === 'dj'
         ? '<p class="conseil spotters" style="margin:6px 0 14px"><b>Profil DJ.</b> Tu crées d\'abord ton compte et ton profil de base, puis ta fiche DJ : ton nom de scène, tes styles, et la formule pour te signaler en live. Ta crédibilité grandit à chaque set confirmé par le public.</p>'
-        : '<p class="conseil spotters" style="margin:6px 0 14px"><b>Deviens Banger.</b> Les Bangers, c\'est la communauté qui fait vivre la carte : ils repèrent qui joue, confirment sur place et notent les sets. Chaque contribution te fait monter, de Disque bronze jusqu\'au Graal.</p>'}
+        : `<div class="avantages-banger"><b class="ab-titre">Tes avantages Banger</b>
+          <ul><li><i>%</i><span><b>Promos sur les soirées</b>préventes et réductions sur les entrées</span></li>
+            <li><i>T</i><span><b>Billets offerts</b>à gagner selon ton niveau</span></li>
+            <li><i>★</i><span><b>Invitations VIP</b>entrées et coupe-file aux plus hauts paliers</span></li>
+            <li><i>♪</i><span><b>Line-ups en avant-première</b>tu sais avant tout le monde qui joue</span></li></ul>
+          <small>Plus tu contribues (tu repères, tu confirmes, tu bangues), plus tu montes de niveau et plus tes avantages grandissent. Avantages en préparation avec les clubs partenaires.</small></div>`}
       <p class="conseil">Un compte garde tes DJ, tes alertes et ta progression, même si tu changes de téléphone. Un seul toucher, pas de mot de passe.</p>
       <button class="btn-compte apple" data-connexion="apple">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.5 2-3.6 2.1-3.7-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.1 2.5-1.8 3.1-.5 7.6 1.3 10.1.8 1.2 1.8 2.6 3.1 2.5 1.3-.1 1.7-.8 3.3-.8s1.9.8 3.3.8c1.4 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.6-1-2.6-4.2zM14 5.1c.7-.8 1.1-1.9 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z"/></svg>
