@@ -1929,8 +1929,8 @@
     const sous = pro ? [pro.ville, ...(pro.residences || [])].filter(Boolean).map(esc).join(' · ') : (ceSoirN ? 'Joue ce soir' : 'Ne joue pas ce soir') + ' · ' + nbSaison + ' date' + (nbSaison > 1 ? 's' : '') + ' à Ibiza en 2025';
     const styles = pro ? pro.styles : [];
     const stat = (v, t) => `<span class="fp-stat"><b>${v}</b><small>${t}</small></span>`;
-    const stats = tier === 'pro' ? stat(k(abonnes), 'abonnés') + stat((pro.annonces || []).length + nbSaison, 'dates') + stat(pro.confirmes, 'sets confirmés') + stat(c.note ? c.note : '–', 'note /5')
-      : tier === 'live' ? stat(pro.confirmes, 'sets confirmés') + stat(c.note ? c.note : '–', 'note /5') + stat(k(abonnes), 'abonnés')
+    const stats = tier === 'pro' ? stat(k(abonnes), 'abonnés') + stat((pro.annonces || []).length + nbSaison, 'dates') + stat(pro.confirmes, 'sets confirmés')
+      : tier === 'live' ? stat(pro.confirmes, 'sets confirmés') + stat(k(abonnes), 'abonnés')
       : stat(nbSaison, 'dates 2025') + stat(ceSoirN, 'ce soir') + stat(state.favs.includes(nom) ? 'Oui' : 'Non', 'tu le suis');
     const suivi = state.favs.includes(nom), al = !!ALERTES_DJ[sansAccent(nom)];
     const TOPM = window.DJMAG2026, iTop = TOPM ? TOPM.djs.findIndex((x) => sansAccent(x[0]) === sansAccent(nom)) : -1;
