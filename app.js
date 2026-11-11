@@ -1929,8 +1929,8 @@
     const sous = pro ? [pro.ville, ...(pro.residences || [])].filter(Boolean).map(esc).join(' · ') : (ceSoirN ? 'Joue ce soir' : 'Ne joue pas ce soir') + ' · ' + nbSaison + ' date' + (nbSaison > 1 ? 's' : '') + ' à Ibiza en 2025';
     const styles = pro ? pro.styles : [];
     const stat = (v, t) => `<span class="fp-stat"><b>${v}</b><small>${t}</small></span>`;
-    const stats = tier === 'pro' ? stat(k(abonnes), 'abonnés') + stat(c.niv.code === 'nouveau' ? '–' : c.score + ' %', 'crédibilité') + stat((pro.annonces || []).length + nbSaison, 'dates') + stat(pro.confirmes, 'sets confirmés')
-      : tier === 'live' ? stat(c.niv.code === 'nouveau' ? '–' : c.score + ' %', 'crédibilité') + stat(pro.confirmes, 'sets confirmés') + stat(c.note ? c.note : '–', 'note /5') + stat(k(abonnes), 'abonnés')
+    const stats = tier === 'pro' ? stat(k(abonnes), 'abonnés') + stat((pro.annonces || []).length + nbSaison, 'dates') + stat(pro.confirmes, 'sets confirmés') + stat(c.note ? c.note : '–', 'note /5')
+      : tier === 'live' ? stat(pro.confirmes, 'sets confirmés') + stat(c.note ? c.note : '–', 'note /5') + stat(k(abonnes), 'abonnés')
       : stat(nbSaison, 'dates 2025') + stat(ceSoirN, 'ce soir') + stat(state.favs.includes(nom) ? 'Oui' : 'Non', 'tu le suis');
     const suivi = state.favs.includes(nom), al = !!ALERTES_DJ[sansAccent(nom)];
     const TOPM = window.DJMAG2026, iTop = TOPM ? TOPM.djs.findIndex((x) => sansAccent(x[0]) === sansAccent(nom)) : -1;
@@ -1979,7 +1979,7 @@
       if (pro.formule === 'pro') h += blocLiens(pro);
       h += lecteurStream(pro);
       if (pro.formule === 'pro') h += blocAnnonces(pro, false);
-      h += `<div class="section-title">Crédibilité</div>` + carteCredibilite(pro);
+      // Crédibilité retirée de la fiche (11/11/2026)
       if (pro.mien && pro.formule !== 'pro') h += `<div class="fp-verrou"><b>Fiche DJ Pro</b> : dates annoncées à l'avance, pays de tournée, lecteur de sets, liens YouTube, SoundCloud, Instagram, TikTok et bouton Booking.</div>`;
       if (!ceSoir.length && !saison.length) { $('#dj-body').innerHTML = h + blocTournee(nom) + blocCommentaires(nom); remplirAvatars($('#dj-body')); return; }
     }
@@ -3198,7 +3198,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       <div class="card-head"><span class="ch-g">${d.photo ? `<img class="avatar petit" src="${d.photo}" alt="">` : '<span class="decl-ico" aria-hidden="true">DJ</span>'}<span><span class="venue">${esc(l.nom)}</span>${l.zone ? ' · ' + esc(l.zone) : ''}</span></span>
         <span class="badge ${declConfirmee(x) ? 'b-ok' : 'b-decl'}">${declConfirmee(x) ? 'Live confirmé · ' + x.conf : 'Déclaré par le DJ'}</span></div>
       <div class="dj-row"><div><button class="dj lien-dj" data-dj-pro="${esc(d.nom)}">${esc(d.nom)}</button> ${badgeOfficiel(d)}
-        <div class="slot">${esc(x.style)} · depuis ${hm(x.debut)} · jusqu'à ${hm(x.fin)} env.</div></div>${badgeCred(d)}</div>
+        <div class="slot">${esc(x.style)} · depuis ${hm(x.debut)} · jusqu'à ${hm(x.fin)} env.</div></div></div>
       ${x.mien ? `<div class="decl-actions"><span class="conseil" style="margin:0">Ta déclaration · ${x.conf} confirmation${x.conf > 1 ? 's' : ''}</span>
           ${x.conf < 2 ? `<button class="lien-demo" data-decl-demo="${x.id}">Démo : quelqu'un sur place confirme</button>` : ''}
           <button class="alerte" data-decl-fin="${x.id}">Terminer mon set</button></div>`
@@ -3215,7 +3215,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <button class="dc-art" data-dj-pro="${esc(d.nom)}" ${d.photo ? `style="--photo:url('${d.photo}')"` : ''}>
           <span class="dc-badge">${ok ? '<i></i>Live · ' + x.conf : 'Déclaré'}</span>
           <span class="dc-type">${esc(x.style || '')}</span><b class="dc-nom">${esc(d.nom)}${d.officiel ? ' <em class="dc-off">✓</em>' : ''}</b><span class="dc-lieu">${esc(l.nom)}${l.zone ? ' · ' + esc(l.zone) : ''}</span></button>
-        <span class="dc-bas"><small>${hm(x.debut)} → ${hm(x.fin)}</small><small>Crédibilité ${credibilite(d).score}</small></span>
+        <span class="dc-bas"><small>${hm(x.debut)} → ${hm(x.fin)}</small></span>
         ${voted ? `<span class="dc-merci">Merci, c'est noté</span>` : `<span class="dc-actions"><button data-decl-ok="${x.id}">J'y suis</button><button class="non" data-decl-non="${x.id}">Pas là</button></span>`}
       </div>`; };
     return `<div class="section-title">Déclarés par les DJ <small>${xs.length} en ce moment</small></div>` + miens.map(carteDecl).join('')
@@ -3322,7 +3322,6 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         : `<div class="jour upsell"><b>Passer en ${FORMULES_DJ.pro.nom} · ${FORMULES_DJ.pro.prix}</b><p class="conseil" style="margin:6px 0 10px">${FORMULES_DJ.pro.aide}</p>
           <button class="btn-plein" data-djpro-upgrade="1">Passer en DJ Pro</button></div>`}
       ${MON_DJ.officiel ? blocVerif(MON_DJ) : banniereProfil('officiel', 'Devenir profil officiel', 'Badge ✓ Officiel', 'Validé par les Bangers : ' + Math.min(etatVerif(MON_DJ).sets, VERIF.sets) + '/' + VERIF.sets + ' sets confirmés', '✓')}
-      ${carteCredibilite(MON_DJ)}
       <p class="demo-note">Démo : aucun paiement. Dans l'appli, l'abonnement passera par l'App Store, Google Play ou le site.</p>`;
   }
   // ---- DJ en live : les DJ Pro partagent le lien de leur live YouTube, visible par tous dans « DJ en live ».
@@ -3361,7 +3360,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       : `<a class="btn-yt" href="${esc(st.url)}" target="_blank" rel="noopener"><span aria-hidden="true">▶</span> Regarder sur YouTube</a>`;
     return `<div class="card stream">
       ${court ? '' : `<div class="dj-row"><div class="dj-tete-g">${d.photo ? `<img class="avatar petit" src="${d.photo}" alt="">` : avatarDj(d.nom)}<div><button class="dj lien-dj" data-dj-pro="${esc(d.nom)}">${esc(d.nom)}</button> ${badgeOfficiel(d)}
-        <div class="slot">${d.styles.map(esc).join(' · ')}${d.ville ? ' · ' + esc(d.ville) : ''}</div></div></div>${badgeCred(d)}</div>`}
+        <div class="slot">${d.styles.map(esc).join(' · ')}${d.ville ? ' · ' + esc(d.ville) : ''}</div></div></div></div>`}
       <div class="stream-titre"><span class="badge b-yt"><span class="pt-rouge" aria-hidden="true"></span>EN LIVE</span> ${esc(st.titre)}</div>
       <div class="slot">Depuis ${depuisTxt(st.depuis)}${st.vues ? ' · ' + st.vues.toLocaleString('fr-FR') + ' spectateurs' : ''}</div>
       ${lien}</div>`;
