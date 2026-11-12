@@ -439,30 +439,14 @@
   }
   function renderMap() {
     try { renderCartesMap(); } catch (e) { console.warn(e); }
-    const leg = state.dest === 'ibiza'
-      ? [['#FF8A3D', 'Club live'], ['#3DD6C6', 'Plage live'], ['#F2B53A', 'Bientôt'], ['#8A8498', 'Fini · fermé']]
-      : [['#FF8A3D', T('club')], ['#3DD6C6', T('plage')], ['#24304A', moisNom(MOIS_NOW) + ' : ' + labelMois(DEST[state.dest].mois[MOIS_NOW])]];
-    if (DEST[state.dest].local) leg.length = 0;
-    leg.push(['#B58CFF', 'Spot']); leg.push(['#F2C94C', 'DJ déclaré']);
+    const leg = [['#B58CFF', 'Signalé en live'], ['#F2C94C', 'DJ déclaré aujourd’hui'], ['#3DD6C6', 'Soirée du jour']];
     $('.map-legend').innerHTML = leg.map(([c, t]) => `<span><i style="background:${c}"></i>${t}</span>`).join('');
-    if (state.vueCarte === 'lieux') renderGalerie();
+    if (state.vueCarte === 'lieux') $('#galerie-lieux').innerHTML = renderCheckin(true).join('') || '<div class="empty">Aucune soirée du jour annoncée autour de toi.</div>';
     if (!map) return;
     layer.clearLayers();
-    if (state.dest !== 'ibiza') { marqueursDest(); marqueursSpots(); marqueursDecls(); marqueursRadar(); return; }
-    const t = state.t;
-    D.lieux.forEach((l) => {
-      const s = statutLieu(l.id, t);
-      const live = s.code === 'live';
-      const col = couleur(l, t);
-      const m = L.marker([l.lat, l.lng], { icon: iconeLieu(l, live, ['fini', 'ferme'].includes(s.code)), zIndexOffset: live ? 400 : 0 });
-      const cur = enCours(l.id, t);
-      const djs = cur.length ? cur.map((p) => `<div class="pop-dj">${p.inconnu ? esc(p.dj) : lienDjs(p.dj)}</div><div class="pop-slot">${esc(p.salle)} · ${horaire(p)}</div>`).join('') : `<div class="pop-slot" style="margin-top:4px">${s.label}</div>`;
-      m.bindPopup(`${photo(l, 'pop-photo')}<div class="pop-venue">${esc(l.nom)}</div>${djs}<button class="pop-btn" data-lieu="${l.id}">Voir la soirée</button>`);
-      lierBandeau(m, `data-lieu="${l.id}"`);
-      m.addTo(layer);
-    });
     marqueursSpots();
     marqueursDecls();
+    marqueursRadar();
   }
 
   // ---------- Fiche lieu
@@ -2383,26 +2367,27 @@
   }
 
   // Bandeau d'actualité des pages saison (Ibiza, Dubaï, Miami…) : sets en cours, line-ups confirmés, DJ déclarés, spots, soirées du jour
-  function filDest() {
+  function filDest(jourSeulement = false) {
     const d = DEST[state.dest]; if (!d) return '';
     const kmL = (la, lo) => d.local && la != null ? ' · ' + (distKm(d.centre, [la, lo]) < 1 ? '< 1' : Math.round(distKm(d.centre, [la, lo]))) + ' km' : '';
     const dur = (m) => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min';
     const item = (k, tag, attr, nom, l1, l2, visO) => { const vis = visO != null ? visO : k === 'spot' ? '' : visFil(nom); return `<button class="fil-item k-${k}${vis ? ' a-vis' : ''}" ${attr}>${vis}<span class="fil-l1"><em class="fil-tag ${k}">${tag}</em><b>${esc(nom)}</b>${l1 ? `<span class="fil-t">${l1}</span>` : ''}</span><span class="fil-l2">${l2.filter(Boolean).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button>`; };
     const xs = [];
-    if (d.id === 'ibiza') {
+    if (!jourSeulement && d.id === 'ibiza') {
       const t = state.t;
       passages.filter((p) => !p.inconnu && t >= p.d && t < p.f).sort((a, b) => (b.confirmations || 0) - (a.confirmations || 0)).forEach((p) => { const l = lieux[p.lieu], ok = !!p.constate;
         xs.push(item(ok ? 'live' : 'decl', ok ? 'Live' : 'Line-up', `data-lieu="${l.id}"`, p.dj, 'encore ' + dur(p.f - t), [[esc(l.nom) + (p.salle ? ' · ' + esc(p.salle) : '')], ok ? ['confirmé par ' + (p.confirmations || 1) + ' Banger' + ((p.confirmations || 1) > 1 ? 's' : '') + ' à ' + p.constate, 'fil-ok'] : ['line-up annoncé, pas encore confirmé', 'fil-att']], visFil(p.dj, ok ? (p.confirmations || 1) : 0, ''))); });
       passages.filter((p) => !p.inconnu && p.d > t && p.d - t <= 120).sort((a, b) => a.d - b.d).slice(0, 6).forEach((p) => { const l = lieux[p.lieu];
         xs.push(item('decl', 'Bientôt', `data-lieu="${l.id}"`, p.dj, 'à ' + p.debut, [[esc(l.nom) + (p.salle ? ' · ' + esc(p.salle) : '')], ['dans ' + dur(p.d - t)]], visFil(p.dj, 0, ''))); });
     }
-    declsVisibles().forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}, ok = declConfirmee(x), m = Math.round((x.fin - Date.now()) / 60000);
+    declsVisibles().filter((x) => !jourSeulement || declDuJour(x)).forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}, ok = declConfirmee(x), m = Math.round((x.fin - Date.now()) / 60000);
       xs.push(item(ok ? 'live' : 'decl', ok ? 'Live' : 'Déclaré', `data-dj-pro="${esc(dj.nom)}"`, dj.nom, m > 0 ? 'encore ' + dur(m) : 'se termine', [[esc(l.nom || 'Spot') + kmL(l.lat, l.lng)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']], visFil(dj.nom, x.conf || 0, `data-decl-ok="${x.id}"`))); });
     spotsVisibles().filter(spotPublic).forEach((sp) => { const n = sp.note || 0, c = sp.conf || 0, v = n >= 4 && c >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || c >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
       xs.push(item('spot', 'Spot', `data-spot-voir="${sp.id}"`, sp.nom || TYPES_SPOT[sp.type] || 'Spot', `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, [[esc(sp.dj || 'DJ inconnu') + kmL(sp.lat, sp.lng)], ['signalé à ' + hm(sp.t || sp.maj) + ' par @' + esc(sp.par || 'un Banger')]], visSpotC(sp))); });
     const auj = isoAuj();
-    if (d.id === 'dubai') soireesDubai().filter((r) => r.date === auj).forEach((r) => { const dj = (r.djs || '').split(/,| b2b /i)[0].trim();
+    if (!jourSeulement && d.id === 'dubai') soireesDubai().filter((r) => r.date === auj).forEach((r) => { const dj = (r.djs || '').split(/,| b2b /i)[0].trim();
       xs.push(item('decl', 'Ce soir', `data-dj-pro="${esc(dj || r.titre)}"`, dj || r.titre, r.heure ? 'à ' + esc(r.heure) : '', [[esc(r.nomLieu)], [esc(r.titre)], [r.djs ? 'line-up annoncé' : 'line-up non communiqué', 'fil-att']], visFil(dj || r.titre, 0, ''))); });
+    if (!jourSeulement) {
     // Agendas du Top 100 : les DJ qui passent dans cette destination dans les 7 jours
     const villes = { dubai: ['dubai', 'dubaï'], miami: ['miami', 'miami beach'], mykonos: ['mykonos', 'mýkonos'], tulum: ['tulum'], phuket: ['phuket', 'patong', 'kamala', 'choeng thale', 'tambon choeng thale'], ibiza: ['ibiza', 'sant antoni de portmany', 'sant josep de sa talaia', 'eivissa'] }[d.id] || [];
     const fin7 = iso(new Date(Date.now() + 7 * 86400000));
@@ -2414,6 +2399,9 @@
       .map((l) => ({ l, k: distKm(d.centre, [l.lat, l.lng]) })).sort((u, v) => u.k - v.k).slice(0, 24);
     const kmClub = (k) => d.local ? (k < 1 ? '< 1 km' : Math.round(k) + ' km') : '';
     lsD.forEach(({ l, k }) => xs.push(filClub(l, kmClub(k))));
+    } else {
+      soireesCarteJour().forEach((x) => xs.push(item('decl', 'Aujourd’hui', radarUrl(x.url) ? `data-soiree-jour="${esc(x.id)}"` : '', x.nom, x.heure ? 'à ' + esc(x.heure) : 'horaire non communiqué', [[esc(x.l.nom) + kmL(x.l.lat, x.l.lng)], [x.djs ? esc(x.djs) : 'Soirée · avec ou sans DJ']], '')));
+    }
     if (!xs.length) return '';
     const lot = xs.slice(0, 60), sep = '<span class="fil-sep" aria-hidden="true"></span>';
     return `<div class="fil-infos fil-dest" aria-label="Fil d'actualité ${esc(d.nom)}"><div class="fil-fenetre"><div class="fil-piste">${lot.join(sep)}${sep}<span class="fil-copie" aria-hidden="true">${lot.join(sep)}${sep}</span></div></div></div>`;
@@ -2438,7 +2426,7 @@
     const L = [];
     const ligne = (o) => L.push(o);
     // DJ déclarés autour de moi
-    DECLS.filter((x) => declActive(x) && djDe(x)).forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}; if (l.lat == null) return; const d = km(l.lat, l.lng); if (d > r) return;
+    DECLS.filter((x) => declDuJour(x) && djDe(x)).forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}; if (l.lat == null) return; const d = km(l.lat, l.lng); if (d > r) return;
       const ok = declConfirmee(x), avant = (x.debut - now) / 60000, reste = (x.fin - now) / 60000;
       const st = avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ok ? ['En cours', 'vert'] : ['Annoncé', 'orange'];
       ligne({ fin: x.fin, conf: x.conf || 0, act: `data-decl-ok="${x.id}"`, km: d, t: x.debut, heure: hm(x.debut), porte: l.nom || 'Spot', st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Déclaré', attr: `data-dj-pro="${esc(dj.nom)}"`, nom: dj.nom,
@@ -2449,33 +2437,14 @@
       const n = sp.note || 0, cf = sp.conf || 0, v = n >= 4 && cf >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || cf >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
       ligne({ fin: (sp.maj || sp.t) + 3 * 3600000, sp, km: d, t: sp.t || sp.maj, heure: hm(sp.t || sp.maj), porte: sp.nom || TYPES_SPOT[sp.type] || 'Spot', st: ['Signalé', 'violet'], k: 'spot', tag: 'Spot', attr: `data-spot-voir="${sp.id}"`, nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot',
         l1: `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, l2: [[esc(sp.dj || 'DJ inconnu') + ' · ' + fK(d)], [(sp.temp != null ? `<span class="thermo-mini t${sp.temp}" title="Ambiance : ${['Froid', 'Moyen', 'Chaud'][sp.temp]}"><i></i></span><span class="thermo-txt t${sp.temp}">${['Froid', 'Moyen', 'Chaud'][sp.temp]}</span> ` : '') + 'signalé par @' + esc(sp.par || 'un Banger')]].concat(sp.com ? [['« ' + esc(sp.com) + ' »', 'fil-com']] : []), vol: '' }); });
-    // Soirées de l'agenda : ce soir et demain
-    SUD.soirees.filter((x) => (x.date === auj || x.date === dem) && SUD.lieux[x.lieu]).forEach((x) => { const l = SUD.lieux[x.lieu], d = km(l.lat, l.lng); if (d > r) return;
+    // Toutes les soirées du jour, avec ou sans DJ, indépendantes des filtres de l’agenda.
+    SUD.soirees.filter((x) => x.date === auj && SUD.lieux[x.lieu]).forEach((x) => { const l = SUD.lieux[x.lieu], d = km(l.lat, l.lng); if (d > r) return;
       const deb = msDe(x.date, x.heure), avant = deb ? (deb - now) / 60000 : null, dj = String(x.djs || '').split(/,| b2b | & /i)[0].trim();
       const st = x.date === dem ? ['Demain', 'gris'] : avant == null ? ['Ce soir', 'bleu'] : avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : avant > -360 ? ['En cours', 'vert'] : ['Terminé', 'gris'];
       if (st[0] === 'Terminé') return;
       ligne({ lieuId: x.lieu, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || '--:--', porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: dj ? `data-dj-pro="${esc(dj)}"` : '', nom: x.nom,
         l1: x.date === dem ? 'demain' + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
         l2: [[esc(l.nom) + ' · ' + fK(d)], [esc(String(x.djs || '').slice(0, 60))], [x.djs ? 'line-up annoncé' : 'line-up non communiqué', 'fil-att']], vol: dj }); });
-    // Rangés par distance, du plus proche au plus loin (à distance égale, par heure)
-    // Ibiza : les sets de ce soir dans les clubs (en cours ou dans les 2 heures)
-    { const t = state.t; passages.filter((p) => !p.inconnu && p.f > t && p.d - t <= 120).forEach((p) => { const l = lieux[p.lieu]; if (!l || l.lat == null) return; const d = km(l.lat, l.lng); if (d > r) return;
-      const avant = p.d - t, reste = p.f - t, ok = !!p.constate;
-      const st = avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ['En cours', 'vert'];
-      ligne({ fin: now + reste * 60000, conf: ok ? (p.confirmations || 1) : 0, km: d, t: now + avant * 60000, heure: p.debut, porte: l.nom, st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Line-up', attr: `data-lieu="${l.id}"`, nom: p.dj,
-        l1: avant > 0 ? 'dans ' + dur(avant) : 'encore ' + dur(reste), l2: [[esc(l.nom) + (p.salle ? ' · ' + esc(p.salle) : '') + ' · ' + fK(d)]], vol: p.dj }); }); }
-    // Dubaï : les soirées de ce soir et demain (agenda Platinumlist / RA)
-    soireesDubai().filter((x) => x.date === auj || x.date === dem).forEach((x) => { const lv = LIEUX_DEST[x.lieu], la = lv ? lv.lat : DEST.dubai.centre[0], lo = lv ? lv.lng : DEST.dubai.centre[1], d = km(la, lo); if (d > r) return;
-      const deb = msDe(x.date, x.heure), avant = deb ? (deb - now) / 60000 : null, dj = String(x.djs || '').split(/,| b2b | & /i)[0].trim();
-      const st = x.date === dem ? ['Demain', 'gris'] : avant == null ? ['Ce soir', 'bleu'] : avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ['En cours', 'vert'];
-      ligne({ lieuId: x.lieu, lieuPin: pinLieu({ nom: x.nomLieu }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || '--:--', porte: x.nomLieu, st, k: 'decl', tag: 'Soirée', attr: dj ? `data-dj-pro="${esc(dj)}"` : '', nom: x.titre,
-        l1: x.date === dem ? 'demain' + (x.heure ? ' à ' + x.heure : '') : x.heure ? 'à ' + x.heure : 'ce soir', l2: [[esc(x.nomLieu) + ' · ' + fK(d)], [esc(String(x.djs || '').slice(0, 60))]], vol: '' }); });
-    // Les DJ du Top 100 qui jouent ce soir ou demain dans une ville du rayon
-    const V = new Map((window.VILLES || []).map((v) => [sansAccent(v[0]).toLowerCase(), v]));
-    Object.entries(window.AGENDA_DJS || {}).forEach(([nomDj, o]) => (o.avenir || []).forEach((row) => { if (row[0] !== auj && row[0] !== dem) return; const v = V.get(sansAccent(String(row[3] || '')).toLowerCase()); if (!v) return; const d = km(v[2], v[3]); if (d > r) return;
-      const deb = msDe(row[0], row[7]);
-      ligne({ km: d, t: deb || msDe(row[0], '23:58'), heure: row[7] || '--:--', porte: row[2], st: row[0] === dem ? ['Demain', 'gris'] : ['Ce soir', 'bleu'], k: 'decl', tag: 'Top 100', attr: `data-dj-pro="${esc(nomDj)}"`, nom: nomDj,
-        l1: row[0] === dem ? 'demain' : 'ce soir', l2: [[esc(row[2]) + ' · ' + esc(row[3]) + ' · ' + fK(d)]], vol: nomDj }); }));
     // D'abord ce qui est en live en ce moment (DJ en cours, dernier appel, spots signalés), puis le reste ; dans chaque groupe, du plus proche au plus loin
     const enLive = (o) => o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert';
     // Ordre : ce qui est en live d'abord, et parmi eux celui qui se termine le plus tôt ; puis les départs à venir, par heure de fin estimée (début + 5 h si on ne la connaît pas)
@@ -2641,14 +2610,26 @@
   Object.assign(SUD.lieux, RADAR.lieux); Object.assign(SUD.sources, RADAR.sources);
   SUD.soirees.push(...RADAR.soirees);
   const radarUrl = (value) => { try { const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch (e) { return ''; } };
+  function soireesCarteJour() {
+    const centre = DEST[state.dest].centre, auj = iso(new Date());
+    return SUD.soirees.filter((x) => x.date === auj && SUD.lieux[x.lieu])
+      .map((x) => ({ ...x, l: SUD.lieux[x.lieu] }))
+      .filter((x) => distKm(centre, [x.l.lat, x.l.lng]) <= state.ckRayon);
+  }
   function marqueursRadar() {
-    if (!DEST[state.dest].local) return;
-    soireesAvecKm().filter((x) => x.km <= RAYONS[state.rayonIdx] && (!state.radarDep || x.l.dep === state.radarDep)).slice(0, 300).forEach((x) => {
-      const marker = L.marker([x.l.lat, x.l.lng], { icon: L.divIcon({ className: 'decl-pin', iconSize: [30, 30], iconAnchor: [15, 15], html: '♪' }), title: x.nom + ' · ' + x.date });
-      marker.on('click', () => { state.radarDep = x.l.dep; state.sudQuand = null; state.sudType = 'tout'; state.sudMesDj = false; setTab('agenda'); });
+    soireesCarteJour().forEach((x) => {
+      const marker = L.marker([x.l.lat, x.l.lng], { icon: L.divIcon({ className: 'decl-pin', iconSize: [30, 30], iconAnchor: [15, 15], html: '♪' }), title: x.nom + ' · aujourd’hui' });
+      const url = radarUrl(x.ticketUrl || x.url);
+      marker.bindPopup(`<div class="pop-venue">${esc(x.nom)}</div><div class="pop-slot">${esc(x.l.nom)} · ${x.heure ? esc(x.heure) : 'Horaire non communiqué'} · Soirée annoncée aujourd’hui</div>${x.djs ? `<div class="pop-dj">${esc(x.djs)}</div>` : ''}${url ? `<a class="pop-btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Infos sur la soirée</a>` : ''}`);
       marker.addTo(layer);
     });
   }
+  document.addEventListener('click', (e) => {
+    const bouton = e.target.closest('[data-soiree-jour]'); if (!bouton) return;
+    const x = soireesCarteJour().find((row) => row.id === bouton.dataset.soireeJour);
+    const url = x && radarUrl(x.ticketUrl || x.url); if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  });
+
 
   const NOMS_DEP = { '13': 'Bouches-du-Rhône', '83': 'Var', '06': 'Alpes-Maritimes', '75': 'Paris', '77': 'Seine-et-Marne', '92': 'Hauts-de-Seine', '93': 'Seine-Saint-Denis',
     '69': 'Rhône', '42': 'Loire', '38': 'Isère', '74': 'Haute-Savoie', '39': 'Jura', '68': 'Haut-Rhin', '59': 'Nord', '62': 'Pas-de-Calais', '33': 'Gironde',
@@ -3297,6 +3278,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const djDe = (x) => tousDjsPro().find((d) => d.id === x.dj);
   const lieuDe = (x) => x.lieu ? (lieux[x.lieu] || LIEUX_DEST[x.lieu]) : { nom: x.nomLieu || 'Spot', lat: x.lat, lng: x.lng, zone: '' };
   const declActive = (x) => Date.now() < x.fin && !(x.contest >= 2 && x.contest > x.conf);
+  function declDuJour(x) {
+    const now = Date.now(), debut = Number(x.debut);
+    return Number.isFinite(debut) && declActive(x) && (debut <= now || iso(new Date(debut)) === iso(new Date(now)));
+  }
   const declConfirmee = (x) => x.conf >= 2;
   const declsVisibles = () => DECLS.filter((x) => x.dest === state.dest && declActive(x) && djDe(x));
   const hm = (ms) => { const d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
@@ -3367,7 +3352,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
 
   function marqueursDecls() {
     const groupes = {};
-    declsVisibles().forEach((x) => { const l = lieuDe(x), d = djDe(x); if (!l || l.lat == null) return; const k = l.lat.toFixed(4) + ',' + l.lng.toFixed(4);
+    declsVisibles().filter(declDuJour).forEach((x) => { const l = lieuDe(x), d = djDe(x); if (!l || l.lat == null) return; const k = l.lat.toFixed(4) + ',' + l.lng.toFixed(4);
       (groupes[k] = groupes[k] || { l, ok: false, html: [], pin: '', nom1: d.nom }); groupes[k].pin = groupes[k].pin || pinDj(d);
       const ok = declConfirmee(x); groupes[k].ok = groupes[k].ok || ok;
       groupes[k].html.push(entreeBulle({ k: ok ? 'live' : 'decl', lieu: esc(l.nom), etat: ok ? 'En live' : 'Déclaré', tete: avatarDj(d.nom, 'pb-av'), t: d.nom,
@@ -3387,7 +3372,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   function renderCartesMap() {
     const box = $('#map-cartes'); if (!box) return;
     // Le bandeau d'actu défile en bas de la grande carte, comme sur l'accueil et les pages saison
-    const fil = filDest(); box.innerHTML = fil; box.hidden = !fil; box.classList.add('avec-fil'); return;
+    const fil = filDest(true); box.innerHTML = fil; box.hidden = !fil; box.classList.add('avec-fil'); return;
     const c = (DEST[state.dest] || {}).centre, dist = (la, lo) => c && la != null ? distKm(c, [la, lo]) : null;
     const kmTxt = (k) => k == null ? '' : ' · ' + (k < 1 ? '< 1' : Math.round(k)) + ' km';
     const ds = declsVisibles().map((x) => { const d = djDe(x), l = lieuDe(x); return `<button class="mc-carte mc-decl" data-mc-ll="${l.lat},${l.lng}">
