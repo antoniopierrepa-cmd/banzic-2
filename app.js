@@ -2482,9 +2482,15 @@
         SUD.lieux[id] = { nom, lat: c[0] + dla, lng: c[1] + dlo, adresse: adr, ville: '' };
         SUD.soirees.push({ id: 'soiree-' + id, nom: titre, date: auj, heure: h(min), djs, lieu: id, type, test: true });
       });
+    // Pour que le test ressemble au vrai : les 3 soirées sont placées dans de vrais lieux Google autour de toi (avec leur photo)
+    lieuxGoogle(c[0], c[1], 3000).then((gs) => { if (!gs.length) return;
+      ['test-club', 'test-bar', 'test-resto'].forEach((id, i) => { const g = gs[i]; if (!g) return;
+        Object.assign(SUD.lieux[id], { nom: g.nom, lat: g.lat, lng: g.lng, adresse: g.lib + (g.zone ? ' · ' + g.zone : ''), gid: g.gid }); if (g.photo) G_PHOTOS[g.gid] = g.photo; });
+      if (state.tab === 'checkin') renderCheckin(); });
   }
+  let CK_OUVERTE = null;
   function ouvrirFicheSoiree(cle) {
-    const f = CK_FICHES[cle]; if (!f) return;
+    const f = CK_FICHES[cle]; if (!f) return; CK_OUVERTE = cle;
     const scr = $('#screen-soiree'); if (!scr) return;
     const l = f.lieu || {}, gm = l.gid ? gMapsUrl(l.gid) : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([l.nom, l.adresse].filter(Boolean).join(' ') || (l.lat + ',' + l.lng));
     const fK = (x) => x == null ? '' : x < 1 ? '< 1 km' : Math.round(x) + ' km';
@@ -2495,15 +2501,18 @@
         ${f.temp != null ? `<p class="sf-ambiance"><span class="thermo-mini t${f.temp}"><i></i></span><span class="thermo-txt t${f.temp}">Ambiance ${['froide', 'moyenne', 'chaude'][f.temp]}</span>${f.conf ? ` · ${f.conf} Banger${f.conf > 1 ? 's' : ''} confirment` : ''}</p>` : ''}
         ${f.com ? `<p class="sf-com fil-com">« ${esc(f.com)} »</p>` : ''}</div>
       <div class="sf-bloc"><div class="sf-titre">Le lieu</div>
-        <div class="sf-lieu"><div class="sf-photo" ${l.gid ? `data-gphoto="${esc(l.gid)}"` : ''}></div>
+        <div class="sf-lieu"><div class="sf-photo" data-sf-photo="1"></div>
           <b>${esc(l.nom || 'Lieu')}</b>${l.adresse ? `<small>${esc(l.adresse)}</small>` : ''}${f.km != null ? `<small>À ${fK(f.km)} de toi</small>` : ''}
-          <div class="sf-actions"><button type="button" class="sf-btn plein" data-soiree-carte="${cle}">Voir sur la carte</button><a class="sf-btn" href="${gm}" target="_blank" rel="noopener">Google Maps</a></div></div></div>
+          <div class="sf-actions"><button type="button" class="sf-btn plein" data-soiree-carte="${cle}">Voir sur la carte</button><a class="sf-btn" data-sf-gm="1" href="${gm}" target="_blank" rel="noopener">Google Maps</a></div></div></div>
       <div class="sf-bloc"><div class="sf-titre">Line-up</div>
         ${f.djs && f.djs.length ? `<div class="sf-lineup">${f.djs.map((n) => `<button type="button" class="sf-dj" data-dj-pro="${esc(n)}"><span class="sf-av">${avatarDj(n)}</span><b>${esc(n)}</b><span class="sf-fleche" aria-hidden="true">›</span></button>`).join('')}</div>`
           : '<p class="aide">Line-up non communiqué pour l\'instant.</p>'}</div>
       ${f.url ? `<a class="btn-plein sf-billets" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">Infos et billets</a>` : ''}`;
     // la photo Google du lieu arrive après (seulement si le lieu vient de Google Maps)
-    const ph = scr.querySelector('[data-gphoto]'); if (ph) photoGoogle(ph.dataset.gphoto).then((p) => { ph.innerHTML = p ? ficheGoogle(p, ph.dataset.gphoto).replace(/<a class="g-lien"[^]*$/, '') : ''; });
+    const ph = scr.querySelector('[data-sf-photo]');
+    (l.gid ? Promise.resolve(l.gid) : gidPour(l)).then((gid) => { if (!gid) return; l.gid = gid;
+      const a = scr.querySelector('[data-sf-gm]'); if (a) a.href = gMapsUrl(gid);
+      return photoGoogle(gid).then((p) => { if (ph && p && CK_OUVERTE === cle) ph.innerHTML = ficheGoogle(p, gid).replace(/<a class="g-lien"[^]*$/, ''); }); });
     document.querySelectorAll('.app > .screen').forEach((x) => { x.hidden = x !== scr; });
     scr.hidden = false; scr.scrollTop = 0;
   }
@@ -3092,6 +3101,24 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (G_PHOTOS[gid] !== undefined) return G_PHOTOS[gid];
     try { const r = await fetch('https://places.googleapis.com/v1/places/' + encodeURIComponent(gid), { headers: { 'X-Goog-Api-Key': GKEY, 'X-Goog-FieldMask': 'photos' } });
       const j = r.ok ? await r.json() : {}; return (G_PHOTOS[gid] = (j.photos || [])[0] || null); } catch (e) { return null; }
+  }
+  // Retrouver un lieu dans Google Maps par son nom (et sa position) : on ne garde que son identifiant Google
+  const G_IDS = store.get('gids', {});
+  async function gidPour(l) {
+    if (!GKEY || !l || !l.nom) return null;
+    const cle = sansAccent(l.nom).toLowerCase() + '|' + (l.lat != null ? (+l.lat).toFixed(3) + ',' + (+l.lng).toFixed(3) : '');
+    if (G_IDS[cle] !== undefined) return G_IDS[cle];
+    try {
+      const corps = { textQuery: [l.nom, l.adresse].filter(Boolean).join(' '), maxResultCount: 3, languageCode: 'fr' };
+      if (l.lat != null) corps.locationBias = { circle: { center: { latitude: +l.lat, longitude: +l.lng }, radius: 2000 } };
+      const r = await fetch('https://places.googleapis.com/v1/places:searchText', { method: 'POST', signal: avecDelai(8000),
+        headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GKEY, 'X-Goog-FieldMask': 'places.id,places.location,places.photos' }, body: JSON.stringify(corps) });
+      if (!r.ok) return null;
+      const p = ((await r.json()).places || []).find((x) => l.lat == null || distKm([+l.lat, +l.lng], [x.location.latitude, x.location.longitude]) < 0.4);
+      if (p && G_PHOTOS[p.id] === undefined) G_PHOTOS[p.id] = (p.photos || [])[0] || null;
+      G_IDS[cle] = p ? p.id : null; store.set('gids', G_IDS);
+      return G_IDS[cle];
+    } catch (e) { return null; }
   }
   const ficheGoogle = (ph, gid) => !gid ? '' : (ph ? `<figure class="g-photo"><img src="${gPhotoUrl(ph)}" alt="" loading="lazy"><figcaption><span>Photo${gAuteur(ph) ? ' : <a href="' + esc(gAuteur(ph).uri || '#') + '" target="_blank" rel="noopener">' + esc(gAuteur(ph).displayName || '') + '</a>' : ''}</span><span class="g-marque">Google Maps</span></figcaption></figure>` : '')
     + `<a class="g-lien" href="${gMapsUrl(gid)}" target="_blank" rel="noopener">Voir sur Google Maps</a>`;
