@@ -1,3 +1,22 @@
-// Agenda « Autour de moi » : vidé le 11/11/2026. Les soirées réelles arriveront par le radar (sources autorisées)
-// et par les déclarations des DJ et des Bangers.
-window.AGENDA_SUD = { maj: '', lieux: {}, sources: {}, soirees: [] };
+// BANZIC — lieux locaux identifiés pour le radar (20 km autour de Hyères).
+// Les événements ne sont affichés que lorsqu'une date est confirmée par une source.
+window.AGENDA_SUD = {
+  maj: '2026-11-12',
+  lieux: {
+    'local-brewpub-hyeres': {
+      nom: 'Brew Pub',
+      ville: 'Hyères',
+      country: 'FR',
+      dep: '83',
+      adresse: '494 rue Nicéphore Niépce, ZA le Palyvestre, 83400 Hyères',
+      url: 'https://www.brewpub.online/news',
+      categories: ['pub', 'concert', 'dj'],
+      approx: true
+    }
+  },
+  sources: {
+    'brewpub-officiel': 'https://www.brewpub.online/news'
+  },
+  // Ne pas transformer le programme hebdomadaire en soirées datées non confirmées.
+  soirees: []
+};
