@@ -21,21 +21,21 @@ export function normalize(row, source, today) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date || date < today) return null;
   if (['cancelled', 'canceled', 'postponed'].includes(row.status)) return null;
   const country = text(row.country) || 'FR';
-  const dep = country === 'BE' ? 'BE' : text(row.dep) || departmentFromPostal(row.postalCode);
+  const dep = country !== 'FR' ? country : text(row.dep) || departmentFromPostal(row.postalCode);
   const url = safeUrl(row.url);
-  if (!['FR', 'BE'].includes(country) || (country === 'FR' && !departments[dep]) || !url || !text(row.nom) || !text(row.lieu)) return null;
+  if (!['FR', 'BE', 'ES'].includes(country) || (country === 'FR' && !departments[dep]) || !url || !text(row.nom) || !text(row.lieu)) return null;
   return { id: source.id + ':' + text(row.id || url), src: source.id, nom: text(row.nom), date,
     heure: /^([01]\d|2[0-3]):[0-5]\d$/.test(row.heure || '') ? row.heure : '',
     djs: Array.isArray(row.lineup) ? row.lineup.map(text).filter(Boolean).join(', ') : text(row.djs),
     type: ['club', 'festival', 'concert', 'bar', 'restaurant', 'soiree'].includes(row.type) ? row.type : 'club',
     djSet: row.djSet !== false && (row.djSet === true || (Array.isArray(row.lineup) ? row.lineup.some(Boolean) : !!text(row.djs))),
-    genres: text(row.genres), prix: text(row.prix), url, ticketUrl: safeUrl(row.ticketUrl), flyerUrl: safeUrl(row.flyerUrl),
+    scheduleNote: text(row.scheduleNote), genres: text(row.genres), prix: text(row.prix), url, ticketUrl: safeUrl(row.ticketUrl), flyerUrl: safeUrl(row.flyerUrl),
     sourceName: text(row.sourceName), sourceUpdatedAt: text(row.sourceUpdatedAt), sourceLicense: safeUrl(row.sourceLicense), sourceRecordUrl: safeUrl(row.sourceRecordUrl),
     venue: { nom: text(row.lieu), ville: text(row.ville), country, dep, lat, lng, approx: row.positionApproximate === true } };
 }
 export function snapshot(rows, sources, now = new Date()) {
   const today = now.toISOString().slice(0, 10), lieux = {}, soirees = [], seen = new Set();
-  const countryCoverage = { FR: 0, BE: 0 };
+  const countryCoverage = { FR: 0, BE: 0, ES: 0 };
   const coverage = Object.fromEntries(Object.keys(departments).map(d => [d, 0]));
   for (const { row, source } of rows) {
     const e = normalize(row, source, today); if (!e) continue;
@@ -54,9 +54,11 @@ export function snapshot(rows, sources, now = new Date()) {
 }
 async function main() {
   const input = JSON.parse(await readFile('data/radar-events.json', 'utf8'));
-  const belgium = JSON.parse(await readFile('data/radar-belgium.json', 'utf8'));
-  input.events.push(...belgium.events);
-  input.sources.push(...belgium.sources.filter(s => !input.sources.some(x => x.id === s.id)));
+  for (const countryFile of ['data/radar-belgium.json', 'data/radar-spain.json']) {
+    const countryData = JSON.parse(await readFile(countryFile, 'utf8'));
+    input.events.push(...countryData.events);
+    input.sources.push(...countryData.sources.filter(s => !input.sources.some(x => x.id === s.id)));
+  }
   const sources = input.sources;
   if (!Array.isArray(sources) || !Array.isArray(input.events)) throw new Error('Format radar invalide');
   const ids = new Set();

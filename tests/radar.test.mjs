@@ -35,3 +35,8 @@ test('la Belgique conserve sa géolocalisation et n’est pas un département fr
  assert.equal(normalize({...belgian,country:'ZZ'},source,'2026-11-12'),null);
  assert.equal(normalize({...belgian,lineup:['Groupe live'],djSet:false},source,'2026-11-12').djSet,false);
 });
+test('Espagne et îles : événements géolocalisés sans département ni DJ obligatoire', () => {
+ const espagne={...row,id:'espagne-test',country:'ES',dep:'',ville:'Barcelona',lat:41.38,lng:2.17,lineup:[],djSet:false,scheduleNote:'Ouverture 0h30 · nuit suivant le 12/11'};
+ const event=normalize(espagne,source,'2026-11-12');assert.equal(event.venue.country,'ES');assert.equal(event.venue.dep,'ES');assert.equal(event.djSet,false);assert.equal(event.scheduleNote,espagne.scheduleNote);
+ const data=snapshot([{row:espagne,source},{row,source}],[source],new Date('2026-11-12T10:00:00Z'));assert.equal(data.countryCoverage.ES,1);assert.equal(data.coverage['83'],1);assert.equal(Object.keys(data.coverage).length,101);
+});
