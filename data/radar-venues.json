@@ -1,6 +1,6 @@
 {
   "phase": "manual",
-  "updatedAt": "2026-11-11T23:57:20.044Z",
+  "updatedAt": "2026-11-12T00:07:42.351Z",
   "scope": "Var (83)",
   "note": "Répertoire initial constitué manuellement. Une présence ici confirme le lieu ou sa source, pas une soirée à une date donnée. L’automatisation générale sera activée après validation du répertoire.",
   "venues": [
@@ -192,6 +192,20 @@
       "status": "lieu-identifie-programmation-a-relever",
       "note": "Établissement identifié par l’office de tourisme et site du restaurant. Page Facebook découverte via VisitVar, accès limité ici. Horaires anciens à revérifier ; aucune soirée datée déduite de la seule ouverture."
     },
+    {
+      "id": "809",
+      "nom": "809 Social Club",
+      "ville": "La Garde",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.visitvar.fr/fiche/discotheque-809-social-club-6086701",
+      "instagram": "https://www.instagram.com/809_club/",
+      "facebook": "https://www.facebook.com/809ClubLaGarde/",
+      "status": "lieu-identifie-programmation-a-relever",
+      "note": "Lieu confirmé par les offices de tourisme, publication de septembre 2026 repérée et signalé ouvert par l’utilisateur. Vérifier les prochaines dates sur les pages officielles. Ne pas confondre fermé à cette heure et fermeture définitive."
+    }
+  ],
+  "unverifiedCandidates": [
     {
       "id": "venium",
       "nom": "Venium",
