@@ -1,10 +1,10 @@
 name: Vérifier le radar national
 on:
   pull_request:
-    paths: ['app.js', 'agenda-radar.js', 'scripts/radar.mjs', 'tests/**', 'data/radar-events.json', '.github/workflows/radar.yml']
+    paths: ['app.js', 'agenda-radar.js', 'scripts/**', 'tests/**', 'data/radar-events.json', '.github/workflows/radar.yml']
   push:
     branches: [main]
-    paths: ['app.js', 'agenda-radar.js', 'scripts/radar.mjs', 'tests/**', 'data/radar-events.json', '.github/workflows/radar.yml']
+    paths: ['app.js', 'agenda-radar.js', 'scripts/**', 'tests/**', 'data/radar-events.json', '.github/workflows/radar.yml']
 permissions:
   contents: read
 jobs:
@@ -15,6 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: python -m unittest discover -s tests -p 'test_*.py'
       - run: node --test tests/radar.test.mjs
       - run: node --check app.js
       - run: node --check agenda-radar.js

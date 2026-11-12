@@ -1,0 +1,826 @@
+{
+  "updatedAt": "2026-11-12T00:12:39.375047+00:00",
+  "scope": "101 départements français",
+  "source": "https://www.data.gouv.fr/datasets/datatourisme-la-plateforme-nationale-des-donnees-touristiques",
+  "license": "https://www.etalab.gouv.fr/licence-ouverte-open-licence/",
+  "exhaustive": false,
+  "note": "Première collecte nationale. Les réseaux sociaux et tous les établissements ne sont pas encore répertoriés. Les périodes continues et horaires d’ouverture ne créent aucune soirée.",
+  "departments": {
+    "01": {
+      "sourceRecordsExamined": 574,
+      "importedEvents": 11,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 12,
+      "publishedEvents": 12
+    },
+    "02": {
+      "sourceRecordsExamined": 169,
+      "importedEvents": 4,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 4,
+      "publishedEvents": 2
+    },
+    "03": {
+      "sourceRecordsExamined": 808,
+      "importedEvents": 25,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 25,
+      "publishedEvents": 25
+    },
+    "04": {
+      "sourceRecordsExamined": 95,
+      "importedEvents": 1,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 1,
+      "publishedEvents": 1
+    },
+    "05": {
+      "sourceRecordsExamined": 57,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "06": {
+      "sourceRecordsExamined": 215,
+      "importedEvents": 2,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 2,
+      "publishedEvents": 2
+    },
+    "07": {
+      "sourceRecordsExamined": 6,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "08": {
+      "sourceRecordsExamined": 242,
+      "importedEvents": 10,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 10,
+      "publishedEvents": 10
+    },
+    "09": {
+      "sourceRecordsExamined": 51,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "10": {
+      "sourceRecordsExamined": 578,
+      "importedEvents": 15,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 15,
+      "publishedEvents": 15
+    },
+    "11": {
+      "sourceRecordsExamined": 226,
+      "importedEvents": 1,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 1,
+      "publishedEvents": 1
+    },
+    "12": {
+      "sourceRecordsExamined": 859,
+      "importedEvents": 55,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 55,
+      "publishedEvents": 55
+    },
+    "13": {
+      "sourceRecordsExamined": 2385,
+      "importedEvents": 38,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 6,
+      "totalBeforeDeduplication": 44,
+      "publishedEvents": 43
+    },
+    "14": {
+      "sourceRecordsExamined": 1002,
+      "importedEvents": 47,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 48,
+      "publishedEvents": 46
+    },
+    "15": {
+      "sourceRecordsExamined": 53,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "16": {
+      "sourceRecordsExamined": 889,
+      "importedEvents": 18,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 18,
+      "publishedEvents": 18
+    },
+    "17": {
+      "sourceRecordsExamined": 1792,
+      "importedEvents": 89,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 2,
+      "totalBeforeDeduplication": 91,
+      "publishedEvents": 90
+    },
+    "18": {
+      "sourceRecordsExamined": 442,
+      "importedEvents": 16,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 17,
+      "publishedEvents": 16
+    },
+    "19": {
+      "sourceRecordsExamined": 554,
+      "importedEvents": 22,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 23,
+      "publishedEvents": 23
+    },
+    "21": {
+      "sourceRecordsExamined": 540,
+      "importedEvents": 22,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 22,
+      "publishedEvents": 22
+    },
+    "22": {
+      "sourceRecordsExamined": 1399,
+      "importedEvents": 43,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 44,
+      "publishedEvents": 43
+    },
+    "23": {
+      "sourceRecordsExamined": 449,
+      "importedEvents": 12,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 12,
+      "publishedEvents": 12
+    },
+    "24": {
+      "sourceRecordsExamined": 1336,
+      "importedEvents": 33,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 34,
+      "publishedEvents": 34
+    },
+    "25": {
+      "sourceRecordsExamined": 744,
+      "importedEvents": 10,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 10,
+      "publishedEvents": 10
+    },
+    "26": {
+      "sourceRecordsExamined": 1772,
+      "importedEvents": 54,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 3,
+      "totalBeforeDeduplication": 57,
+      "publishedEvents": 57
+    },
+    "27": {
+      "sourceRecordsExamined": 352,
+      "importedEvents": 6,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 3,
+      "totalBeforeDeduplication": 9,
+      "publishedEvents": 9
+    },
+    "28": {
+      "sourceRecordsExamined": 369,
+      "importedEvents": 12,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 12,
+      "publishedEvents": 12
+    },
+    "29": {
+      "sourceRecordsExamined": 1944,
+      "importedEvents": 43,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 3,
+      "totalBeforeDeduplication": 46,
+      "publishedEvents": 44
+    },
+    "2A": {
+      "sourceRecordsExamined": 4,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "2B": {
+      "sourceRecordsExamined": 9,
+      "importedEvents": 0,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 1,
+      "publishedEvents": 1
+    },
+    "30": {
+      "sourceRecordsExamined": 145,
+      "importedEvents": 0,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 12,
+      "totalBeforeDeduplication": 12,
+      "publishedEvents": 12
+    },
+    "31": {
+      "sourceRecordsExamined": 1085,
+      "importedEvents": 35,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 10,
+      "totalBeforeDeduplication": 45,
+      "publishedEvents": 44
+    },
+    "32": {
+      "sourceRecordsExamined": 101,
+      "importedEvents": 1,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 1,
+      "publishedEvents": 1
+    },
+    "33": {
+      "sourceRecordsExamined": 997,
+      "importedEvents": 47,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 21,
+      "totalBeforeDeduplication": 68,
+      "publishedEvents": 62
+    },
+    "34": {
+      "sourceRecordsExamined": 2412,
+      "importedEvents": 109,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 2,
+      "totalBeforeDeduplication": 111,
+      "publishedEvents": 111
+    },
+    "35": {
+      "sourceRecordsExamined": 535,
+      "importedEvents": 14,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 23,
+      "totalBeforeDeduplication": 37,
+      "publishedEvents": 34
+    },
+    "36": {
+      "sourceRecordsExamined": 543,
+      "importedEvents": 6,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 6,
+      "publishedEvents": 6
+    },
+    "37": {
+      "sourceRecordsExamined": 544,
+      "importedEvents": 4,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 5,
+      "publishedEvents": 5
+    },
+    "38": {
+      "sourceRecordsExamined": 330,
+      "importedEvents": 0,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 1,
+      "publishedEvents": 1
+    },
+    "39": {
+      "sourceRecordsExamined": 648,
+      "importedEvents": 14,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 14,
+      "publishedEvents": 14
+    },
+    "40": {
+      "sourceRecordsExamined": 1445,
+      "importedEvents": 31,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 31,
+      "publishedEvents": 31
+    },
+    "41": {
+      "sourceRecordsExamined": 128,
+      "importedEvents": 0,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 1,
+      "publishedEvents": 1
+    },
+    "42": {
+      "sourceRecordsExamined": 185,
+      "importedEvents": 0,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 1,
+      "publishedEvents": 1
+    },
+    "43": {
+      "sourceRecordsExamined": 1226,
+      "importedEvents": 19,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 19,
+      "publishedEvents": 18
+    },
+    "44": {
+      "sourceRecordsExamined": 1297,
+      "importedEvents": 31,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 44,
+      "totalBeforeDeduplication": 75,
+      "publishedEvents": 74
+    },
+    "45": {
+      "sourceRecordsExamined": 518,
+      "importedEvents": 23,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 12,
+      "totalBeforeDeduplication": 35,
+      "publishedEvents": 32
+    },
+    "46": {
+      "sourceRecordsExamined": 1049,
+      "importedEvents": 32,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 32,
+      "publishedEvents": 31
+    },
+    "47": {
+      "sourceRecordsExamined": 678,
+      "importedEvents": 44,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 44,
+      "publishedEvents": 44
+    },
+    "48": {
+      "sourceRecordsExamined": 499,
+      "importedEvents": 10,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 10,
+      "publishedEvents": 5
+    },
+    "49": {
+      "sourceRecordsExamined": 787,
+      "importedEvents": 9,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 9,
+      "publishedEvents": 9
+    },
+    "50": {
+      "sourceRecordsExamined": 0,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "51": {
+      "sourceRecordsExamined": 497,
+      "importedEvents": 6,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 3,
+      "totalBeforeDeduplication": 9,
+      "publishedEvents": 9
+    },
+    "52": {
+      "sourceRecordsExamined": 240,
+      "importedEvents": 6,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 7,
+      "publishedEvents": 7
+    },
+    "53": {
+      "sourceRecordsExamined": 545,
+      "importedEvents": 1,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 1,
+      "publishedEvents": 1
+    },
+    "54": {
+      "sourceRecordsExamined": 506,
+      "importedEvents": 13,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 13,
+      "publishedEvents": 12
+    },
+    "55": {
+      "sourceRecordsExamined": 267,
+      "importedEvents": 22,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 22,
+      "publishedEvents": 22
+    },
+    "56": {
+      "sourceRecordsExamined": 577,
+      "importedEvents": 3,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 3,
+      "publishedEvents": 3
+    },
+    "57": {
+      "sourceRecordsExamined": 951,
+      "importedEvents": 21,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 21,
+      "publishedEvents": 21
+    },
+    "58": {
+      "sourceRecordsExamined": 368,
+      "importedEvents": 19,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 3,
+      "totalBeforeDeduplication": 22,
+      "publishedEvents": 22
+    },
+    "59": {
+      "sourceRecordsExamined": 291,
+      "importedEvents": 2,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 20,
+      "totalBeforeDeduplication": 22,
+      "publishedEvents": 22
+    },
+    "60": {
+      "sourceRecordsExamined": 273,
+      "importedEvents": 10,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 10,
+      "publishedEvents": 9
+    },
+    "61": {
+      "sourceRecordsExamined": 563,
+      "importedEvents": 60,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 61,
+      "publishedEvents": 61
+    },
+    "62": {
+      "sourceRecordsExamined": 8915,
+      "importedEvents": 3,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 10,
+      "totalBeforeDeduplication": 13,
+      "publishedEvents": 13
+    },
+    "63": {
+      "sourceRecordsExamined": 298,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "64": {
+      "sourceRecordsExamined": 3464,
+      "importedEvents": 35,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 36,
+      "publishedEvents": 35
+    },
+    "65": {
+      "sourceRecordsExamined": 820,
+      "importedEvents": 17,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 17,
+      "publishedEvents": 16
+    },
+    "66": {
+      "sourceRecordsExamined": 522,
+      "importedEvents": 10,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 4,
+      "totalBeforeDeduplication": 14,
+      "publishedEvents": 14
+    },
+    "67": {
+      "sourceRecordsExamined": 1672,
+      "importedEvents": 51,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 51,
+      "publishedEvents": 51
+    },
+    "68": {
+      "sourceRecordsExamined": 1455,
+      "importedEvents": 35,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 3,
+      "totalBeforeDeduplication": 38,
+      "publishedEvents": 38
+    },
+    "69": {
+      "sourceRecordsExamined": 440,
+      "importedEvents": 4,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 4,
+      "totalBeforeDeduplication": 8,
+      "publishedEvents": 8
+    },
+    "70": {
+      "sourceRecordsExamined": 259,
+      "importedEvents": 9,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 10,
+      "publishedEvents": 10
+    },
+    "71": {
+      "sourceRecordsExamined": 811,
+      "importedEvents": 11,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 11,
+      "publishedEvents": 11
+    },
+    "72": {
+      "sourceRecordsExamined": 689,
+      "importedEvents": 13,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 3,
+      "totalBeforeDeduplication": 16,
+      "publishedEvents": 16
+    },
+    "73": {
+      "sourceRecordsExamined": 538,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "74": {
+      "sourceRecordsExamined": 369,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "75": {
+      "sourceRecordsExamined": 78,
+      "importedEvents": 0,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 152,
+      "totalBeforeDeduplication": 152,
+      "publishedEvents": 152
+    },
+    "76": {
+      "sourceRecordsExamined": 1586,
+      "importedEvents": 63,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 3,
+      "totalBeforeDeduplication": 66,
+      "publishedEvents": 66
+    },
+    "77": {
+      "sourceRecordsExamined": 56,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "78": {
+      "sourceRecordsExamined": 59,
+      "importedEvents": 1,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 5,
+      "totalBeforeDeduplication": 6,
+      "publishedEvents": 6
+    },
+    "79": {
+      "sourceRecordsExamined": 689,
+      "importedEvents": 16,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 16,
+      "publishedEvents": 16
+    },
+    "80": {
+      "sourceRecordsExamined": 354,
+      "importedEvents": 8,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 8,
+      "publishedEvents": 8
+    },
+    "81": {
+      "sourceRecordsExamined": 123,
+      "importedEvents": 5,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 6,
+      "publishedEvents": 6
+    },
+    "82": {
+      "sourceRecordsExamined": 101,
+      "importedEvents": 4,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 4,
+      "publishedEvents": 4
+    },
+    "83": {
+      "sourceRecordsExamined": 258,
+      "importedEvents": 1,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 6,
+      "totalBeforeDeduplication": 35,
+      "publishedEvents": 35
+    },
+    "84": {
+      "sourceRecordsExamined": 226,
+      "importedEvents": 2,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 3,
+      "publishedEvents": 3
+    },
+    "85": {
+      "sourceRecordsExamined": 745,
+      "importedEvents": 24,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 8,
+      "totalBeforeDeduplication": 32,
+      "publishedEvents": 30
+    },
+    "86": {
+      "sourceRecordsExamined": 455,
+      "importedEvents": 7,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 7,
+      "publishedEvents": 7
+    },
+    "87": {
+      "sourceRecordsExamined": 895,
+      "importedEvents": 24,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 3,
+      "totalBeforeDeduplication": 27,
+      "publishedEvents": 27
+    },
+    "88": {
+      "sourceRecordsExamined": 393,
+      "importedEvents": 21,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 4,
+      "totalBeforeDeduplication": 25,
+      "publishedEvents": 25
+    },
+    "89": {
+      "sourceRecordsExamined": 450,
+      "importedEvents": 10,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 10,
+      "publishedEvents": 10
+    },
+    "90": {
+      "sourceRecordsExamined": 127,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "91": {
+      "sourceRecordsExamined": 103,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "92": {
+      "sourceRecordsExamined": 13,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "93": {
+      "sourceRecordsExamined": 55,
+      "importedEvents": 0,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 9,
+      "totalBeforeDeduplication": 9,
+      "publishedEvents": 9
+    },
+    "94": {
+      "sourceRecordsExamined": 60,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "95": {
+      "sourceRecordsExamined": 23,
+      "importedEvents": 0,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 4,
+      "totalBeforeDeduplication": 4,
+      "publishedEvents": 4
+    },
+    "971": {
+      "sourceRecordsExamined": 0,
+      "importedEvents": 0,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 1,
+      "totalBeforeDeduplication": 1,
+      "publishedEvents": 1
+    },
+    "972": {
+      "sourceRecordsExamined": 0,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "973": {
+      "sourceRecordsExamined": 0,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    },
+    "974": {
+      "sourceRecordsExamined": 0,
+      "importedEvents": 0,
+      "status": "annonces trouvées",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 13,
+      "publishedEvents": 13
+    },
+    "976": {
+      "sourceRecordsExamined": 0,
+      "importedEvents": 0,
+      "status": "à compléter",
+      "openAgendaImportedEvents": 0,
+      "totalBeforeDeduplication": 0,
+      "publishedEvents": 0
+    }
+  },
+  "additionalSources": [
+    "https://public.opendatasoft.com/explore/dataset/evenements-publics-openagenda/",
+    "https://shotgun.live/fr/cities/la-reunion",
+    "https://shotgun.live/fr/venues/poupee-bastia"
+  ],
+  "openAgendaRecordsExamined": 541,
+  "publishedEvents": 1962,
+  "departmentsWithEvents": 84
+}

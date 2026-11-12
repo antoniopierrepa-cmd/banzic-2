@@ -2687,7 +2687,7 @@
         </div>
         <label class="radar-dep">Département <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>
         <label class="radar-dep"><input type="checkbox" id="radar-avec-dj" ${state.sudAvecDj ? 'checked' : ''}> Avec DJ uniquement</label>
-        <p class="demo-note">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements avec annonces.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
+        <p class="demo-note">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements avec annonces · collecte partielle.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
         <div class="pads" role="group" aria-label="Filtres">${PADS.map((x) => `<button class="pad" style="--pc:${x.c}" data-pad="${x.g}|${x.k}" aria-pressed="false"><span class="pad-nom">${x.nom}</span><small class="pad-nb"></small></button>`).join('')}</div>
       </div>
       <div id="agenda-liste"></div>`;
@@ -2765,18 +2765,18 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     return (_affCache[cle] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
   }
   // Couleur de chaque type = celle de sa touche en haut
-  const TYPE_COUL = { club: '#3D8BFF', festival: '#FF8A3D', concert: '#F2C53A', bar: '#3DD6C6', restaurant: '#FF4FA3' };
-  const TYPE_NOM = { club: 'Club', festival: 'Festival', concert: 'Concert', bar: 'Bar', restaurant: 'Resto' };
+  const TYPE_COUL = { soiree: '#C9CFDD', club: '#3D8BFF', festival: '#FF8A3D', concert: '#F2C53A', bar: '#3DD6C6', restaurant: '#FF4FA3' };
+  const TYPE_NOM = { soiree: 'Soirée', club: 'Club', festival: 'Festival', concert: 'Concert', bar: 'Bar', restaurant: 'Resto' };
   // Une ligne de l'agenda
   function ligneSud(x) {
       const dt = new Date(x.date + 'T12:00:00');
       const wd = (dt.getDay() + 6) % 7, infoUrl = radarUrl(x.url || SUD.sources[x.src]), ticketUrl = radarUrl(x.ticketUrl), url = ticketUrl || infoUrl;
       return `<div class="sud-soiree ${x.gros ? 'gros' : ''}">
         <div class="sud-date" style="--tc:${TYPE_COUL[x.type || 'club']}"><b>${dt.getDate()}</b><small>${JOURS[wd]}</small><i>${TYPE_NOM[x.type || 'club']}</i></div>
-        <img class="sud-affiche" src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : ''}" style="object-fit:contain" loading="lazy" referrerpolicy="no-referrer">
+        <img class="sud-affiche" src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC — affiche non fournie'}" style="object-fit:contain" loading="lazy" referrerpolicy="no-referrer">
         <div class="sud-info"><span class="venue">${esc(x.nom)}</span>
           ${x.djs ? `<small>Line-up : ${esc(x.djs)}</small>` : `<small>${x.djSet ? 'DJ annoncé · nom non communiqué' : 'Programmation non communiquée'}</small>`}${x.genres ? `<small class="sud-genres">${esc(x.genres)}</small>` : ''}
-          <small class="sud-lieu">${esc(x.l.nom)} · ${esc(x.l.ville)}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}${x.prix ? ' · ' + esc(x.prix) : ''} ${/^(\d{2,3}|2[AB])$/.test(x.l.dep) ? ' · <span class="sud-dep">' + x.l.dep + '</span>' : ''}</small></div>
+          <small class="sud-lieu">${esc(x.l.nom)} · ${esc(x.l.ville)}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}${x.prix ? ' · ' + esc(x.prix) : ''} ${/^(\d{2,3}|2[AB])$/.test(x.l.dep) ? ' · <span class="sud-dep">' + x.l.dep + '</span>' : ''}</small>${x.sourceName ? `<small class="sud-source">Source : ${esc(x.sourceName)}${x.sourceUpdatedAt ? ' · mise à jour ' + esc(x.sourceUpdatedAt.slice(0, 10)) : ''}${radarUrl(x.sourceLicense) ? ` · <a href="${esc(radarUrl(x.sourceLicense))}" target="_blank" rel="noopener noreferrer">Licence ouverte</a>` : ''}</small>` : ''}</div>
         ${url ? `<a class="badge b-soon" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${ticketUrl ? 'Billets' : 'Infos'}</a>` : ''}
       </div>`;
   }

@@ -1,8 +1,8 @@
 {
   "phase": "manual",
   "updatedAt": "2026-11-12T00:07:42.351Z",
-  "scope": "Var (83)",
-  "note": "Répertoire initial constitué manuellement. Une présence ici confirme le lieu ou sa source, pas une soirée à une date donnée. L’automatisation générale sera activée après validation du répertoire.",
+  "scope": "France — 101 départements",
+  "note": "Répertoire manuel des établissements identifiés, complété par les sources nationales DATAtourisme et OpenAgenda dans radar-events.json. Un lieu mentionné pour un événement ne prouve pas une ouverture permanente. Les anciens noms non vérifiés restent séparés.",
   "venues": [
     {
       "id": "petit-bain",
@@ -203,6 +203,30 @@
       "facebook": "https://www.facebook.com/809ClubLaGarde/",
       "status": "lieu-identifie-programmation-a-relever",
       "note": "Lieu confirmé par les offices de tourisme, publication de septembre 2026 repérée et signalé ouvert par l’utilisateur. Vérifier les prochaines dates sur les pages officielles. Ne pas confondre fermé à cette heure et fermeture définitive."
+    },
+    {
+      "id": "poupee-bastia",
+      "nom": "Poupée",
+      "ville": "Bastia",
+      "dep": "2B",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/venues/poupee-bastia",
+      "instagram": "https://www.instagram.com/poupee.bastia",
+      "facebook": "https://www.facebook.com/61595186795299",
+      "status": "programme futur publié",
+      "note": "Soirée annoncée le 14 novembre 2026 sur la page organisateur Shotgun."
+    },
+    {
+      "id": "lumia-bonneville",
+      "nom": "LUMIA",
+      "ville": "Bonneville",
+      "dep": "74",
+      "type": "club",
+      "sourceUrl": "https://espacelumia.com/",
+      "instagram": "https://www.instagram.com/espacelumia/",
+      "facebook": "https://www.facebook.com/espacelumia/",
+      "status": "programme futur publié",
+      "note": "Site officiel consulté le 12 novembre 2026 ; programme club, cabaret et dancing. Ne pas transformer les horaires d’ouverture en événements."
     }
   ],
   "unverifiedCandidates": [
@@ -406,5 +430,6 @@
       "status": "piste-annuaire-activite-actuelle-non-verifiee",
       "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
     }
-  ]
+  ],
+  "nationalCoverageFile": "data/radar-coverage.json"
 }

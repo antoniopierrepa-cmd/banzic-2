@@ -23,3 +23,7 @@ test('déduplique et fusionne le line-up et la billetterie, sans inventer de DJ'
   assert.equal(data.soirees[0].ticketUrl, row.url); assert.equal(data.coverage['83'], 1);
   assert.equal(normalize({ ...row, lineup: [] }, source, '2026-11-12').djs, '');
 });
+test('conserve la provenance des annonces nationales et le type soirée', () => {
+ const event = normalize({...row,type:'soiree',lineup:[],sourceName:'Office de tourisme',sourceUpdatedAt:'2026-11-10',sourceLicense:'https://example.org/licence',sourceRecordUrl:row.url},source,'2026-11-12');
+ assert.equal(event.type,'soiree');assert.equal(event.sourceName,'Office de tourisme');assert.equal(event.sourceUpdatedAt,'2026-11-10');assert.equal(event.sourceRecordUrl,row.url);assert.equal(event.djSet,false);
+});
