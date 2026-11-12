@@ -2976,17 +2976,22 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const TYPE_NOM = { soiree: 'Soirée', club: 'Club', festival: 'Festival', concert: 'Concert', bar: 'Bar', restaurant: 'Resto' };
   // Une soirée de l'agenda en grande carte : l'affiche en haut, puis le nom, le lieu, la date et l'heure, le prix et les styles
   // Pas d'affiche pour la soirée : on met la photo Google Maps du lieu (chargée seulement quand la carte arrive à l'écran)
-  let ioPhotos = null;
+  // Toutes les cartes sans affiche reçoivent la photo du lieu, l'une après l'autre ; une photo déjà trouvée revient tout de suite
+  const photoLieuFaite = (z, p) => { const u = gPhotoUrl(p, 800), img = z.querySelector('img'); if (!img || z.classList.contains('agc-photo-lieu')) return;
+    img.onerror = null; img.src = u; img.alt = 'Photo du lieu'; z.style.setProperty('--aff', `url("${u}")`); z.classList.add('agc-photo-lieu');
+    z.insertAdjacentHTML('beforeend', `<span class="agc-credit">Le lieu · ${gAuteur(p) ? esc(gAuteur(p).displayName || '') + ' · ' : ''}Google Maps</span>`); };
+  let filePhotos = Promise.resolve();
   function photosAgenda() {
-    const zs = document.querySelectorAll('.agc-visuel.agc-gp:not([data-gp-fait])'); if (!zs.length || !GKEY) return;
-    const charger = (z) => { z.setAttribute('data-gp-fait', '1'); let l = null; try { l = JSON.parse(z.dataset.gp); } catch (e) { return; }
-      gidPour(l).then((gid) => gid && photoGoogle(gid)).then((p) => { if (!p) return; const u = gPhotoUrl(p, 800), img = z.querySelector('img'); if (!img) return;
-        img.onerror = null; img.src = u; img.alt = 'Photo du lieu — ' + (l.nom || ''); z.style.setProperty('--aff', `url("${u}")`); z.classList.add('agc-photo-lieu');
-        z.insertAdjacentHTML('beforeend', `<span class="agc-credit">Le lieu · ${gAuteur(p) ? esc(gAuteur(p).displayName || '') + ' · ' : ''}Google Maps</span>`); }); };
-    if (!('IntersectionObserver' in window)) { zs.forEach(charger); return; }
-    if (ioPhotos) ioPhotos.disconnect();
-    ioPhotos = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { ioPhotos.unobserve(e.target); charger(e.target); } }), { rootMargin: '900px' });
-    document.querySelectorAll('.agc-visuel.agc-gp:not([data-gp-fait])').forEach((z) => ioPhotos.observe(z));
+    if (!GKEY) return;
+    const vus = new Set();
+    document.querySelectorAll('.agc-visuel.agc-gp:not(.agc-photo-lieu)').forEach((z) => {
+      let l = null; try { l = JSON.parse(z.dataset.gp); } catch (e) { return; }
+      const cle = cleLieuG(l), gid = G_IDS[cle];
+      if (gid && G_PHOTOS[gid]) { photoLieuFaite(z, G_PHOTOS[gid]); return; }
+      if (gid === null || vus.has(cle)) return; vus.add(cle);
+      filePhotos = filePhotos.then(() => gidPour(l)).then((g) => g && photoGoogle(g)).then((p) => { if (!p) return;
+        document.querySelectorAll('.agc-visuel.agc-gp:not(.agc-photo-lieu)').forEach((y) => { try { if (cleLieuG(JSON.parse(y.dataset.gp)) === cle) photoLieuFaite(y, p); } catch (e) { /* */ } }); }).catch(() => {});
+    });
   }
   window.__photosAgenda = photosAgenda;
   const MOIS_CRT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
@@ -3231,9 +3236,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   }
   // Retrouver un lieu dans Google Maps par son nom (et sa position) : on ne garde que son identifiant Google
   const G_IDS = store.get('gids', {});
+  const cleLieuG = (l) => sansAccent(l.nom || '').toLowerCase() + '|' + (l.lat != null ? (+l.lat).toFixed(3) + ',' + (+l.lng).toFixed(3) : '');
   async function gidPour(l) {
     if (!GKEY || !l || !l.nom) return null;
-    const cle = sansAccent(l.nom).toLowerCase() + '|' + (l.lat != null ? (+l.lat).toFixed(3) + ',' + (+l.lng).toFixed(3) : '');
+    const cle = cleLieuG(l);
     if (G_IDS[cle] !== undefined) return G_IDS[cle];
     try {
       const corps = { textQuery: [l.nom, l.adresse].filter(Boolean).join(' '), maxResultCount: 3, languageCode: 'fr' };
