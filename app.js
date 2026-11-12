@@ -2544,6 +2544,15 @@
     const scr = $('#screen-soiree'); if (!scr) return;
     const l = f.lieu || {}, gm = l.gid ? gMapsUrl(l.gid) : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([l.nom, l.adresse].filter(Boolean).join(' ') || (l.lat + ',' + l.lng));
     const fK = (x) => x == null ? '' : x < 1 ? '< 1 km' : Math.round(x) + ' km';
+    // Chronologie uniquement sur des horaires réellement annoncés : aucune fermeture inventée.
+    const debutChrono = f.date && f.heure ? new Date(f.date + 'T' + f.heure).getTime() : NaN;
+    let finChrono = f.date && f.heureFin ? new Date((f.dateFin || f.date) + 'T' + f.heureFin).getTime() : NaN;
+    if (Number.isFinite(finChrono) && Number.isFinite(debutChrono) && finChrono <= debutChrono && !f.dateFin) finChrono += 86400000;
+    const chronoValide = Number.isFinite(debutChrono) && Number.isFinite(finChrono) && finChrono > debutChrono;
+    const chronoPct = chronoValide ? Math.max(0, Math.min(100, (Date.now() - debutChrono) / (finChrono - debutChrono) * 100)) : 0;
+    const chronoHtml = chronoValide
+      ? `<div class="sf-bloc" data-sf-chrono="1" data-debut="${debutChrono}" data-fin="${finChrono}"><div class="sf-titre">${f.tag === 'DJ set' ? 'Progression du set DJ' : 'Ouverture → fermeture'}</div><div style="display:flex;justify-content:space-between;gap:8px;margin:8px 0"><span>Début <b>${esc(f.heure)}</b></span><span>Fin <b>${esc(f.heureFin)}</b></span></div><div role="progressbar" aria-label="Progression de la soirée" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(chronoPct)}" style="height:9px;border-radius:9px;background:rgba(160,160,170,.25);overflow:hidden"><div data-sf-chrono-bar style="height:100%;width:${chronoPct.toFixed(1)}%;border-radius:9px;background:linear-gradient(90deg,#ffad5c,#fa4f8c)"></div></div><small data-sf-chrono-statut>${Date.now() < debutChrono ? 'Pas encore commencé' : Date.now() >= finChrono ? 'Terminé' : Math.round(chronoPct) + ' % écoulés'}</small></div>`
+      : `<div class="sf-bloc"><div class="sf-titre">Horaires</div><p>Début : ${f.heure ? esc(f.heure) : 'non communiqué'} · Fin : ${f.heureFin ? esc(f.heureFin) : 'non communiquée'}</p><small>Progression disponible lorsque les deux horaires sont confirmés.</small></div>`;
     scr.innerHTML = `<div class="sf-haut"><button type="button" class="sf-retour" data-soiree-fermer="1" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>${({ map: 'Carte', agenda: 'Agenda', checkin: 'Check-in' })[state.tab] || 'Retour'}</button>${f.test ? '<span class="sf-test">Mode test</span>' : ''}</div>
       ${f.affiche ? `<img class="sf-affiche" src="${esc(f.affiche)}" alt="Affiche — ${esc(f.titre)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}
       <div class="sf-tete ck-${f.st[1]}"><span class="ck-st ck-st-${f.st[1]}"><i></i>${esc(f.st[0])}</span>${f.club ? '' : `<em class="fil-tag decl">${esc(f.tag)}</em>`}
@@ -2551,7 +2560,7 @@
         <p class="sf-quand">${f.heure ? `<b>${esc(f.heure)}</b> · ` : ''}${esc(f.quand || '')}</p>
         ${f.temp != null ? `<p class="sf-ambiance"><span class="thermo-mini t${f.temp}"><i></i></span><span class="thermo-txt t${f.temp}">Ambiance ${['froide', 'moyenne', 'chaude'][f.temp]}</span>${f.conf ? ` · ${f.conf} Banger${f.conf > 1 ? 's' : ''} confirment` : ''}</p>` : ''}
         ${f.com ? `<p class="sf-com fil-com">« ${esc(f.com)} »</p>` : ''}</div>
-      <div class="sf-bloc"><div class="sf-titre">Le lieu</div>
+      ${chronoHtml}\n      <div class="sf-bloc"><div class="sf-titre">Le lieu</div>
         <div class="sf-lieu"><div class="sf-photo" data-sf-photo="1"></div>
           <b>${esc(l.nom || 'Lieu')}</b>${l.adresse ? `<small>${esc(l.adresse)}</small>` : ''}${f.km != null ? `<small>À ${fK(f.km)} de toi</small>` : ''}
           <div class="sf-actions"><button type="button" class="sf-btn plein" data-soiree-carte="${cle}">Voir sur la carte</button><a class="sf-btn" data-sf-gm="1" href="${gm}" target="_blank" rel="noopener">Google Maps</a></div></div></div>
@@ -2634,7 +2643,7 @@
       const st = x.date > auj ? [nomJour(x.date), 'gris'] : avant == null ? ['Ce soir', 'bleu'] : avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ['En cours', 'vert'];
       if (st[0] === 'Terminé') return;
       const lineup = djsDe(x.djs);
-      CK_FICHES['s:' + x.id] = { titre: x.nom, sous: '', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', st, heure: x.heure || '', quand: x.date > auj ? nomJour(x.date) + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
+      CK_FICHES['s:' + x.id] = { date: x.date, dateFin: x.dateFin || '', heureFin: x.heureFin || '', titre: x.nom, sous: '', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', st, heure: x.heure || '', quand: x.date > auj ? nomJour(x.date) + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
         lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: d, djs: lineup, url: radarUrl(x.ticketUrl || x.url), test: x.test };
       ligne({ fin, lieuId: x.lieu, fiche: 's:' + x.id, djs: lineup, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || '--:--', porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: `data-ck-fiche="s:${x.id}"`, nom: x.nom,
         l1: x.date > auj ? nomJour(x.date).toLowerCase() + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
