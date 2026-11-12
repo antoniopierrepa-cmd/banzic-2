@@ -3017,3 +3017,5 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .ag-plus { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 18px 0 30px; color: #9AA3B8; font-size: 13px; }
 .ag-plus-rond { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #FF8A3D; border-top-color: transparent; animation: ag-tourne .8s linear infinite; }
 @keyframes ag-tourne { to { transform: rotate(360deg); } }
+.agc-photo-lieu img { object-fit: cover; }
+.agc-credit { position: absolute; right: 8px; bottom: 8px; padding: 2px 7px; border-radius: 6px; background: rgba(0,0,0,.6); color: #fff; font-size: 10px; }

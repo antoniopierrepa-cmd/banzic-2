@@ -2924,6 +2924,7 @@
     if (reste) h += `<div class="ag-plus" id="ag-plus"><span class="ag-plus-rond"></span>Les dates suivantes arrivent…</div>`;
     h += `<p class="demo-note">Sources : déclarations des DJ et des Bangers, et le radar Banzic (agendas et billetteries autorisés). Vérifie toujours sur la page de la soirée avant de sortir.</p>`;
     $('#agenda-liste').innerHTML = h;
+    photosAgenda();
     const sent = $('#ag-plus');
     if (sent && 'IntersectionObserver' in window) { const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); state.agJours = (state.agJours || 7) + 7; listeAgendaSud(); } }, { rootMargin: '300px' }); io.observe(sent); }
   }
@@ -2974,13 +2975,27 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const TYPE_COUL = { soiree: '#C9CFDD', club: '#3D8BFF', festival: '#FF8A3D', concert: '#F2C53A', bar: '#3DD6C6', restaurant: '#FF4FA3' };
   const TYPE_NOM = { soiree: 'Soirée', club: 'Club', festival: 'Festival', concert: 'Concert', bar: 'Bar', restaurant: 'Resto' };
   // Une soirée de l'agenda en grande carte : l'affiche en haut, puis le nom, le lieu, la date et l'heure, le prix et les styles
+  // Pas d'affiche pour la soirée : on met la photo Google Maps du lieu (chargée seulement quand la carte arrive à l'écran)
+  let ioPhotos = null;
+  function photosAgenda() {
+    const zs = document.querySelectorAll('.agc-visuel.agc-gp:not([data-gp-fait])'); if (!zs.length || !GKEY) return;
+    const charger = (z) => { z.setAttribute('data-gp-fait', '1'); let l = null; try { l = JSON.parse(z.dataset.gp); } catch (e) { return; }
+      gidPour(l).then((gid) => gid && photoGoogle(gid)).then((p) => { if (!p) return; const u = gPhotoUrl(p, 800), img = z.querySelector('img'); if (!img) return;
+        img.onerror = null; img.src = u; img.alt = 'Photo du lieu — ' + (l.nom || ''); z.style.setProperty('--aff', `url("${u}")`); z.classList.add('agc-photo-lieu');
+        z.insertAdjacentHTML('beforeend', `<span class="agc-credit">Le lieu · ${gAuteur(p) ? esc(gAuteur(p).displayName || '') + ' · ' : ''}Google Maps</span>`); }); };
+    if (!('IntersectionObserver' in window)) { zs.forEach(charger); return; }
+    if (ioPhotos) ioPhotos.disconnect();
+    ioPhotos = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { ioPhotos.unobserve(e.target); charger(e.target); } }), { rootMargin: '200px' });
+    document.querySelectorAll('.agc-visuel.agc-gp:not([data-gp-fait])').forEach((z) => ioPhotos.observe(z));
+  }
+  window.__photosAgenda = photosAgenda;
   const MOIS_CRT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
   function carteAgenda(x) {
     ficheSoireeJour(x);
     const dt = new Date(x.date + 'T12:00:00'), aff = radarUrl(x.flyerUrl) || afficheSoiree(x), gen = String(x.genres || '').split(/,|·|\//).map((g) => g.trim()).filter(Boolean);
     const pays = x.l.country === 'ES' ? 'Espagne' : x.l.country === 'BE' ? 'Belgique' : '';
     return `<div class="ag-carte" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
-      <div class="agc-visuel" style="--aff:url('${esc(aff).replace(/'/g, '%27')}')"><img src="${esc(aff)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback;this.parentNode.style.setProperty('--aff','none')" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC'}" loading="lazy" referrerpolicy="no-referrer">
+      <div class="agc-visuel${x.flyerUrl ? '' : ' agc-gp'}" data-gp="${esc(JSON.stringify({ nom: x.l.nom, adresse: x.l.ville || '', lat: x.l.lat, lng: x.l.lng }))}" style="--aff:url('${esc(aff).replace(/'/g, '%27')}')"><img src="${esc(aff)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback;this.parentNode.style.setProperty('--aff','none');this.parentNode.classList.add('agc-gp');window.__photosAgenda&&window.__photosAgenda()" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC'}" loading="lazy" referrerpolicy="no-referrer">
         <span class="agc-type" style="--tc:${TYPE_COUL[x.type || 'club']}">${TYPE_NOM[x.type || 'club']}</span>${estLibertin(x) ? '<span class="moins18 agc-18" title="Interdit aux moins de 18 ans">-18</span>' : ''}</div>
       <div class="agc-txt"><b class="agc-nom">${esc(x.nom)}</b>
         <span class="agc-lieu">${esc(x.l.nom)}${x.l.ville ? ' · ' + esc(x.l.ville) : ''}${pays ? ', ' + pays : ''}</span>
