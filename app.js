@@ -450,6 +450,7 @@
     marqueursSpots();
     marqueursDecls();
     marqueursRadar();
+    marqueursDiscotheques();
   }
 
   // ---------- Fiche lieu
@@ -2524,7 +2525,7 @@
     const html = `<button type="button" class="bc-bulle" data-bulle-fiche="${cle}">
       <span class="bcb-photo" data-bcb-photo="1"><span class="bcb-st ck-st ck-st-${f.st[1]}"><i></i>${esc(f.st[0])}</span></span>
       <span class="bcb-txt"><b class="bcb-lieu">${esc(l.nom || f.titre)}</b>${f.titre && f.titre !== l.nom ? `<small class="bcb-soiree">${esc(f.titre)}</small>` : ''}
-        <span class="bcb-djs">${djs.length ? `<small>${f.tag === 'Live' || f.st[1] === 'vert' ? 'Aux platines' : 'Line-up'}</small>${djs.slice(0, 3).map((n) => `<span class="bcb-dj">${avatarDj(n)}<em>${esc(n)}</em></span>`).join('')}${djs.length > 3 ? `<span class="bcb-plus">+${djs.length - 3}</span>` : ''}` : '<small>DJ pas encore annoncé</small>'}</span>
+        <span class="bcb-djs">${djs.length ? `<small>${f.tag === 'Live' || f.st[1] === 'vert' ? 'Aux platines' : 'Line-up'}</small>${djs.slice(0, 3).map((n) => `<span class="bcb-dj">${avatarDj(n)}<em>${esc(n)}</em></span>`).join('')}${djs.length > 3 ? `<span class="bcb-plus">+${djs.length - 3}</span>` : ''}` : `<small>${f.club ? 'Aucune soirée annoncée' : 'DJ pas encore annoncé'}</small>`}</span>
         <span class="bcb-bas">${f.heure ? esc(f.heure) + ' · ' : ''}${esc(f.quand || '')}<span class="bcb-voir">Voir la soirée ›</span></span></span></button>`;
     if (bullePt) map.closePopup(bullePt);
     bullePt = L.popup({ className: 'pop-grandit', closeButton: false, maxWidth: 270, minWidth: 250, offset: [0, -14], autoPanPaddingTopLeft: [16, 84], autoPanPaddingBottomRight: [16, 120] }).setLatLng(ll).setContent(html).openOn(map);
@@ -2533,6 +2534,7 @@
       if (z && p) { z.style.backgroundImage = `url("${gPhotoUrl(p, 520)}")`; z.classList.add('a-photo'); z.insertAdjacentHTML('beforeend', `<span class="bcb-credit">${gAuteur(p) ? esc(gAuteur(p).displayName || '') + ' · ' : ''}Google Maps</span>`); } }); });
   }
   window.__bulleCarte = ouvrirBulleCarte;
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-club-revendiquer]')) toast('Bientôt : les clubs pourront revendiquer leur fiche et annoncer leurs soirées'); });
   // Agenda : toute la bannière d'une soirée ouvre sa fiche (les boutons Billets / Infos gardent leur lien)
   document.addEventListener('click', (e) => { const z = e.target.closest('[data-ag-fiche]'); if (!z || e.target.closest('a')) return; e.preventDefault(); ouvrirFicheSoiree(z.dataset.agFiche); });
   document.addEventListener('click', (e) => { const b = e.target.closest('[data-bulle-fiche]'); if (!b) return; e.preventDefault(); const k = b.dataset.bulleFiche; if (map && bullePt) map.closePopup(bullePt); ouvrirFicheSoiree(k); });
@@ -2555,8 +2557,8 @@
           <div class="sf-actions"><button type="button" class="sf-btn plein" data-soiree-carte="${cle}">Voir sur la carte</button><a class="sf-btn" data-sf-gm="1" href="${gm}" target="_blank" rel="noopener">Google Maps</a></div></div></div>
       <div class="sf-bloc"><div class="sf-titre">Line-up</div>
         ${f.djs && f.djs.length ? `<div class="sf-lineup">${f.djs.map((n) => `<button type="button" class="sf-dj" data-dj-pro="${esc(n)}"><span class="sf-av">${avatarDj(n)}</span><b>${esc(n)}</b><span class="sf-fleche" aria-hidden="true">›</span></button>`).join('')}</div>`
-          : '<p class="aide">Line-up non communiqué pour l\'instant.</p>'}</div>
-      ${f.url ? `<a class="btn-plein sf-billets" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${f.billets ? 'Billets' : 'Infos sur la soirée'}</a>` : ''}${f.source ? `<p class="aide sf-source">Source : ${esc(f.source)}</p>` : ''}`;
+          : `<p class="aide">${f.club ? 'Aucune soirée annoncée pour l\'instant.' : 'Line-up non communiqué pour l\'instant.'}</p>`}</div>
+      ${f.url ? `<a class="btn-plein sf-billets" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${f.club ? 'Site du club' : f.billets ? 'Billets' : 'Infos sur la soirée'}</a>` : ''}${f.club ? `<div class="sf-revendiquer"><b>C'est votre club ?</b><p>Revendiquez cette fiche pour annoncer vos soirées et les proposer aux Bangers de votre région.</p><button type="button" class="sf-btn" data-club-revendiquer="1">C'est mon club</button></div>` : ''}${f.source ? `<p class="aide sf-source">Source : ${esc(f.source)}</p>` : ''}`;
     // la photo Google du lieu arrive après (seulement si le lieu vient de Google Maps)
     const ph = scr.querySelector('[data-sf-photo]');
     (l.gid ? Promise.resolve(l.gid) : gidPour(l)).then((gid) => { if (!gid) return; l.gid = gid;
@@ -2819,6 +2821,23 @@
     return SUD.soirees.filter((x) => x.date === auj && SUD.lieux[x.lieu])
       .map((x) => ({ ...x, l: SUD.lieux[x.lieu] }))
       .filter((x) => dansZoneCarte(x.l.lat, x.l.lng));
+  }
+  // Discothèques de France (OpenStreetMap, © les contributeurs OpenStreetMap, licence ODbL) : toujours sur la carte, en bleu néon.
+  // Toucher un club : la bulle avec sa photo Google, puis sa fiche. Le club pourra revendiquer sa fiche pour annoncer ses soirées.
+  const DISCOS = (window.DISCOTHEQUES || []).map(([id, nom, lat, lng, ville, site]) => ({ id, nom, lat, lng, ville, site }));
+  function ficheDisco(c) {
+    const auj = iso(new Date()), soir = SUD.soirees.find((x) => x.date >= auj && SUD.lieux[x.lieu] && distKm([c.lat, c.lng], [SUD.lieux[x.lieu].lat, SUD.lieux[x.lieu].lng]) < 0.08);
+    return CK_FICHES['c:' + c.id] = { titre: c.nom, sous: c.ville || '', tag: 'Discothèque', st: soir ? ['Soirée annoncée', 'vert'] : ['Discothèque', 'bleu'], heure: '',
+      quand: soir ? 'prochaine soirée : ' + soir.nom : 'aucune soirée annoncée pour l’instant', lieu: { nom: c.nom, adresse: c.ville || '', lat: c.lat, lng: c.lng }, km: kmDeMoi(c.lat, c.lng),
+      djs: soir ? djsDe(soir.djs) : [], url: c.site || '', siteClub: !!c.site, club: true, source: 'OpenStreetMap (© contributeurs OpenStreetMap)' };
+  }
+  const ICONE_DISCO = window.L ? L.divIcon({ className: 'disco-pin', iconSize: [18, 18], iconAnchor: [9, 9], html: '<i></i>' }) : null;
+  function marqueursDiscotheques() {
+    if (!DISCOS.length || map.getZoom() < 9) return; // de loin, on ne charge pas les 2 000 clubs de France
+    const b = map.getBounds();
+    DISCOS.forEach((c) => { if (!b.contains([c.lat, c.lng])) return;
+      const m = L.marker([c.lat, c.lng], { icon: ICONE_DISCO, zIndexOffset: 100, title: c.nom }).bindPopup('');
+      ficheDisco(c); m.__fiche = 'c:' + c.id; m.addTo(layer); });
   }
   function marqueursRadar() {
     soireesCarteJour().forEach((x) => {
