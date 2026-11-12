@@ -46,6 +46,21 @@
       "formats": [
         "concert"
       ]
+    },
+    {
+      "id": "halles-milona",
+      "nom": "Les Halles Milona",
+      "ville": "La Crau - La Moutonne",
+      "url": "https://halles-milona.fr/",
+      "type": "site_officiel",
+      "formats": [
+        "DJ",
+        "concert",
+        "SBK",
+        "soirée à thème"
+      ],
+      "instagram": "leshallesmilona",
+      "adresse": "595 chemin de l'Estagnol, 83260 La Crau"
     }
   ]
 }
