@@ -2380,9 +2380,9 @@
       passages.filter((p) => !p.inconnu && p.d > t && p.d - t <= 120).sort((a, b) => a.d - b.d).slice(0, 6).forEach((p) => { const l = lieux[p.lieu];
         xs.push(item('decl', 'Bientôt', `data-lieu="${l.id}"`, p.dj, 'à ' + p.debut, [[esc(l.nom) + (p.salle ? ' · ' + esc(p.salle) : '')], ['dans ' + dur(p.d - t)]], visFil(p.dj, 0, ''))); });
     }
-    declsVisibles().filter((x) => !jourSeulement || declDuJour(x)).forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}, ok = declConfirmee(x), m = Math.round((x.fin - Date.now()) / 60000);
+    (jourSeulement ? DECLS.filter((x) => declDuJour(x) && djDe(x) && (() => { const l = lieuDe(x); return l && dansRayonCarte(l.lat, l.lng); })()) : declsVisibles()).forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}, ok = declConfirmee(x), m = Math.round((x.fin - Date.now()) / 60000);
       xs.push(item(ok ? 'live' : 'decl', ok ? 'Live' : 'Déclaré', `data-dj-pro="${esc(dj.nom)}"`, dj.nom, m > 0 ? 'encore ' + dur(m) : 'se termine', [[esc(l.nom || 'Spot') + kmL(l.lat, l.lng)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']], visFil(dj.nom, x.conf || 0, `data-decl-ok="${x.id}"`))); });
-    spotsVisibles().filter(spotPublic).forEach((sp) => { const n = sp.note || 0, c = sp.conf || 0, v = n >= 4 && c >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || c >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
+    (jourSeulement ? SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && dansRayonCarte(s.lat, s.lng)) : spotsVisibles().filter(spotPublic)).forEach((sp) => { const n = sp.note || 0, c = sp.conf || 0, v = n >= 4 && c >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || c >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
       xs.push(item('spot', 'Spot', `data-spot-voir="${sp.id}"`, sp.nom || TYPES_SPOT[sp.type] || 'Spot', `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, [[esc(sp.dj || 'DJ inconnu') + kmL(sp.lat, sp.lng)], ['signalé à ' + hm(sp.t || sp.maj) + ' par @' + esc(sp.par || 'un Banger')]], visSpotC(sp))); });
     const auj = isoAuj();
     if (!jourSeulement && d.id === 'dubai') soireesDubai().filter((r) => r.date === auj).forEach((r) => { const dj = (r.djs || '').split(/,| b2b /i)[0].trim();
@@ -2407,9 +2407,9 @@
     return `<div class="fil-infos fil-dest" aria-label="Fil d'actualité ${esc(d.nom)}"><div class="fil-fenetre"><div class="fil-piste">${lot.join(sep)}${sep}<span class="fil-copie" aria-hidden="true">${lot.join(sep)}${sep}</span></div></div></div>`;
   }
 
-  // ---- Check-in : le tableau des départs façon aéroport, autour de moi (10 à 100 km).
+  // ---- Check-in : le tableau des départs façon aéroport, autour de moi (10 à 1 000 km).
   // Chaque ligne garde le bandeau tel quel ; au-dessus, la bande aéroport : heure, porte (le lieu), statut.
-  const CK_RAYONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  const CK_RAYONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 500, 1000];
   state.ckRayon = store.get('ckRayon', 50);
   // La barre de progression avance toute seule : le Check-in se redessine chaque minute quand il est affiché
   setInterval(() => { if (state.tab === 'checkin' && !document.hidden) { try { renderCheckin(); } catch (e) { /* */ } } }, 60000);
@@ -2465,10 +2465,10 @@
       <div class="fd-rail ck-rail"><input type="range" id="fader-ck" min="0" max="${CK_RAYONS.length - 1}" step="1" value="${i}" style="--pct:${i / (CK_RAYONS.length - 1) * 100}%" aria-label="Rayon du check-in" aria-valuetext="${r} kilomètres">
         <div class="fd-graduations" aria-hidden="true">${CK_RAYONS.map((k, j) => `<span class="${j === i ? 'on' : ''}" data-ck-rayon="${j}">${k}</span>`).join('')}</div></div>
       <div class="ck-legende"><span class="ck-st ck-st-or"><i></i>Embarquement</span><span>commence dans moins de 2 h</span><span class="ck-st ck-st-rouge"><i></i>Dernier appel</span><span>commence dans moins de 15 min</span></div>
-      ${L.length ? `<div class="ck-liste">${L.map(rangee).join('')}</div>` : `<div class="empty">Aucun départ à moins de ${r} km pour l'instant. Pousse le fader vers 100 km.</div>`}`;
+      ${L.length ? `<div class="ck-liste">${L.map(rangee).join('')}</div>` : `<div class="empty">Aucun départ à moins de ${r} km pour l'instant. Élargis le rayon jusqu’à 1 000 km.</div>`}`;
   }
   const reglerCk = (j) => { state.ckRayon = CK_RAYONS[Math.max(0, Math.min(CK_RAYONS.length - 1, j))]; store.set('ckRayon', state.ckRayon); renderCheckin(); };
-  document.addEventListener('change', (e) => { if (e.target.id === 'fader-ck') reglerCk(+e.target.value); });
+  document.addEventListener('change', (e) => { if (e.target.id === 'fader-ck') reglerCk(+e.target.value); if (e.target.id === 'map-rayon') { state.ckRayon = CK_RAYONS[+e.target.value]; store.set('ckRayon', state.ckRayon); renderMap(); centrerSurMoi(); } });
   document.addEventListener('input', (e) => { if (e.target.id === 'fader-ck') { const j = +e.target.value; e.target.style.setProperty('--pct', j / (CK_RAYONS.length - 1) * 100 + '%'); document.querySelectorAll('[data-ck-rayon]').forEach((s, k) => s.classList.toggle('on', k === j)); } });
   document.addEventListener('click', (e) => { const g = e.target.closest('[data-ck-rayon]'); if (g) reglerCk(+g.dataset.ckRayon); });
 
@@ -2610,8 +2610,14 @@
   Object.assign(SUD.lieux, RADAR.lieux); Object.assign(SUD.sources, RADAR.sources);
   SUD.soirees.push(...RADAR.soirees);
   const radarUrl = (value) => { try { const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch (e) { return ''; } };
+  function centreGeographique() {
+    return state.maPos ? [state.maPos.lat, state.maPos.lng] : DEST.local.centre;
+  }
+  function dansRayonCarte(lat, lng) {
+    return lat != null && lng != null && distKm(centreGeographique(), [lat, lng]) <= state.ckRayon;
+  }
   function soireesCarteJour() {
-    const centre = DEST[state.dest].centre, auj = iso(new Date());
+    const centre = centreGeographique(), auj = iso(new Date());
     return SUD.soirees.filter((x) => x.date === auj && SUD.lieux[x.lieu])
       .map((x) => ({ ...x, l: SUD.lieux[x.lieu] }))
       .filter((x) => distKm(centre, [x.l.lat, x.l.lng]) <= state.ckRayon);
@@ -2653,7 +2659,7 @@
   };
   state.rayonIdx = Math.max(0, Math.min(RAYONS.length - 1, Number(store.get('rayonIdx', 2)) || 0));
   function soireesAvecKm() {
-    const centre = DEST.local.centre, auj = iso(new Date());
+    const centre = centreGeographique(), auj = iso(new Date());
     return SUD.soirees.filter((x) => x.date >= auj && SUD.lieux[x.lieu])
       .map((x) => ({ ...x, l: SUD.lieux[x.lieu], km: distKm(centre, [SUD.lieux[x.lieu].lat, SUD.lieux[x.lieu].lng]) }))
       .sort((a, b) => a.date.localeCompare(b.date) || a.km - b.km);
@@ -2666,9 +2672,9 @@
           <input type="range" id="fader-rayon" min="0" max="${RAYONS.length - 1}" step="1" value="${state.rayonIdx}" aria-label="Rayon de recherche" aria-valuetext="${r} kilomètres">
           <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k}</span>`).join('')}</div>
         </div>
-        <label class="radar-dep">Département <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>
+        <label class="radar-dep">Département français (facultatif) <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>
         <label class="radar-dep"><input type="checkbox" id="radar-avec-dj" ${state.sudAvecDj ? 'checked' : ''}> Avec DJ uniquement</label>
-        <p class="demo-note">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements avec annonces · collecte partielle.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
+        <p class="demo-note">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements français avec annonces' + (RADAR.countryCoverage && RADAR.countryCoverage.BE ? ' · Belgique : ' + RADAR.countryCoverage.BE + ' soirées' : '') + ' · collecte partielle.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
         <div class="pads" role="group" aria-label="Filtres">${PADS.map((x) => `<button class="pad" style="--pc:${x.c}" data-pad="${x.g}|${x.k}" aria-pressed="false"><span class="pad-nom">${x.nom}</span><small class="pad-nb"></small></button>`).join('')}</div>
       </div>
       <div id="agenda-liste"></div>`;
@@ -2757,7 +2763,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <img class="sud-affiche" src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC — affiche non fournie'}" style="object-fit:contain" loading="lazy" referrerpolicy="no-referrer">
         <div class="sud-info"><span class="venue">${esc(x.nom)}</span>
           ${x.djs ? `<small>Line-up : ${esc(x.djs)}</small>` : `<small>${x.djSet ? 'DJ annoncé · nom non communiqué' : 'Programmation non communiquée'}</small>`}${x.genres ? `<small class="sud-genres">${esc(x.genres)}</small>` : ''}
-          <small class="sud-lieu">${esc(x.l.nom)} · ${esc(x.l.ville)}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}${x.prix ? ' · ' + esc(x.prix) : ''} ${/^(\d{2,3}|2[AB])$/.test(x.l.dep) ? ' · <span class="sud-dep">' + x.l.dep + '</span>' : ''}</small>${x.sourceName ? `<small class="sud-source">Source : ${esc(x.sourceName)}${x.sourceUpdatedAt ? ' · mise à jour ' + esc(x.sourceUpdatedAt.slice(0, 10)) : ''}${radarUrl(x.sourceLicense) ? ` · <a href="${esc(radarUrl(x.sourceLicense))}" target="_blank" rel="noopener noreferrer">Licence ouverte</a>` : ''}</small>` : ''}</div>
+          <small class="sud-lieu">${esc(x.l.nom)} · ${esc(x.l.ville)}${x.l.approx ? ' · Position approximative' : ''}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}${x.prix ? ' · ' + esc(x.prix) : ''} ${x.l.country === 'BE' ? ' · Belgique' : /^(\d{2,3}|2[AB])$/.test(x.l.dep) ? ' · <span class="sud-dep">' + x.l.dep + '</span>' : ''}</small>${x.sourceName ? `<small class="sud-source">Source : ${esc(x.sourceName)}${x.sourceUpdatedAt ? ' · mise à jour ' + esc(x.sourceUpdatedAt.slice(0, 10)) : ''}${radarUrl(x.sourceLicense) ? ` · <a href="${esc(radarUrl(x.sourceLicense))}" target="_blank" rel="noopener noreferrer">Licence ouverte</a>` : ''}</small>` : ''}</div>
         ${url ? `<a class="badge b-soon" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${ticketUrl ? 'Billets' : 'Infos'}</a>` : ''}
       </div>`;
   }
@@ -2896,7 +2902,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       actions: `<div class="pb-actions"><button class="pb-btn plein" data-spot-ok="${s.id}">${s.type === 'bateau' ? 'Je suis à bord' : 'J\'y suis : il joue'}</button></div>${s.mien && !spotPublic(s) ? `<button class="lien-demo" data-spot-autre="${s.id}">Démo : un autre utilisateur confirme</button>` : ''}` });
   }
   function marqueursSpots() {
-    spotsVisibles().forEach((s) => {
+    SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && dansRayonCarte(s.lat, s.lng)).forEach((s) => {
       if (s.type === 'bateau' && s.trace && s.trace.length) {
         L.polyline(s.trace.concat([[s.lat, s.lng]]), { color: '#B58CFF', weight: 2, dashArray: '4 6', opacity: .8 }).addTo(layer);
       }
@@ -3352,7 +3358,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
 
   function marqueursDecls() {
     const groupes = {};
-    declsVisibles().filter(declDuJour).forEach((x) => { const l = lieuDe(x), d = djDe(x); if (!l || l.lat == null) return; const k = l.lat.toFixed(4) + ',' + l.lng.toFixed(4);
+    DECLS.filter((x) => declDuJour(x) && djDe(x) && (() => { const l = lieuDe(x); return l && dansRayonCarte(l.lat, l.lng); })()).forEach((x) => { const l = lieuDe(x), d = djDe(x); if (!l || l.lat == null) return; const k = l.lat.toFixed(4) + ',' + l.lng.toFixed(4);
       (groupes[k] = groupes[k] || { l, ok: false, html: [], pin: '', nom1: d.nom }); groupes[k].pin = groupes[k].pin || pinDj(d);
       const ok = declConfirmee(x); groupes[k].ok = groupes[k].ok || ok;
       groupes[k].html.push(entreeBulle({ k: ok ? 'live' : 'decl', lieu: esc(l.nom), etat: ok ? 'En live' : 'Déclaré', tete: avatarDj(d.nom, 'pb-av'), t: d.nom,
@@ -3372,7 +3378,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   function renderCartesMap() {
     const box = $('#map-cartes'); if (!box) return;
     // Le bandeau d'actu défile en bas de la grande carte, comme sur l'accueil et les pages saison
-    const fil = filDest(true); box.innerHTML = fil; box.hidden = !fil; box.classList.add('avec-fil'); return;
+    const fil = filDest(true); box.innerHTML = `<div class="map-rayon" style="padding:6px 12px;background:rgba(11,15,28,.92);border-radius:12px"><label style="display:flex;align-items:center;gap:8px;font-size:11px">Rayon · ${state.ckRayon} km <input id="map-rayon" type="range" min="0" max="${CK_RAYONS.length - 1}" step="1" value="${Math.max(0, CK_RAYONS.indexOf(state.ckRayon))}" aria-label="Rayon de la carte" aria-valuetext="${state.ckRayon} kilomètres" style="flex:1;min-width:0"></label><small>10 à 1 000 km · sans frontière</small></div>` + fil; box.hidden = false; box.classList.add('avec-fil'); return;
     const c = (DEST[state.dest] || {}).centre, dist = (la, lo) => c && la != null ? distKm(c, [la, lo]) : null;
     const kmTxt = (k) => k == null ? '' : ' · ' + (k < 1 ? '< 1' : Math.round(k)) + ' km';
     const ds = declsVisibles().map((x) => { const d = djDe(x), l = lieuDe(x); return `<button class="mc-carte mc-decl" data-mc-ll="${l.lat},${l.lng}">
@@ -4655,8 +4661,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     // Point GPS au milieu, cercle de 50 km autour : la carte s'ouvre cadrée sur ce cercle
     const poser = () => { const m = state.maPos, c = m ? [m.lat, m.lng] : ((state.zoneGeo && DEST[state.zoneGeo.dest]) || DEST.local).centre; dessinerMoi();
       if (!rayonLayer) rayonLayer = L.layerGroup().addTo(map); rayonLayer.clearLayers();
-      const cercle = L.circle(c, { radius: 50000, color: '#4DA3FF', weight: 1.5, opacity: .7, dashArray: '6 6', fillColor: '#4DA3FF', fillOpacity: .05, interactive: false }).addTo(rayonLayer);
-      L.marker(L.latLng(c[0] + 50 / 111, c[1]), { icon: L.divIcon({ className: 'rayon-label', html: '<span>50 km</span>', iconSize: [60, 20], iconAnchor: [30, 10] }), interactive: false }).addTo(rayonLayer);
+      const cercle = L.circle(c, { radius: state.ckRayon * 1000, color: '#4DA3FF', weight: 1.5, opacity: .7, dashArray: '6 6', fillColor: '#4DA3FF', fillOpacity: .05, interactive: false }).addTo(rayonLayer);
+      L.marker(L.latLng(c[0] + state.ckRayon / 111, c[1]), { icon: L.divIcon({ className: 'rayon-label', html: '<span>' + state.ckRayon + ' km</span>', iconSize: [60, 20], iconAnchor: [30, 10] }), interactive: false }).addTo(rayonLayer);
       map.fitBounds(cercle.getBounds(), { padding: [10, 10] }); };
     if (state.maPos && Date.now() - state.maPos.t < 120000) { poser(); return; }
     poser();

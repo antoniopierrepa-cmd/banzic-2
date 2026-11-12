@@ -1,0 +1,508 @@
+{
+  "country": "BE",
+  "updatedAt": "2026-11-12T08:24:10.112172+00:00",
+  "exhaustive": false,
+  "note": "Sources publiques identifiées. Les comptes sociaux sont à consulter ; leur présence ici ne signifie pas que toutes leurs publications ont été collectées. Ne pas fabriquer de dates à partir des horaires d’ouverture.",
+  "venues": [
+    {
+      "nom": "Bruxelles, Belgique",
+      "ville": "Brussels",
+      "country": "BE",
+      "type": "soiree",
+      "sourceUrl": "https://shotgun.live/fr/events/100-chris-brown-party-brussels",
+      "organizerUrl": "https://shotgun.live/fr/venues/cent-pour-cent",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-28"
+      ]
+    },
+    {
+      "nom": "The Sneakers Cafe - Bar",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "bar",
+      "sourceUrl": "https://shotgun.live/fr/events/100-hamza-party-in-brussels",
+      "organizerUrl": "https://shotgun.live/fr/venues/centpour-cent-belgium",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-12-12",
+        "2026-12-12",
+        "2026-11-27"
+      ]
+    },
+    {
+      "nom": "Théâtre Varia",
+      "ville": "Ixelles",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/21-am-culture",
+      "organizerUrl": "https://shotgun.live/fr/venues/cafe-ania",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-21",
+        "2026-11-22"
+      ]
+    },
+    {
+      "nom": "Rue Dieudonné Lefèvre 4, 1020 Bruxelles, Belgique",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "soiree",
+      "sourceUrl": "https://shotgun.live/fr/events/54-sound-invites-idren-leeroy",
+      "organizerUrl": "https://shotgun.live/fr/venues/la-source-beer-co",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-21"
+      ]
+    },
+    {
+      "nom": "Congressistes",
+      "ville": "Liège",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/alchemy-special-new-year-s",
+      "organizerUrl": "https://shotgun.live/fr/venues/alchemy-be",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-12-31"
+      ]
+    },
+    {
+      "nom": "La Source Beer Co.",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "bar",
+      "sourceUrl": "https://shotgun.live/fr/events/arabrot-big-horse",
+      "organizerUrl": "https://shotgun.live/fr/venues/la-source-beer-co",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-12-02",
+        "2026-11-26",
+        "2027-02-03",
+        "2026-11-27",
+        "2027-03-27",
+        "2027-01-08",
+        "2027-01-23",
+        "2027-02-06",
+        "2027-04-27",
+        "2026-11-15"
+      ]
+    },
+    {
+      "nom": "Madame Moustache - Night Club",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "soiree",
+      "sourceUrl": "https://shotgun.live/fr/events/arch-club-bruxelles",
+      "organizerUrl": "https://shotgun.live/fr/venues/based-mtp",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-20"
+      ]
+    },
+    {
+      "nom": "Gemeenschapscentrum De Vaartkapoen",
+      "ville": "Molenbeek-Saint-Jean",
+      "country": "BE",
+      "type": "concert",
+      "sourceUrl": "https://shotgun.live/fr/events/balik-en-concert-exclusif-bruxelles-vk",
+      "organizerUrl": "https://shotgun.live/fr/venues/skinfama",
+      "status": "programmation future publiée",
+      "events": [
+        "2027-04-16"
+      ]
+    },
+    {
+      "nom": "Cirque Royal",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "concert",
+      "sourceUrl": "https://shotgun.live/fr/events/bandit-bandit-cirque-royal-club",
+      "organizerUrl": "https://shotgun.live/fr/venues/coppr-art",
+      "status": "programmation future publiée",
+      "events": [
+        "2027-01-30"
+      ]
+    },
+    {
+      "nom": "Quai Louva 1, 4102 Seraing, Belgique",
+      "ville": "Seraing",
+      "country": "BE",
+      "type": "soiree",
+      "sourceUrl": "https://shotgun.live/fr/events/birds-on-a-wire-om",
+      "organizerUrl": "https://shotgun.live/fr/venues/coppr-art",
+      "status": "programmation future publiée",
+      "events": [
+        "2027-05-05"
+      ]
+    },
+    {
+      "nom": "B21",
+      "ville": "Forest",
+      "country": "BE",
+      "type": "soiree",
+      "sourceUrl": "https://shotgun.live/fr/events/bluehours-2-g-ear-tres-beau-paradis-fiscal-soft-machina",
+      "organizerUrl": "https://shotgun.live/fr/venues/matiere",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-14"
+      ]
+    },
+    {
+      "nom": "UMI",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "soiree",
+      "sourceUrl": "https://shotgun.live/fr/events/blur-12-dec-26",
+      "organizerUrl": "https://shotgun.live/fr/venues/blur",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-12-12",
+        "2026-11-14",
+        "2026-12-19",
+        "2026-12-05",
+        "2027-01-01",
+        "2026-11-27",
+        "2026-11-21",
+        "2026-12-18",
+        "2026-11-21",
+        "2026-11-20"
+      ]
+    },
+    {
+      "nom": "Acte 3 - Braine-l'Alleud",
+      "ville": "Braine-L'alleud",
+      "country": "BE",
+      "type": "soiree",
+      "sourceUrl": "https://shotgun.live/fr/events/blurrymoov-act-i",
+      "organizerUrl": "https://shotgun.live/fr/venues/blurrymoov",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-13"
+      ]
+    },
+    {
+      "nom": "VK concerts",
+      "ville": "Molenbeek-Saint-Jean",
+      "country": "BE",
+      "type": "concert",
+      "sourceUrl": "https://shotgun.live/fr/events/camel-power-club-in-brussels",
+      "organizerUrl": "https://shotgun.live/fr/venues/monty-people",
+      "status": "programmation future publiée",
+      "events": [
+        "2027-12-10"
+      ]
+    },
+    {
+      "nom": "Église Sainte-Catherine",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/concert-a-bruxelles-tchaikovsky-williams-vivaldi",
+      "organizerUrl": "https://shotgun.live/fr/venues/musicame-france",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-12-13"
+      ]
+    },
+    {
+      "nom": "Eglise Saint-Pierre d'Uccle",
+      "ville": "Uccle",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/concert-a-uccle-tchaikovsky-williams-vivaldi-pachelbel",
+      "organizerUrl": "https://shotgun.live/fr/venues/musicame-france",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-12-11"
+      ]
+    },
+    {
+      "nom": "Brasserie de la Senne",
+      "ville": "Brussel",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/drum-beer-46-deep-more",
+      "organizerUrl": "https://shotgun.live/fr/venues/drumnbeer",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-21"
+      ]
+    },
+    {
+      "nom": "Nashaz",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/drum-beer-x-aleph-dub-soundsystem-jungle-edition",
+      "organizerUrl": "https://shotgun.live/fr/venues/drumnbeer",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-12-04"
+      ]
+    },
+    {
+      "nom": "Place Poelaert 6, 1000 Bruxelles, Belgium",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "soiree",
+      "sourceUrl": "https://shotgun.live/fr/events/flora-x-oken-28-11",
+      "organizerUrl": "https://shotgun.live/fr/venues/flora-brussels",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-28"
+      ]
+    },
+    {
+      "nom": "La Fabriek",
+      "ville": "Anderlecht",
+      "country": "BE",
+      "type": "concert",
+      "sourceUrl": "https://shotgun.live/fr/events/gl-1-tch-v-14-11",
+      "organizerUrl": "https://shotgun.live/fr/venues/la-fabriek",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-14",
+        "2026-11-13",
+        "2026-11-19",
+        "2026-11-26",
+        "2026-11-20",
+        "2026-11-27"
+      ]
+    },
+    {
+      "nom": "Rue Riverre 17 b, 5150 Floreffe, Belgique",
+      "ville": "Floreffe",
+      "country": "BE",
+      "type": "soiree",
+      "sourceUrl": "https://shotgun.live/fr/events/hdtc-the-resurgence-14-11-26-pheoni",
+      "organizerUrl": "https://shotgun.live/fr/venues/hdtc",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-14"
+      ]
+    },
+    {
+      "nom": "Rue des Pierres 52, 1000 Bruxelles, Belgique",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/hypnofaze-clubnight-8-last-of-2-k-26",
+      "organizerUrl": "https://shotgun.live/fr/venues/hypnofaze",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-21"
+      ]
+    },
+    {
+      "nom": "BBP Bailli",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "soiree",
+      "sourceUrl": "https://shotgun.live/fr/events/in-oubliables-at-bbp-bailli",
+      "organizerUrl": "https://shotgun.live/fr/venues/in-oubliables",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-27"
+      ]
+    },
+    {
+      "nom": "Rue Saint Jean en Isle 20, 4000 Liège, Belgique",
+      "ville": "Liège",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/invazzion-hysta-hard-techno-360",
+      "organizerUrl": "https://shotgun.live/fr/venues/invazzion",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-27"
+      ]
+    },
+    {
+      "nom": "Église Notre-Dame et Saint Pierre",
+      "ville": "Gent",
+      "country": "BE",
+      "type": "concert",
+      "sourceUrl": "https://shotgun.live/fr/events/kerstconcert-in-gent-tchaikovsky-williams-vivaldi",
+      "organizerUrl": "https://shotgun.live/fr/venues/musicame-france",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-12-12"
+      ]
+    },
+    {
+      "nom": "C12",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "soiree",
+      "sourceUrl": "https://shotgun.live/fr/events/la-purple-bxl-popaddiction",
+      "organizerUrl": "https://shotgun.live/fr/venues/la-purple",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-13"
+      ]
+    },
+    {
+      "nom": "ZENNEBAR",
+      "ville": "Brussel",
+      "country": "BE",
+      "type": "bar",
+      "sourceUrl": "https://shotgun.live/fr/events/loud-bodies-1",
+      "organizerUrl": "https://shotgun.live/fr/venues/embruns",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-14"
+      ]
+    },
+    {
+      "nom": "Rue d'Ecosse 30, 1060 Bruxelles, Belgique",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "soiree",
+      "sourceUrl": "https://shotgun.live/fr/events/par-sek-a-la-maison-poeme",
+      "organizerUrl": "https://shotgun.live/fr/venues/delco-music",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-25"
+      ]
+    },
+    {
+      "nom": "Coco Brussels",
+      "ville": "Ixelles",
+      "country": "BE",
+      "type": "soiree",
+      "sourceUrl": "https://shotgun.live/fr/events/session-32-r-b-party-ii-a-bruxelles",
+      "organizerUrl": "https://shotgun.live/fr/venues/session-32",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-27"
+      ]
+    },
+    {
+      "nom": "BUDA BXL",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/span-001-weekender",
+      "organizerUrl": "https://shotgun.live/fr/venues/span",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-12-12"
+      ]
+    },
+    {
+      "nom": "Rue Ransonnet 2, 4020 Liège, Belgique",
+      "ville": "Liège",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/strate-01",
+      "organizerUrl": "https://shotgun.live/fr/venues/strate",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-12-04"
+      ]
+    },
+    {
+      "nom": "Rue du Marché aux Herbes 116, 1000 Bruxelles, Belgique",
+      "ville": "Bruxelles",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/sublime-club-bruxelles",
+      "organizerUrl": "https://shotgun.live/fr/venues/bleu-citron-productions",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-19"
+      ]
+    },
+    {
+      "nom": "Studio Citygate",
+      "ville": "Anderlecht",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/unfaced-brussels-261211",
+      "organizerUrl": "https://shotgun.live/fr/venues/unfaced",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-12-11"
+      ]
+    },
+    {
+      "nom": "De Casino",
+      "ville": "Sint-Niklaas",
+      "country": "BE",
+      "type": "concert",
+      "sourceUrl": "https://shotgun.live/fr/events/villagers-of-ioannina-city-de-casino",
+      "organizerUrl": "https://shotgun.live/fr/venues/coppr-art",
+      "status": "programmation future publiée",
+      "events": [
+        "2027-04-01"
+      ]
+    },
+    {
+      "nom": "Liège, Belgium",
+      "ville": "Liège",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/vizion-focus-orbit",
+      "organizerUrl": "https://shotgun.live/fr/venues/vizion-focus",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-21"
+      ]
+    },
+    {
+      "nom": "Avenue de la Libération 1, 4960 Malmedy, Belgique",
+      "ville": "Malmedy",
+      "country": "BE",
+      "type": "club",
+      "sourceUrl": "https://shotgun.live/fr/events/yesterave-parenthese-2026",
+      "organizerUrl": "https://shotgun.live/fr/venues/yesterave",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-28"
+      ]
+    },
+    {
+      "nom": "Ciao Bella — 221 route de Philippeville",
+      "ville": "Charleroi",
+      "country": "BE",
+      "type": "restaurant",
+      "sourceUrl": "https://ciaobellarestaurant.be/evenement-restaurant-charleroi",
+      "organizerUrl": "",
+      "status": "programmation future publiée",
+      "events": [
+        "2026-11-13",
+        "2026-12-11"
+      ]
+    }
+  ],
+  "additionalSources": [
+    {
+      "nom": "Fuse",
+      "ville": "Bruxelles",
+      "website": "https://www.fuse.be/",
+      "facebook": "https://www.facebook.com/fusebrussels/",
+      "instagram": "https://www.instagram.com/fusebrussels/"
+    },
+    {
+      "nom": "Kompass Klub",
+      "ville": "Gand",
+      "website": "https://kompassklub.com/",
+      "facebook": "https://www.facebook.com/kompassklub",
+      "instagram": "https://www.instagram.com/kompassklub/",
+      "tiktok": "https://www.tiktok.com/@kompassklub"
+    },
+    {
+      "nom": "Ampere",
+      "ville": "Anvers",
+      "website": "https://ampere-antwerp.com/program/?future=true"
+    },
+    {
+      "nom": "Le Maquis Bar",
+      "ville": "Bruxelles",
+      "website": "https://lemaquisbar.be/bar-quizz/",
+      "facebook": "https://www.facebook.com/lemaquisbar",
+      "instagram": "https://www.instagram.com/lemaquisbar/"
+    }
+  ]
+}

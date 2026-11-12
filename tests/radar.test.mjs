@@ -27,3 +27,11 @@ test('conserve la provenance des annonces nationales et le type soirée', () => 
  const event = normalize({...row,type:'soiree',lineup:[],sourceName:'Office de tourisme',sourceUpdatedAt:'2026-11-10',sourceLicense:'https://example.org/licence',sourceRecordUrl:row.url},source,'2026-11-12');
  assert.equal(event.type,'soiree');assert.equal(event.sourceName,'Office de tourisme');assert.equal(event.sourceUpdatedAt,'2026-11-10');assert.equal(event.sourceRecordUrl,row.url);assert.equal(event.djSet,false);
 });
+test('la Belgique conserve sa géolocalisation et n’est pas un département français', () => {
+ const belgian={...row,id:'belgium-test',country:'BE',dep:'',ville:'Bruxelles',lat:50.85,lng:4.35,lineup:[],flyerUrl:'https://example.org/flyer.jpg'};
+ const result=normalize(belgian,source,'2026-11-12');assert.equal(result.venue.country,'BE');assert.equal(result.venue.dep,'BE');assert.equal(result.flyerUrl,belgian.flyerUrl);assert.equal(result.djSet,false);
+ const data=snapshot([{row:belgian,source},{row,source}],[source],new Date('2026-11-12T10:00:00Z'));
+ assert.equal(data.countryCoverage.BE,1);assert.equal(data.countryCoverage.FR,1);assert.equal(Object.keys(data.coverage).length,101);assert.equal(data.coverage.BE,undefined);
+ assert.equal(normalize({...belgian,country:'ZZ'},source,'2026-11-12'),null);
+ assert.equal(normalize({...belgian,lineup:['Groupe live'],djSet:false},source,'2026-11-12').djSet,false);
+});
