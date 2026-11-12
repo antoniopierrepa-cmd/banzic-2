@@ -2670,11 +2670,20 @@
     const i = CK_RAYONS.indexOf(r);
     if (lignesSeules) return L.map(rangee);
     box.innerHTML = `<div class="ck-tete"><div><h2>Check-in</h2><small>Départs autour de ${esc(nomPos)} · <b>${r} km</b> · ${L.length} départ${L.length > 1 ? 's' : ''}</small></div><span class="ck-horloge">${flap(hm(now), 5)}</span></div>
+      <button type="button" id="ck-hyeres" class="acc-chip" style="margin:8px 0 12px">📍 Voir les départs de Hyères · 20 km</button>
       <div class="fd-rail ck-rail"><input type="range" id="fader-ck" min="0" max="${CK_RAYONS.length - 1}" step="1" value="${i}" style="--pct:${i / (CK_RAYONS.length - 1) * 100}%" aria-label="Rayon du check-in" aria-valuetext="${r} kilomètres">
         <div class="fd-graduations" aria-hidden="true">${CK_RAYONS.map((k, j) => `<span class="${j === i ? 'on' : ''}" data-ck-rayon="${j}">${k}</span>`).join('')}</div></div>
       <div class="ck-legende"><span class="ck-st ck-st-or"><i></i>Embarquement</span><span>commence dans moins de 2 h</span><span class="ck-st ck-st-rouge"><i></i>Dernier appel</span><span>commence dans moins de 15 min</span></div>
       ${jours.map((date) => { const lignes = L.filter((o) => { const j = iso(new Date(o.t || now)); return date === auj ? j <= auj : j === date; }); return `<section class="ck-jour ${clJour(date)}"><h3 class="ck-jour-bandeau"><span class="cjb-nom">${titreJour(date)}</span><span class="cjb-info"><b>${new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</b><small>${lignes.length} départ${lignes.length > 1 ? 's' : ''}</small></span></h3>${lignes.length ? `<div class="ck-liste">${lignes.map(rangee).join('')}</div>` : `<p class="empty">Aucune soirée répertoriée à moins de ${r} km pour cette journée.</p>`}</section>`; }).join('')}<p class="aide">Mise à jour automatique. Sans horaire de fin publié, la fin est estimée à six heures après le début ; sans horaire, la soirée reste affichée jusqu’à minuit.</p>`;
   }
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#ck-hyeres')) return;
+    state.villeChoisie = true;
+    state.villeRecherche = [43.1205, 6.1286];
+    state.zoneGeo = { ...zoneDe([43.1205, 6.1286], false, 'Hyères'), nom: 'Hyères' };
+    state.ckRayon = 20;
+    renderCheckin();
+  });
   const reglerCk = (j) => { state.ckRayon = CK_RAYONS[Math.max(0, Math.min(CK_RAYONS.length - 1, j))]; store.set('ckRayon', state.ckRayon); renderCheckin(); };
   document.addEventListener('change', (e) => { if (e.target.id === 'fader-ck') reglerCk(+e.target.value); });
   document.addEventListener('input', (e) => { if (e.target.id === 'fader-ck') { const j = +e.target.value; e.target.style.setProperty('--pct', j / (CK_RAYONS.length - 1) * 100 + '%'); document.querySelectorAll('[data-ck-rayon]').forEach((s, k) => s.classList.toggle('on', k === j)); } });
