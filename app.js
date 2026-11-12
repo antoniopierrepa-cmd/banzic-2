@@ -399,6 +399,7 @@
   function initMap() {
     if (map || typeof L === 'undefined') return;
     map = L.map('map', { zoomControl: false, attributionControl: true }).setView(DEST[state.dest].centre, DEST[state.dest].zoom);
+    map.on('popupopen', (ev) => remplirPhotosGoogle(ev.popup.getElement()));
     // Deux fonds Esri (acceptent les pages ouvertes depuis un fichier local) : nuit et satellite
     const esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
     FONDS = {
@@ -2946,7 +2947,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     return entreeBulle({ k: 'spot', lieu: esc(s.nom || TYPES_SPOT[s.type]), etat: 'Spot', tete: `<span class="pb-ico spot">${TYPES_SPOT[s.type].slice(0, 1)}</span>`, t: s.dj || 'DJ inconnu',
       heure: `Signalé à ${hm(s.t)} par @${esc(s.par || 'un Banger')}`,
       bang: spotPublic(s) ? `${tetesBangers(c, s.id)}<span><b>${c} Bangers</b> y sont${n ? ' · ' + '★'.repeat(n) : ''}</span><span class="pb-vaut ${v[1]}">${v[0]}</span>` : `<span><b>Ton signalement</b> · en attente ${Math.min(c, SEUIL_SPOT)}/${SEUIL_SPOT}</span>`,
-      actions: `<div class="pb-actions"><button class="pb-btn plein" data-spot-ok="${s.id}">${s.type === 'bateau' ? 'Je suis à bord' : 'J\'y suis : il joue'}</button></div>${s.mien && !spotPublic(s) ? `<button class="lien-demo" data-spot-autre="${s.id}">Démo : un autre utilisateur confirme</button>` : ''}` });
+      actions: `${s.gid ? `<div class="g-bulle" data-gphoto="${esc(s.gid)}"></div>` : ''}<div class="pb-actions"><button class="pb-btn plein" data-spot-ok="${s.id}">${s.type === 'bateau' ? 'Je suis à bord' : 'J\'y suis : il joue'}</button></div>${s.mien && !spotPublic(s) ? `<button class="lien-demo" data-spot-autre="${s.id}">Démo : un autre utilisateur confirme</button>` : ''}` });
   }
   function marqueursSpots() {
     SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && dansZoneCarte(s.lat, s.lng)).forEach((s) => {
@@ -3001,6 +3002,45 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
           zone: [t['addr:street'], t['addr:city']].filter(Boolean).join(', '), src: 'osm', dest: state.dest === 'ibiza' ? 'ibiza' : 'local' }; }).filter(Boolean);
     } catch (e) { return []; }
   }
+  // Google Places (essai) : boîtes, bars, pubs, karaokés ; les restaurants seulement s'ils ont de la musique live.
+  // On ne garde que l'identifiant Google du lieu ; la photo est redemandée à Google à chaque affichage, avec le nom de l'auteur.
+  const GKEY = (window.BANZIC_GOOGLE || {}).cle;
+  const G_NUIT = { night_club: ['club', 'Boîte de nuit'], dance_hall: ['club', 'Salle de danse'], bar: ['bar', 'Bar'], pub: ['bar', 'Pub'], wine_bar: ['bar', 'Bar à vin'], cocktail_bar: ['bar', 'Bar à cocktails'],
+    lounge_bar: ['bar', 'Lounge'], karaoke: ['bar', 'Karaoké'], brewpub: ['bar', 'Brasserie'], bar_and_grill: ['bar', 'Bar'] };
+  const gPhotoUrl = (ph, w) => ph && GKEY ? `https://places.googleapis.com/v1/${ph.name}/media?maxWidthPx=${w || 480}&key=${GKEY}` : '';
+  const gAuteur = (ph) => ((ph && ph.authorAttributions) || [])[0] || null;
+  const gMapsUrl = (gid) => 'https://www.google.com/maps/place/?q=place_id:' + encodeURIComponent(gid);
+  async function lieuxGoogle(lat, lng, metres) {
+    if (!GKEY) return [];
+    try {
+      const r = await fetch('https://places.googleapis.com/v1/places:searchNearby', { method: 'POST', signal: avecDelai(8000),
+        headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GKEY, 'X-Goog-FieldMask': 'places.id,places.displayName,places.primaryType,places.location,places.photos,places.liveMusic,places.shortFormattedAddress' },
+        body: JSON.stringify({ includedTypes: ['night_club', 'bar', 'pub', 'wine_bar', 'karaoke', 'dance_hall', 'restaurant'], maxResultCount: 20, rankPreference: 'DISTANCE', languageCode: 'fr',
+          locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius: Math.min(50000, Math.max(100, metres)) } } }) });
+      if (!r.ok) return [];
+      const j = await r.json();
+      return (j.places || []).map((p) => {
+        const nuit = G_NUIT[p.primaryType]; if (!nuit && p.liveMusic !== true) return null;
+        const ty = nuit || ['bar', 'Musique live'];
+        return { id: 'g-' + p.id, gid: p.id, nom: (p.displayName || {}).text || 'Lieu', lat: p.location.latitude, lng: p.location.longitude, type: ty[0] === 'club' ? 'club' : 'bar', genre: ty[0],
+          lib: ty[1] + (nuit && p.liveMusic ? ' · musique live' : ''), zone: p.shortFormattedAddress || '', src: 'google', dest: state.dest === 'ibiza' ? 'ibiza' : 'local', photo: (p.photos || [])[0] || null };
+      }).filter(Boolean);
+    } catch (e) { return []; }
+  }
+  // Photo Google d'un lieu déjà choisi : gardée seulement le temps de la session, jamais enregistrée
+  const G_PHOTOS = {};
+  async function photoGoogle(gid) {
+    if (!GKEY || !gid) return null;
+    if (G_PHOTOS[gid] !== undefined) return G_PHOTOS[gid];
+    try { const r = await fetch('https://places.googleapis.com/v1/places/' + encodeURIComponent(gid), { headers: { 'X-Goog-Api-Key': GKEY, 'X-Goog-FieldMask': 'photos' } });
+      const j = r.ok ? await r.json() : {}; return (G_PHOTOS[gid] = (j.photos || [])[0] || null); } catch (e) { return null; }
+  }
+  const ficheGoogle = (ph, gid) => !gid ? '' : (ph ? `<figure class="g-photo"><img src="${gPhotoUrl(ph)}" alt="" loading="lazy"><figcaption><span>Photo${gAuteur(ph) ? ' : <a href="' + esc(gAuteur(ph).uri || '#') + '" target="_blank" rel="noopener">' + esc(gAuteur(ph).displayName || '') + '</a>' : ''}</span><span class="g-marque">Google Maps</span></figcaption></figure>` : '')
+    + `<a class="g-lien" href="${gMapsUrl(gid)}" target="_blank" rel="noopener">Voir sur Google Maps</a>`;
+  // Dans une bulle de la carte : la photo arrive quand la bulle s'ouvre
+  function remplirPhotosGoogle(el) {
+    (el ? el.querySelectorAll('[data-gphoto]') : []).forEach((z) => { if (z.dataset.ok) return; z.dataset.ok = 1; photoGoogle(z.dataset.gphoto).then((ph) => { z.innerHTML = ficheGoogle(ph, z.dataset.gphoto); }); });
+  }
   function formSpot() {
     photoSpot = '';
     $('#panel-spot').innerHTML = '<div class="ps-titre"><b>Je bangue</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div><p class="aide">Je cherche ta position…</p>';
@@ -3020,7 +3060,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         const deja = $('#form-spot');
         const html = `<button type="button" class="ps-ou ps-ou-btn" data-ps-ou="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
             <span id="ps-ou-txt">${posSpot.connu ? `Tu es à : <b>${esc(posSpot.connu.nom)}</b>` : proches.length ? '<b>Où es-tu ?</b> Choisis le lieu' : cherche ? '<b>Je cherche…</b>' : '<b>Lieu introuvable</b>'}</span><small>${proches.length} lieu${proches.length > 1 ? 'x' : ''} à ${Math.round(R * 1000) >= 1000 ? fm(R) : Math.round(R * 1000) + ' m'}</small></button>
-          <div class="ps-lieux" id="ps-lieux"${posSpot.connu ? ' hidden' : ''}>${liste}</div>`;
+          <div class="ps-lieux" id="ps-lieux"${posSpot.connu ? ' hidden' : ''}>${liste}</div>
+          <div class="ps-gfiche" id="ps-gfiche">${posSpot.connu && posSpot.connu.gid ? ficheGoogle(posSpot.connu.photo, posSpot.connu.gid) : ''}</div>`;
         if (deja) { $('#ps-zone').innerHTML = html; deja.querySelector('.ps-suite').hidden = !proches.length; majDjIci(); return; }
         $('#panel-spot').innerHTML = `<form id="form-spot" novalidate>
           <div class="ps-titre"><b>Je bangue</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div>
@@ -3045,13 +3086,13 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
             <small class="aide">Éphémère : il s'efface à la fin du set, quand la barre de progression arrive au bout.</small></label>
           <button type="submit" class="btn-plein">Je bangue ici</button></div>
           <button type="button" class="alerte ps-retour" data-spot-fermer="1">← Annuler</button>
-          <p class="aide">Seulement dans un lieu public (bar, resto, club, beach club). Lieux : Banzic et OpenStreetMap. Visible tout de suite pour toi ; les autres le verront quand 2 personnes à côté l'auront confirmé.</p>
+          <p class="aide">Seulement dans un lieu public (bar, resto, club, beach club). Lieux : Banzic, Google Maps et OpenStreetMap. Visible tout de suite pour toi ; les autres le verront quand 2 personnes à côté l'auront confirmé.</p>
         </form>`;
         majDjIci();
       };
       posSpot = null;
       dessiner(banzic.slice(), true);
-      lieuxOsm(lat, lng, Math.round(R * 1000)).then((osm) => {
+      lieuxGoogle(lat, lng, Math.round(R * 1000)).then((g) => g.length ? g : lieuxOsm(lat, lng, Math.round(R * 1000))).then((osm) => {
         const tous = banzic.slice();
         osm.forEach((l) => { const km = distKm([lat, lng], [l.lat, l.lng]); if (km > R) return; if (tous.some((o) => sansAccent(o.l.nom).toLowerCase() === sansAccent(l.nom).toLowerCase() && o.km < .3)) return; tous.push({ l, km }); });
         if ($('#panel-spot') && !$('#panel-spot').hidden) dessiner(tous, false);
@@ -3065,6 +3106,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     posSpot.connu = o.l;
     document.querySelectorAll('.ps-lieu').forEach((x) => x.classList.toggle('on', x === b));
     $('#ps-ou-txt').innerHTML = `Tu es à : <b>${esc(o.l.nom)}</b>`;
+    { const z = $('#ps-gfiche'); if (z) z.innerHTML = o.l.gid ? ficheGoogle(o.l.photo, o.l.gid) : ''; }
     majDjIci();
     setTimeout(() => { const l = $('#ps-lieux'); if (l) l.hidden = true; }, 250);
   });
@@ -3126,7 +3168,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (connu.src === 'ibiza' && lieux[connu.id]) { signaler(connu.id, dj || 'DJ inconnu'); renderMap(); return; }
     const s = { id: 'sp' + Date.now(), dest: (connu && connu.dest) || state.dest, type: connu ? (connu.type === 'plage' ? 'plage' : connu.genre === 'bar' ? 'bar' : 'club') : (f.get('type') || 'bar'),
       nom: connu ? connu.nom : String(f.get('nom') || '').trim(), dj, lat: connu ? connu.lat : lat, lng: connu ? connu.lng : lng,
-      t: Date.now(), maj: Date.now(), conf: 0, mien: true, trace: [], note, notes: note ? [note] : [], temp: f.get('temp') != null ? +f.get('temp') : 1, com: String(f.get('com') || '').trim().slice(0, 80) };
+      gid: (connu && connu.gid) || null, t: Date.now(), maj: Date.now(), conf: 0, mien: true, trace: [], note, notes: note ? [note] : [], temp: f.get('temp') != null ? +f.get('temp') : 1, com: String(f.get('com') || '').trim().slice(0, 80) };
     SPOTS.push(s); sauverSpots(); BDD.envoyerSpot(s);
     renderMap(); rappelCompte && rappelCompte();
     if (connu) { BANG_LIEU[connu.id] = (BANG_LIEU[connu.id] || 0) + 1; store.set('bangLieu', BANG_LIEU); }

@@ -2909,3 +2909,14 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .thermo-txt { font-size: 11px; font-weight: 800; margin-right: 4px; } .thermo-txt.t0 { color: #6FA8FF; } .thermo-txt.t1 { color: #F2C53A; } .thermo-txt.t2 { color: #FF5A5A; }
 
 .radar-dep{display:flex;align-items:center;gap:12px;margin:12px 0;flex-wrap:wrap}.radar-dep select{font:inherit;color:inherit;background:#151725;border:1px solid #777;border-radius:8px;padding:10px;max-width:100%}
+
+/* Google Maps : photo du lieu choisi, avec l'auteur et la mention Google Maps */
+.ps-gfiche:empty { display: none; }
+.ps-gfiche, .g-bulle { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 2px; }
+.g-photo { margin: 0; border-radius: 12px; overflow: hidden; background: #0B0F1C; border: 1px solid rgba(255,255,255,.08); }
+.g-photo img { display: block; width: 100%; height: 150px; object-fit: cover; }
+.g-bulle .g-photo img { height: 110px; }
+.g-photo figcaption { display: flex; justify-content: space-between; gap: 8px; padding: 5px 9px; font-size: 10.5px; color: var(--muted, #9AA3B8); }
+.g-photo figcaption a { color: inherit; text-decoration: underline; }
+.g-marque { font-weight: 600; color: #C8CEDD; white-space: nowrap; }
+.g-lien { align-self: flex-start; font-size: 12.5px; font-weight: 600; color: #FF8A3D; text-decoration: none; padding: 4px 0; }
