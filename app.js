@@ -2526,7 +2526,7 @@
       <span class="bcb-photo" data-bcb-photo="1"><span class="bcb-st ck-st ck-st-${f.st[1]}"><i></i>${esc(f.st[0])}</span></span>
       <span class="bcb-txt"><b class="bcb-lieu">${esc(l.nom || f.titre)}</b>${f.titre && f.titre !== l.nom ? `<small class="bcb-soiree">${esc(f.titre)}</small>` : ''}
         <span class="bcb-djs">${djs.length ? `<small>${f.tag === 'Live' || f.st[1] === 'vert' ? 'Aux platines' : 'Line-up'}</small>${djs.slice(0, 3).map((n) => `<span class="bcb-dj">${avatarDj(n)}<em>${esc(n)}</em></span>`).join('')}${djs.length > 3 ? `<span class="bcb-plus">+${djs.length - 3}</span>` : ''}` : `<small>${f.club ? 'Aucune soirée annoncée' : 'DJ pas encore annoncé'}</small>`}</span>
-        <span class="bcb-bas">${f.heure ? esc(f.heure) + ' · ' : ''}${esc(f.quand || '')}<span class="bcb-voir">Voir la soirée ›</span></span></span></button>`;
+        <span class="bcb-bas">${f.heure ? esc(f.heure) + ' · ' : ''}${f.club ? esc(f.lieu.adresse || '') : esc(f.quand || '')}<span class="bcb-voir">${f.club ? 'Voir le club ›' : 'Voir la soirée ›'}</span></span></span></button>`;
     if (bullePt) map.closePopup(bullePt);
     bullePt = L.popup({ className: 'pop-grandit', closeButton: false, maxWidth: 270, minWidth: 250, offset: [0, -14], autoPanPaddingTopLeft: [16, 84], autoPanPaddingBottomRight: [16, 120] }).setLatLng(ll).setContent(html).openOn(map);
     (l.gid ? Promise.resolve(l.gid) : gidPour(l)).then((gid) => { if (!gid) return; l.gid = gid; return photoGoogle(gid).then((p) => {
@@ -2546,7 +2546,7 @@
     const fK = (x) => x == null ? '' : x < 1 ? '< 1 km' : Math.round(x) + ' km';
     scr.innerHTML = `<div class="sf-haut"><button type="button" class="sf-retour" data-soiree-fermer="1" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>${({ map: 'Carte', agenda: 'Agenda', checkin: 'Check-in' })[state.tab] || 'Retour'}</button>${f.test ? '<span class="sf-test">Mode test</span>' : ''}</div>
       ${f.affiche ? `<img class="sf-affiche" src="${esc(f.affiche)}" alt="Affiche — ${esc(f.titre)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}
-      <div class="sf-tete ck-${f.st[1]}"><span class="ck-st ck-st-${f.st[1]}"><i></i>${esc(f.st[0])}</span><em class="fil-tag decl">${esc(f.tag)}</em>
+      <div class="sf-tete ck-${f.st[1]}"><span class="ck-st ck-st-${f.st[1]}"><i></i>${esc(f.st[0])}</span>${f.club ? '' : `<em class="fil-tag decl">${esc(f.tag)}</em>`}
         <h2>${esc(f.titre)}</h2>${f.sous ? `<p class="sf-sous">${esc(f.sous)}</p>` : ''}
         <p class="sf-quand">${f.heure ? `<b>${esc(f.heure)}</b> · ` : ''}${esc(f.quand || '')}</p>
         ${f.temp != null ? `<p class="sf-ambiance"><span class="thermo-mini t${f.temp}"><i></i></span><span class="thermo-txt t${f.temp}">Ambiance ${['froide', 'moyenne', 'chaude'][f.temp]}</span>${f.conf ? ` · ${f.conf} Banger${f.conf > 1 ? 's' : ''} confirment` : ''}</p>` : ''}
@@ -2555,7 +2555,7 @@
         <div class="sf-lieu"><div class="sf-photo" data-sf-photo="1"></div>
           <b>${esc(l.nom || 'Lieu')}</b>${l.adresse ? `<small>${esc(l.adresse)}</small>` : ''}${f.km != null ? `<small>À ${fK(f.km)} de toi</small>` : ''}
           <div class="sf-actions"><button type="button" class="sf-btn plein" data-soiree-carte="${cle}">Voir sur la carte</button><a class="sf-btn" data-sf-gm="1" href="${gm}" target="_blank" rel="noopener">Google Maps</a></div></div></div>
-      <div class="sf-bloc"><div class="sf-titre">Line-up</div>
+      <div class="sf-bloc"><div class="sf-titre">${f.club ? 'Soirées' : 'Line-up'}</div>
         ${f.djs && f.djs.length ? `<div class="sf-lineup">${f.djs.map((n) => `<button type="button" class="sf-dj" data-dj-pro="${esc(n)}"><span class="sf-av">${avatarDj(n)}</span><b>${esc(n)}</b><span class="sf-fleche" aria-hidden="true">›</span></button>`).join('')}</div>`
           : `<p class="aide">${f.club ? 'Aucune soirée annoncée pour l\'instant.' : 'Line-up non communiqué pour l\'instant.'}</p>`}</div>
       ${f.url ? `<a class="btn-plein sf-billets" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${f.club ? 'Site du club' : f.billets ? 'Billets' : 'Infos sur la soirée'}</a>` : ''}${f.club ? `<div class="sf-revendiquer"><b>C'est votre club ?</b><p>Revendiquez cette fiche pour annoncer vos soirées et les proposer aux Bangers de votre région.</p><button type="button" class="sf-btn" data-club-revendiquer="1">C'est mon club</button></div>` : ''}${f.source ? `<p class="aide sf-source">Source : ${esc(f.source)}</p>` : ''}`;
@@ -2831,9 +2831,10 @@
       quand: soir ? 'prochaine soirée : ' + soir.nom : 'aucune soirée annoncée pour l’instant', lieu: { nom: c.nom, adresse: c.ville || '', lat: c.lat, lng: c.lng }, km: kmDeMoi(c.lat, c.lng),
       djs: soir ? djsDe(soir.djs) : [], url: c.site || '', siteClub: !!c.site, club: true, source: 'OpenStreetMap (© contributeurs OpenStreetMap)' };
   }
-  const ICONE_DISCO = window.L ? L.divIcon({ className: 'disco-pin', iconSize: [18, 18], iconAnchor: [9, 9], html: '<i></i>' }) : null;
+  let ICONE_DISCO = null;
   function marqueursDiscotheques() {
-    if (!DISCOS.length || map.getZoom() < 9) return; // de loin, on ne charge pas les 2 000 clubs de France
+    if (!DISCOS.length || map.getZoom() < 9) return; // de loin, on ne charge pas les 1 000 clubs de France
+    ICONE_DISCO = ICONE_DISCO || L.divIcon({ className: 'disco-pin', iconSize: [18, 18], iconAnchor: [9, 9], html: '<i></i>' });
     const b = map.getBounds();
     DISCOS.forEach((c) => { if (!b.contains([c.lat, c.lng])) return;
       const m = L.marker([c.lat, c.lng], { icon: ICONE_DISCO, zIndexOffset: 100, title: c.nom }).bindPopup('');
