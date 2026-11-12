@@ -1,0 +1,23 @@
+name: Radar local Hyères — contrôle des annonces
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 7,12,17 * * *'
+permissions:
+  contents: write
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Contrôler les pages des lieux
+        run: node scripts/radar-local-hyeres.mjs
+      - name: Conserver les résultats de contrôle
+        uses: actions/upload-artifact@v4
+        with:
+          name: radar-hyeres-review
+          path: data/radar-review/hyeres-candidates.json
+          retention-days: 7
