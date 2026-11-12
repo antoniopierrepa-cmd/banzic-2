@@ -12,7 +12,7 @@ def plain(s):
     return ''.join(c for c in unicodedata.normalize('NFD', s.lower()) if unicodedata.category(c) != 'Mn')
 def eligible(title, description):
     t, d = plain(title), plain(description)
-    if re.search(r'annul|reporte|theatre|bibliotheque|mediatheque|lecture|projection|cinema|conference|conte\b|livres?\b|spectacle jeune|sapin|atelier|pyjama|debat|loto|belote|tarot|jeux de societe|mantras|yoga|astronomie', t): return False
+    if re.search(r'annul|reporte|photograph|supply chain|networking|recrutement|entrepreneur|professionnel|business|intelligence artificielle|theatre|bibliotheque|mediatheque|lecture|projection|cinema|conference|conte\b|livres?\b|spectacle jeune|sapin|atelier|pyjama|debat|loto|belote|tarot|jeux de societe|mantras|yoga|astronomie', t): return False
     direct = r'\bdj\b|discotheque|clubbing|dancefloor|dansant|karaoke|blind.?test|after.?work|\bbal\b|reveillon|saint.?sylvestre|roller disco'
     if re.search(direct, t): return True
     if not re.search(r'soiree|apero', t): return False

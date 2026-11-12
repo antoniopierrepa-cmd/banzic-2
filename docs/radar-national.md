@@ -1,6 +1,6 @@
 # Collecte nationale BANZIC
 
-Première collecte du 12 novembre 2026 : 1 962 dates publiées dans 84 départements, gratuite, sans clé API ni prestataire payant. La liste des 101 départements et l’état réel des résultats sont dans `data/radar-coverage.json`. La couverture reste partielle : aucun résultat ne signifie pas aucune soirée.
+Première collecte du 12 novembre 2026 : 1 958 dates publiées dans 84 départements, gratuite, sans clé API ni prestataire payant. La liste des 101 départements et l’état réel des résultats sont dans `data/radar-coverage.json`. La couverture reste partielle : aucun résultat ne signifie pas aucune soirée.
 
 ## Sources
 

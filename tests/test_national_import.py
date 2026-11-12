@@ -5,7 +5,7 @@ class NationalImport(unittest.TestCase):
  def test_nightlife_selection(self):
   for title in ['Soirée karaoké','Blind test au bar','Bal dansant','Afterwork','Soirée années 80']:
    self.assertTrue(m.eligible(title,''),title)
-  for title in ['Théâtre : Le bal des escargots','Soirée pyjama à la bibliothèque','Réveillon les livres','Soirée conférence','Soirée annulée']:
+  for title in ['Théâtre : Le bal des escargots','Soirée pyjama à la bibliothèque','Réveillon les livres','Soirée conférence','Soirée annulée','Afterwork automobile & supply chain','Soirée photographique']:
    self.assertFalse(m.eligible(title,''),title)
  def test_no_invented_daily_events(self):
   m.DEPS={'83'}
