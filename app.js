@@ -2620,8 +2620,8 @@
     soireesCarteJour().forEach((x) => {
       const marker = L.marker([x.l.lat, x.l.lng], { icon: L.divIcon({ className: 'decl-pin', iconSize: [30, 30], iconAnchor: [15, 15], html: '♪' }), title: x.nom + ' · aujourd’hui' });
       const url = radarUrl(x.ticketUrl || x.url);
-      marker.bindPopup(`<div class="pop-venue">${esc(x.nom)}</div><div class="pop-slot">${esc(x.l.nom)} · ${x.heure ? esc(x.heure) : 'Horaire non communiqué'} · Soirée annoncée aujourd’hui</div>${x.djs ? `<div class="pop-dj">${esc(x.djs)}</div>` : ''}${url ? `<a class="pop-btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Infos sur la soirée</a>` : ''}`);
-      marker.addTo(layer);
+      marker.bindPopup(`<div class="pop-venue">${esc(x.nom)}</div><div class="pop-slot">${esc(x.l.nom)} · ${x.heure ? esc(x.heure) : 'Horaire non communiqué'} · Soirée annoncée aujourd’hui</div>${x.djs ? `<div class="pop-dj">${esc(x.djs)}</div>` : ''}${url ? `<a class="pop-btn" data-soiree-jour="${esc(x.id)}" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Infos sur la soirée</a>` : ''}`);
+      lierBandeau(marker, `data-soiree-jour="${esc(x.id)}"`).addTo(layer);
     });
   }
   document.addEventListener('click', (e) => {
@@ -3337,7 +3337,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const ouvrirDepuisRepere = function () {
       if (window.__zoomRepere) window.__zoomRepere(this);
       const html = typeof this.__bulle === 'string' ? this.__bulle : '';
-      const m = html.match(/data-(lieu|spot-voir|dj-pro)="([^"]*)"/) || (this.__lieu ? [null, 'lieu', this.__lieu] : null); if (!m) return;
+      const m = html.match(/data-(lieu|spot-voir|dj-pro|soiree-jour)="([^"]*)"/) || (this.__lieu ? [null, 'lieu', this.__lieu] : null); if (!m) return;
       const attr = `data-${m[1]}="${m[2]}"`;
       if (window.__filCibler && window.__filCibler(attr)) return;
       const f = document.createElement('button'); f.setAttribute('data-' + m[1], m[2].replace(/&quot;/g, '"').replace(/&amp;/g, '&')); f.hidden = true; document.body.appendChild(f); f.click(); f.remove();
@@ -4171,7 +4171,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const it = e.target.closest('.fil-item');
 
     // Toucher une info ouvre sa fiche ; le bandeau, lui, ne s'arrête pas
-    const ouvre = it && [...it.attributes].find((x) => /^data-(lieu|dj-pro|spot-voir)$/.test(x.name));
+    const ouvre = it && [...it.attributes].find((x) => /^data-(lieu|dj-pro|spot-voir|soiree-jour)$/.test(x.name));
     if (ouvre) { const f = document.createElement('button'); f.setAttribute(ouvre.name, ouvre.value); f.hidden = true; document.body.appendChild(f); f.click(); f.remove(); }
   }, true);
   const toastFil2 = (m) => toast(m);
