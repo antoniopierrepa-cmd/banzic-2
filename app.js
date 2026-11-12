@@ -2590,15 +2590,19 @@
     return [0, 1, 2].map((n) => { const d = new Date(base); d.setDate(d.getDate() + n); return iso(d); });
   }
   function horairesCheckin(x) {
-    const debut = x.heure ? new Date(x.date + 'T' + x.heure).getTime() : null;
-    let fin = x.heureFin ? new Date((x.dateFin || x.date) + 'T' + x.heureFin).getTime() : NaN;
+    const estClub = x.type === 'club';
+    // Horaires de référence d'une discothèque uniquement quand l'établissement
+    // n'a pas communiqué les siens ; ce sont des estimations, pas des heures officielles.
+    const heureDebut = x.heure || (estClub ? '23:30' : '');
+    const heureFin = x.heureFin || (estClub ? '05:00' : '');
+    const debut = heureDebut ? new Date(x.date + 'T' + heureDebut).getTime() : null;
+    let fin = heureFin ? new Date((x.dateFin || x.date) + 'T' + heureFin).getTime() : NaN;
     if (Number.isFinite(fin) && debut != null && fin <= debut && !x.dateFin) { const d = new Date(fin); d.setDate(d.getDate() + 1); fin = d.getTime(); }
-    // Sans fin publiée : estimation de six heures ; sans horaire : fin de la journée.
     if (!Number.isFinite(fin)) {
       if (Number.isFinite(debut)) fin = debut + 6 * 3600000;
       else { const d = new Date(x.date + 'T00:00:00'); d.setDate(d.getDate() + 1); fin = d.getTime(); }
     }
-    return { debut, fin };
+    return { debut, fin, heureDebut, heureFin, estime: estClub && (!x.heure || !x.heureFin) };
   }
   function soireeCheckinVisible(x, now = Date.now(), zoneCarte = false) {
     const jours = joursCheckin(now), h = horairesCheckin(x);
@@ -2643,11 +2647,11 @@
       const st = x.date > auj ? [nomJour(x.date), 'gris'] : avant == null ? ['Ce soir', 'bleu'] : avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ['En cours', 'vert'];
       if (st[0] === 'Terminé') return;
       const lineup = djsDe(x.djs);
-      CK_FICHES['s:' + x.id] = { date: x.date, dateFin: x.dateFin || '', heureFin: x.heureFin || '', titre: x.nom, sous: '', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', st, heure: x.heure || '', quand: x.date > auj ? nomJour(x.date) + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
+      CK_FICHES['s:' + x.id] = { date: x.date, dateFin: x.dateFin || '', heureFin: x.heureFin || (x.type === 'club' ? '05:00' : ''), titre: x.nom, sous: '', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', st, heure: x.heure || '', quand: x.date > auj ? nomJour(x.date) + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
         lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: d, djs: lineup, url: radarUrl(x.ticketUrl || x.url), test: x.test };
-      ligne({ fin, lieuId: x.lieu, fiche: 's:' + x.id, djs: lineup, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || '--:--', porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: `data-ck-fiche="s:${x.id}"`, nom: x.nom,
+      ligne({ fin, lieuId: x.lieu, fiche: 's:' + x.id, djs: lineup, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || (x.type === 'club' ? '23:30' : '--:--'), porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: `data-ck-fiche="s:${x.id}"`, nom: x.nom,
         l1: x.date > auj ? nomJour(x.date).toLowerCase() + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
-        l2: [[esc(l.nom) + ' · ' + fK(d)], [x.djs ? 'line-up annoncé' : 'line-up non communiqué', 'fil-att']], vol: dj }); });
+        l2: [[esc(l.nom) + ' · ' + fK(d)], [x.type === 'club' ? ((x.heure || '23:30') + ' → ' + (x.heureFin || '05:00') + (!x.heureFin || !x.heure ? ' · estimé' : '')) : (x.heureFin ? (x.heure || '?') + ' → ' + x.heureFin : ''), 'fil-att'], [x.djs ? 'line-up annoncé' : 'line-up non communiqué', 'fil-att']], vol: dj }); });
     // D'abord ce qui est en live en ce moment (DJ en cours, dernier appel, spots signalés), puis le reste ; dans chaque groupe, du plus proche au plus loin
     const enLive = (o) => o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert';
     // Ordre : ce qui est en live d'abord, et parmi eux celui qui se termine le plus tôt ; puis les départs à venir, par heure de fin estimée (début + 5 h si on ne la connaît pas)
