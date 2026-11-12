@@ -2985,7 +2985,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         z.insertAdjacentHTML('beforeend', `<span class="agc-credit">Le lieu · ${gAuteur(p) ? esc(gAuteur(p).displayName || '') + ' · ' : ''}Google Maps</span>`); }); };
     if (!('IntersectionObserver' in window)) { zs.forEach(charger); return; }
     if (ioPhotos) ioPhotos.disconnect();
-    ioPhotos = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { ioPhotos.unobserve(e.target); charger(e.target); } }), { rootMargin: '200px' });
+    ioPhotos = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { ioPhotos.unobserve(e.target); charger(e.target); } }), { rootMargin: '900px' });
     document.querySelectorAll('.agc-visuel.agc-gp:not([data-gp-fait])').forEach((z) => ioPhotos.observe(z));
   }
   window.__photosAgenda = photosAgenda;
