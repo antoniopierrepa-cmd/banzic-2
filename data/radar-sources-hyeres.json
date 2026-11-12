@@ -1,0 +1,51 @@
+{
+  "zone": {
+    "centre": "Hyères",
+    "rayonKm": 20
+  },
+  "sources": [
+    {
+      "id": "brewpub",
+      "nom": "Brew Pub",
+      "ville": "Hyères",
+      "url": "https://www.brewpub.online/news",
+      "type": "site_officiel",
+      "formats": [
+        "DJ",
+        "concert"
+      ]
+    },
+    {
+      "id": "petit-bain-hyeres",
+      "nom": "Le Petit Bain",
+      "ville": "Hyères",
+      "url": "https://lepetitbainhyeres.fr/soirees",
+      "type": "site_officiel",
+      "formats": [
+        "DJ",
+        "soirée à thème"
+      ]
+    },
+    {
+      "id": "baraza",
+      "nom": "Le Baraza",
+      "ville": "Hyères",
+      "url": "https://shotgun.live/en/events/this-is-house?organizer=260804",
+      "type": "billetterie",
+      "formats": [
+        "DJ",
+        "house"
+      ]
+    },
+    {
+      "id": "brewpub-tourisme",
+      "nom": "Brew Pub (fiche touristique)",
+      "ville": "Hyères",
+      "url": "https://www.visitvar.fr/fiche/brew-pub-4685825",
+      "type": "annuaire",
+      "formats": [
+        "concert"
+      ]
+    }
+  ]
+}
