@@ -8,14 +8,20 @@ permissions:
 jobs:
   maj:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node scripts/discotheques.mjs
+      - run: sudo apt-get update -q && sudo apt-get install -y -q osmium-tool
+      - run: curl -sSfL -o /tmp/france.osm.pbf https://download.geofabrik.de/europe/france-latest.osm.pbf
+      - run: |
+          osmium tags-filter /tmp/france.osm.pbf nwr/amenity=nightclub -o /tmp/clubs.osm.pbf --overwrite
+          osmium export /tmp/clubs.osm.pbf -f geojsonseq -a type,id -o /tmp/clubs.geojsonseq --overwrite
+      - run: node scripts/discotheques-pbf.mjs /tmp/clubs.geojsonseq
       - run: |
           git config user.name "banzic-radar"
           git config user.email "noreply@anthropic.com"
           git add discotheques.js
-          git diff --cached --quiet || (git commit -m "Discothèques de France : mise à jour OpenStreetMap" && git push)
+          git diff --cached --quiet || (git commit -m "Discothèques de France : mise à jour OpenStreetMap" && git pull --rebase -q && git push)
