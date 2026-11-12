@@ -1096,7 +1096,7 @@
     const sd = e.target.closest('[data-sud-dep]');
     if (sd) { state.sudDep = sd.dataset.sudDep; renderAgendaSud(); return true; }
     const st = e.target.closest('[data-sud-type]');
-    if (st) { state.sudType = st.dataset.sudType; listeAgendaSud(); return true; }
+    if (st) { const k = st.dataset.sudType; state.sudTypes = k === 'tout' ? [] : [k]; listeAgendaSud(); return true; }
     if (clicSaison(e)) return true;
     const env = e.target.closest('[data-envie]');
     if (env) { state.envie = env.dataset.envie; store.set('envie', state.envie); renderAgenda(); return true; }
@@ -2840,18 +2840,33 @@
   // Agenda autour de moi : un fader façon table de mixage règle le rayon (10 → 100 km) autour de ma position
   const RAYONS = [10, 50, 100];
   // 8 pads façon platine : 1re rangée le type de soirée, 2e rangée le moment (et mes DJ favoris)
+  // Petits logos des pads (dessinés en trait, aux couleurs de chaque pad)
+  const ICO_PAD = {
+    tout: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    club: '<circle cx="12" cy="13" r="7"/><path d="M5 13h14M12 6v14M7 9c3 1.5 7 1.5 10 0M7 17c3-1.5 7-1.5 10 0M12 2v4"/>',
+    libertin: '<circle cx="12" cy="12" r="10" fill="#fff" stroke="#FF3B3B" stroke-width="2.6"/><text x="12" y="15.4" text-anchor="middle" font-size="9" font-weight="900" fill="#111" stroke="none" font-family="Arial, sans-serif">-18</text>',
+    festival: '<path d="M3 20 12 5l9 15z"/><path d="M12 5V2l4 1.5L12 5M9 20l3-5 3 5"/>',
+    concert: '<rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/>',
+    bar: '<path d="M4 4h16l-8 9z"/><path d="M12 13v7M8 20h8M15 7l3-4"/>',
+    weekend: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    mesdj: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'
+  };
+  const icoPad = (k) => `<svg class="pad-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO_PAD[k] || ''}</svg>`;
   const PADS = [
-    { g: 'type', k: 'tout', nom: 'Tout', c: '#C9CFDD' }, { g: 'type', k: 'club', nom: 'Clubs', c: '#3D8BFF' },
-    { g: 'type', k: 'festival', nom: 'Festivals', c: '#FF8A3D' }, { g: 'type', k: 'concert', nom: 'Concerts', c: '#F2C53A' },
-    { g: 'quand', k: 'soir', nom: 'Ce soir', c: '#FF4FA3' }, { g: 'quand', k: 'weekend', nom: 'Week-end', c: '#A77BFF' },
-    { g: 'quand', k: 'semaine', nom: '7 jours', c: '#3DD6C6' }, { g: 'mesdj', k: 'oui', nom: 'Mes DJ', c: '#3DF28A' }
+    { g: 'type', k: 'tout', nom: 'Tout', c: '#C9CFDD' }, { g: 'type', k: 'club', nom: 'Discothèques', c: '#3D8BFF' },
+    { g: 'type', k: 'libertin', nom: 'Clubs libertins', c: '#FF5A5A', moins18: true }, { g: 'type', k: 'festival', nom: 'Festivals', c: '#FF8A3D' },
+    { g: 'type', k: 'concert', nom: 'Concerts', c: '#F2C53A' }, { g: 'type', k: 'bar', nom: 'Bars festifs', c: '#3DD6C6' },
+    { g: 'quand', k: 'weekend', nom: 'Week-end', c: '#A77BFF' }, { g: 'mesdj', k: 'oui', nom: 'Mes DJ', c: '#3DF28A' }
   ];
+  // Club libertin : réservé aux plus de 18 ans (repéré au nom du lieu ou de la soirée)
+  const estLibertin = (x) => /libertin|échangis|echangis|\bswing/i.test((x.nom || '') + ' ' + ((x.l || SUD.lieux[x.lieu] || {}).nom || ''));
   const auJour = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
   function finWeekend() { const d = new Date(), j = d.getDay(); d.setDate(d.getDate() + (j === 0 ? 0 : 7 - j)); return iso(d); }
   function debutWeekend() { const d = new Date(), j = d.getDay(); if (j >= 5 || j === 0) return iso(d); d.setDate(d.getDate() + (5 - j)); return iso(d); }
   const PAD_TEST = {
-    'type|club': (x) => (x.type || 'club') === 'club', 'type|festival': (x) => x.type === 'festival', 'type|concert': (x) => x.type === 'concert', 'type|tout': () => true,
-    'quand|soir': (x) => x.date === iso(new Date()), 'quand|weekend': (x) => x.date >= debutWeekend() && x.date <= finWeekend(), 'quand|semaine': (x) => x.date < auJour(7),
+    'type|club': (x) => (x.type || 'club') === 'club' && !estLibertin(x), 'type|libertin': (x) => estLibertin(x), 'type|festival': (x) => x.type === 'festival', 'type|concert': (x) => x.type === 'concert',
+    'type|bar': (x) => /^(bar|restaurant|soiree)$/.test(x.type || '') && !estLibertin(x), 'type|tout': () => true,
+    'quand|weekend': (x) => x.date >= debutWeekend() && x.date <= finWeekend(), 'quand|semaine': (x) => x.date < auJour(7),
     'mesdj|oui': (x) => !!x.djs && state.favs.some((f) => sansAccent(x.djs).includes(sansAccent(f)))
   };
   state.rayonIdx = Math.max(0, Math.min(RAYONS.length - 1, Number(store.get('rayonIdx', 2)) || 0));
@@ -2872,17 +2887,19 @@
         <label class="radar-dep">Département français (facultatif) <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>
         <label class="radar-dep"><input type="checkbox" id="radar-avec-dj" ${state.sudAvecDj ? 'checked' : ''}> Avec DJ uniquement</label>
         <p class="demo-note">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements français avec annonces' + (RADAR.countryCoverage && RADAR.countryCoverage.BE ? ' · Belgique : ' + RADAR.countryCoverage.BE + ' soirées' : '') + (RADAR.countryCoverage && RADAR.countryCoverage.ES ? ' · Espagne : ' + RADAR.countryCoverage.ES + ' soirées' : '') + ' · collecte partielle.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
-        <div class="pads" role="group" aria-label="Filtres">${PADS.map((x) => `<button class="pad" style="--pc:${x.c}" data-pad="${x.g}|${x.k}" aria-pressed="false"><span class="pad-nom">${x.nom}</span><small class="pad-nb"></small></button>`).join('')}</div>
+        <div class="pads" role="group" aria-label="Filtres">${PADS.map((x) => `<button class="pad${x.moins18 ? ' pad-18' : ''}" style="--pc:${x.c}" data-pad="${x.g}|${x.k}" aria-pressed="false"${x.moins18 ? ' title="Interdit aux moins de 18 ans"' : ''}>${icoPad(x.g === 'type' ? x.k : x.k === 'oui' ? 'mesdj' : x.k)}<span class="pad-nom">${x.nom}</span><small class="pad-nb"></small></button>`).join('')}</div>
       </div>
       <div id="agenda-liste"></div>`;
     listeAgendaSud();
   }
   function listeAgendaSud() {
-    const r = RAYONS[state.rayonIdx], toutes = soireesAvecKm().filter((x) => x.km <= r && (!state.radarDep || x.l.dep === state.radarDep));
-    const typ = state.sudType || 'tout', quand = state.sudQuand || null, mesdj = !!state.sudMesDj;
-    const liste = toutes.filter((x) => PAD_TEST['type|' + typ](x) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs));
+    // Ce soir est déjà sur la carte et dans le Check-in : l'agenda montre les 7 prochains jours, à partir de demain
+    const auj0 = iso(new Date()), j7 = auJour(7);
+    const r = RAYONS[state.rayonIdx], toutes = soireesAvecKm().filter((x) => x.date > auj0 && x.date <= j7 && x.km <= r && (!state.radarDep || x.l.dep === state.radarDep));
+    const types = (state.sudTypes || []).filter((k) => PAD_TEST['type|' + k]), quand = state.sudQuand === 'weekend' ? 'weekend' : null, mesdj = !!state.sudMesDj;
+    const liste = toutes.filter((x) => (!types.length || types.some((k) => PAD_TEST['type|' + k](x))) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs));
     document.querySelectorAll('[data-pad]').forEach((b) => {
-      const [g, k] = b.dataset.pad.split('|'), on = g === 'type' ? typ === k : g === 'quand' ? quand === k : mesdj;
+      const [g, k] = b.dataset.pad.split('|'), on = g === 'type' ? (k === 'tout' ? !types.length : types.includes(k)) : g === 'quand' ? quand === k : mesdj;
       b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
       b.querySelector('.pad-nb').textContent = toutes.filter(PAD_TEST[b.dataset.pad]).length;
     });
@@ -2891,7 +2908,7 @@
     document.querySelectorAll('.fd-graduations span').forEach((s, i) => s.classList.toggle('on', i === state.rayonIdx));
     const fr = $('#fader-rayon'); if (fr) fr.style.setProperty('--pct', (state.rayonIdx / (RAYONS.length - 1) * 100) + '%');
     let h = '';
-    if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département à moins de ' + r + ' km.' : `Rien d’annoncé à moins de ${r} km. Le rayon maximal est de 100 km autour de ta position.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
+    if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département à moins de ' + r + ' km.' : `Rien d’annoncé dans les 7 prochains jours à moins de ${r} km. Ce soir, regarde la carte et le Check-in.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
     else {
       if (!liste.length) h += `<div class="empty">Rien pour ces pads dans ce rayon.${mesdj && !state.favs.length ? ' Ajoute des DJ en favori (♥) pour utiliser « Mes DJ ».' : ''}</div>`;
       let mois = '';
@@ -2912,7 +2929,7 @@
   document.addEventListener('click', (e) => {
     const pd = e.target.closest('[data-pad]'); if (!pd) return;
     const [g, k] = pd.dataset.pad.split('|');
-    if (g === 'type') state.sudType = k;
+    if (g === 'type') { const t = state.sudTypes || []; state.sudTypes = k === 'tout' ? [] : t.includes(k) ? t.filter((y) => y !== k) : t.concat(k); } // plusieurs types à la fois : ex. Discothèques + Festivals
     else if (g === 'quand') state.sudQuand = state.sudQuand === k ? null : k;
     else state.sudMesDj = !state.sudMesDj;
     pd.classList.remove('frappe'); void pd.offsetWidth; pd.classList.add('frappe');
@@ -2958,7 +2975,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       return `<div class="sud-soiree ${x.gros ? 'gros' : ''}" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
         <div class="sud-date" style="--tc:${TYPE_COUL[x.type || 'club']}"><b>${dt.getDate()}</b><small>${JOURS[wd]}</small><i>${TYPE_NOM[x.type || 'club']}</i></div>
         <img class="sud-affiche" src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC — affiche non fournie'}" style="object-fit:contain" loading="lazy" referrerpolicy="no-referrer">
-        <div class="sud-info"><span class="venue">${esc(x.nom)}</span>
+        <div class="sud-info"><span class="venue">${estLibertin(x) ? '<span class="moins18" title="Interdit aux moins de 18 ans" aria-label="Interdit aux moins de 18 ans">-18</span>' : ''}${esc(x.nom)}</span>
           ${x.djs ? `<small>Line-up : ${esc(x.djs)}</small>` : `<small>${x.djSet ? 'DJ annoncé · nom non communiqué' : 'Programmation non communiquée'}</small>`}${x.scheduleNote ? `<small>${esc(x.scheduleNote)}</small>` : ''}${x.genres ? `<small class="sud-genres">${esc(x.genres)}</small>` : ''}
           <small class="sud-lieu">${esc(x.l.nom)} · ${esc(x.l.ville)}${x.l.approx ? ' · Position approximative' : ''}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}${x.prix ? ' · ' + esc(x.prix) : ''} ${x.l.country === 'ES' ? ' · Espagne' : x.l.country === 'BE' ? ' · Belgique' : /^(\d{2,3}|2[AB])$/.test(x.l.dep) ? ' · <span class="sud-dep">' + x.l.dep + '</span>' : ''}</small>${x.sourceName ? `<small class="sud-source">Source : ${esc(x.sourceName)}${x.sourceUpdatedAt ? ' · mise à jour ' + esc(x.sourceUpdatedAt.slice(0, 10)) : ''}${radarUrl(x.sourceLicense) ? ` · <a href="${esc(radarUrl(x.sourceLicense))}" target="_blank" rel="noopener noreferrer">Licence ouverte</a>` : ''}</small>` : ''}</div>
         ${url ? `<a class="badge b-soon" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${ticketUrl ? 'Billets' : 'Infos'}</a>` : ''}
@@ -4701,9 +4718,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const t = e.target.closest('[data-ag-type]'); if (!t) return;
     const k = t.dataset.agType;
     if (state.mode !== 'geo') choisirMode('geo');
-    state.sudType = ['bar', 'resto'].includes(k) ? 'tout' : k; state.sudQuand = null; state.sudMesDj = false;
+    state.sudTypes = k === 'tout' ? [] : ['bar', 'resto'].includes(k) ? ['bar'] : [k]; state.sudQuand = null; state.sudMesDj = false;
     setTab('agenda');
-    if (['bar', 'resto'].includes(k)) toast((k === 'bar' ? 'Les bars' : 'Les restaurants') + ' avec DJ arrivent bientôt dans l\'Agenda');
   });
   document.addEventListener('click', (e) => { if (!e.target.closest('[data-acc-autour]')) return; state.vueAcc = 'liste'; if (state.mode !== 'geo') choisirMode('geo'); setTab('live'); });
   // À la souris (ordinateur), on attrape une rangée et on la fait glisser comme au doigt

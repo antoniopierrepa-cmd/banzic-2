@@ -2986,3 +2986,13 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .sf-affiche { display: block; width: 100%; max-height: 360px; object-fit: contain; border-radius: 16px; background: #0B0F1C; margin-bottom: 12px; }
 .sf-source { margin-top: 8px; text-align: center; }
 .sf-billets { display: flex !important; align-items: center; justify-content: center; min-height: 52px; padding: 0 16px !important; line-height: 1.2; }
+
+/* Pads de l'agenda avec leurs petits logos ; Clubs libertins : interdit aux moins de 18 ans */
+.pads { grid-template-columns: repeat(4, 1fr); }
+.pad { height: auto !important; min-height: 54px; flex-direction: column !important; gap: 2px !important; padding: 5px 3px !important; }
+.pad-ico { width: 18px; height: 18px; color: color-mix(in srgb, var(--pc) 75%, #fff); flex: none; }
+.pad.on .pad-ico { color: #0A0D16; }
+.pad.pad-18 .pad-ico { color: inherit; }
+.pad-nom { white-space: normal !important; font-size: 10.5px !important; }
+.moins18 { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-right: 6px; vertical-align: -5px; border-radius: 50%; border: 2.5px solid #FF3B3B; background: #fff; color: #111; font: 900 9px/1 Arial, sans-serif; letter-spacing: -.3px; position: relative; }
+.moins18::after { content: none; }
