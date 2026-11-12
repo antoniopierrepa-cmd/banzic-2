@@ -2495,11 +2495,14 @@
   function ficheSoireeJour(x) {
     const l = x.l || SUD.lieux[x.lieu] || {}, now = Date.now();
     let deb = null; if (x.heure) { const [H, M] = x.heure.split(':').map(Number); const d = new Date(x.date + 'T00:00:00'); d.setHours(H, M, 0, 0); deb = d.getTime(); }
-    const avant = deb ? (deb - now) / 60000 : null;
-    const st = avant == null ? ['Ce soir', 'bleu'] : avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ['En cours', 'vert'];
-    return CK_FICHES['s:' + x.id] = { titre: x.nom, sous: '', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', st, heure: x.heure || '',
-      quand: avant != null && avant > 0 ? 'commence dans ' + durTxt(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
-      lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: kmDeMoi(l.lat, l.lng), djs: djsDe(x.djs), url: radarUrl(x.ticketUrl || x.url), test: x.test };
+    const avant = deb ? (deb - now) / 60000 : null, auj = x.date === iso(new Date()), dt = new Date(x.date + 'T12:00:00');
+    const jourTxt = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'][dt.getDay()] + ' ' + dt.getDate() + ' ' + MOIS[dt.getMonth()];
+    const st = !auj ? (x.date === iso(new Date(now + 86400000)) ? ['Demain', 'bleu'] : [jourTxt, 'bleu']) : avant == null ? ['Ce soir', 'bleu'] : avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ['En cours', 'vert'];
+    const ticket = radarUrl(x.ticketUrl), info = radarUrl(x.url || (SUD.sources || {})[x.src]);
+    return CK_FICHES['s:' + x.id] = { titre: x.nom, sous: [x.genres, x.prix, x.scheduleNote].filter(Boolean).join(' · '), tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert', bar: 'Bar', restaurant: 'Resto' })[x.type] || 'Soirée', st, heure: x.heure || '',
+      quand: !auj ? jourTxt + (x.heure ? ' à ' + x.heure.replace(':', 'h') : '') : avant != null && avant > 0 ? 'commence dans ' + durTxt(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
+      affiche: radarUrl(x.flyerUrl) || '', billets: ticket, source: x.sourceName || '',
+      lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: kmDeMoi(l.lat, l.lng), djs: djsDe(x.djs), url: ticket || info, test: x.test };
   }
   function ficheDeclCarte(xs) {
     const x = xs[0], l = lieuDe(x) || {}, ok = xs.some(declConfirmee), now = Date.now(), avant = (x.debut - now) / 60000, reste = (x.fin - now) / 60000;
@@ -2530,6 +2533,8 @@
       if (z && p) { z.style.backgroundImage = `url("${gPhotoUrl(p, 520)}")`; z.classList.add('a-photo'); z.insertAdjacentHTML('beforeend', `<span class="bcb-credit">${gAuteur(p) ? esc(gAuteur(p).displayName || '') + ' · ' : ''}Google Maps</span>`); } }); });
   }
   window.__bulleCarte = ouvrirBulleCarte;
+  // Agenda : toute la bannière d'une soirée ouvre sa fiche (les boutons Billets / Infos gardent leur lien)
+  document.addEventListener('click', (e) => { const z = e.target.closest('[data-ag-fiche]'); if (!z || e.target.closest('a')) return; e.preventDefault(); ouvrirFicheSoiree(z.dataset.agFiche); });
   document.addEventListener('click', (e) => { const b = e.target.closest('[data-bulle-fiche]'); if (!b) return; e.preventDefault(); const k = b.dataset.bulleFiche; if (map && bullePt) map.closePopup(bullePt); ouvrirFicheSoiree(k); });
   let CK_OUVERTE = null;
   function ouvrirFicheSoiree(cle) {
@@ -2537,7 +2542,8 @@
     const scr = $('#screen-soiree'); if (!scr) return;
     const l = f.lieu || {}, gm = l.gid ? gMapsUrl(l.gid) : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([l.nom, l.adresse].filter(Boolean).join(' ') || (l.lat + ',' + l.lng));
     const fK = (x) => x == null ? '' : x < 1 ? '< 1 km' : Math.round(x) + ' km';
-    scr.innerHTML = `<div class="sf-haut"><button type="button" class="sf-retour" data-soiree-fermer="1" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>${state.tab === 'map' ? 'Carte' : 'Check-in'}</button>${f.test ? '<span class="sf-test">Mode test</span>' : ''}</div>
+    scr.innerHTML = `<div class="sf-haut"><button type="button" class="sf-retour" data-soiree-fermer="1" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>${({ map: 'Carte', agenda: 'Agenda', checkin: 'Check-in' })[state.tab] || 'Retour'}</button>${f.test ? '<span class="sf-test">Mode test</span>' : ''}</div>
+      ${f.affiche ? `<img class="sf-affiche" src="${esc(f.affiche)}" alt="Affiche — ${esc(f.titre)}" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}
       <div class="sf-tete ck-${f.st[1]}"><span class="ck-st ck-st-${f.st[1]}"><i></i>${esc(f.st[0])}</span><em class="fil-tag decl">${esc(f.tag)}</em>
         <h2>${esc(f.titre)}</h2>${f.sous ? `<p class="sf-sous">${esc(f.sous)}</p>` : ''}
         <p class="sf-quand">${f.heure ? `<b>${esc(f.heure)}</b> · ` : ''}${esc(f.quand || '')}</p>
@@ -2550,7 +2556,7 @@
       <div class="sf-bloc"><div class="sf-titre">Line-up</div>
         ${f.djs && f.djs.length ? `<div class="sf-lineup">${f.djs.map((n) => `<button type="button" class="sf-dj" data-dj-pro="${esc(n)}"><span class="sf-av">${avatarDj(n)}</span><b>${esc(n)}</b><span class="sf-fleche" aria-hidden="true">›</span></button>`).join('')}</div>`
           : '<p class="aide">Line-up non communiqué pour l\'instant.</p>'}</div>
-      ${f.url ? `<a class="btn-plein sf-billets" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">Infos et billets</a>` : ''}`;
+      ${f.url ? `<a class="btn-plein sf-billets" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${f.billets ? 'Billets' : 'Infos sur la soirée'}</a>` : ''}${f.source ? `<p class="aide sf-source">Source : ${esc(f.source)}</p>` : ''}`;
     // la photo Google du lieu arrive après (seulement si le lieu vient de Google Maps)
     const ph = scr.querySelector('[data-sf-photo]');
     (l.gid ? Promise.resolve(l.gid) : gidPour(l)).then((gid) => { if (!gid) return; l.gid = gid;
@@ -2926,7 +2932,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   function ligneSud(x) {
       const dt = new Date(x.date + 'T12:00:00');
       const wd = (dt.getDay() + 6) % 7, infoUrl = radarUrl(x.url || SUD.sources[x.src]), ticketUrl = radarUrl(x.ticketUrl), url = ticketUrl || infoUrl;
-      return `<div class="sud-soiree ${x.gros ? 'gros' : ''}">
+      ficheSoireeJour(x);
+      return `<div class="sud-soiree ${x.gros ? 'gros' : ''}" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
         <div class="sud-date" style="--tc:${TYPE_COUL[x.type || 'club']}"><b>${dt.getDate()}</b><small>${JOURS[wd]}</small><i>${TYPE_NOM[x.type || 'club']}</i></div>
         <img class="sud-affiche" src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC — affiche non fournie'}" style="object-fit:contain" loading="lazy" referrerpolicy="no-referrer">
         <div class="sud-info"><span class="venue">${esc(x.nom)}</span>
