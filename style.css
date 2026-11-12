@@ -2920,3 +2920,39 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .g-photo figcaption a { color: inherit; text-decoration: underline; }
 .g-marque { font-weight: 600; color: #C8CEDD; white-space: nowrap; }
 .g-lien { align-self: flex-start; font-size: 12.5px; font-weight: 600; color: #FF8A3D; text-decoration: none; padding: 4px 0; }
+
+/* Check-in : tout le bandeau ouvre la fiche de la soirée ; cases du line-up en bas */
+.ck-ligne[data-ck-fiche] { cursor: pointer; }
+.ck-lineup { position: relative; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 0 12px 11px; }
+.ck-lineup small { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #FF8A3D; margin-right: 2px; }
+.ck-dj { padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(255,138,61,.45); background: rgba(255,138,61,.12); color: #FFE2CC; font: 600 12px/1.2 inherit; font-family: inherit; cursor: pointer; }
+.ck-dj.plus { border-style: dashed; color: #9AA3B8; background: transparent; cursor: default; }
+
+/* Fiche soirée */
+.screen-soiree { padding: 10px 16px 120px; background: radial-gradient(circle at 100% 0, rgba(255,79,163,.14), transparent 55%); }
+.sf-haut { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.sf-retour { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px 6px 4px; border: 0; border-radius: 999px; background: rgba(255,255,255,.06); color: #fff; font: 600 14px inherit; font-family: inherit; cursor: pointer; }
+.sf-retour svg { width: 20px; height: 20px; }
+.sf-test { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: #3A2A0B; color: #F2C53A; border: 1px solid rgba(242,197,58,.4); }
+.sf-tete { padding: 16px; border-radius: 18px; background: #0F1526; border: 1px solid rgba(255,255,255,.08); display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.sf-tete .ck-st { position: static; }
+.sf-tete h2 { margin: 2px 0 0; font-size: 26px; line-height: 1.15; }
+.sf-sous, .sf-quand, .sf-ambiance, .sf-com { margin: 0; font-size: 14px; color: #C8CEDD; }
+.sf-quand b { color: #fff; }
+.sf-ambiance { display: flex; align-items: center; gap: 6px; }
+.sf-bloc { margin-top: 18px; }
+.sf-titre { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #FF8A3D; margin-bottom: 8px; }
+.sf-lieu { display: flex; flex-direction: column; gap: 4px; padding: 14px; border-radius: 16px; background: #0B0F1C; border: 1px solid rgba(255,255,255,.08); }
+.sf-lieu > b { font-size: 18px; } .sf-lieu > small { color: #9AA3B8; font-size: 13px; }
+.sf-photo:empty { display: none; } .sf-photo { margin-bottom: 6px; } .sf-photo .g-photo img { height: 170px; }
+.sf-actions { display: flex; gap: 8px; margin-top: 8px; } .sf-actions .pb-btn { flex: 1; text-align: center; text-decoration: none; }
+.sf-lineup { display: flex; flex-direction: column; gap: 8px; }
+.sf-dj { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 14px 10px 10px; border-radius: 16px; border: 1px solid rgba(255,138,61,.35); background: linear-gradient(90deg, rgba(255,138,61,.14), rgba(255,79,163,.08)); color: #fff; text-align: left; cursor: pointer; font-family: inherit; }
+.sf-av { flex: none; width: 48px; height: 48px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; }
+.sf-av > * { width: 100%; height: 100%; }
+.sf-dj b { flex: 1; font-size: 20px; font-weight: 800; letter-spacing: .01em; }
+.sf-fleche { font-size: 26px; color: #FF8A3D; }
+.sf-billets { display: block; margin-top: 18px; text-align: center; text-decoration: none; }
+.sf-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05); color: #fff; font: 700 14px/1 inherit; font-family: inherit; text-decoration: none; cursor: pointer; }
+.sf-btn.plein { background: #FF8A3D; border-color: #FF8A3D; color: #160C05; }
+.sf-tete .fil-tag { font-style: normal; }

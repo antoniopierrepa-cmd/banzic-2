@@ -2466,6 +2466,55 @@
   store.set('ckRayon', state.ckRayon);
   // La barre de progression avance toute seule : le Check-in se redessine chaque minute quand il est affiché
   setInterval(() => { if (state.tab === 'checkin' && !document.hidden) { try { renderCheckin(); } catch (e) { /* */ } } }, 60000);
+  // ---- Fiche d'une soirée (Check-in) : tout le bandeau ouvre une page avec le lieu et le line-up en grand
+  const CK_FICHES = {};
+  const djsDe = (txt) => String(txt || '').split(/,| b2b | & | \/ | x /i).map((x) => x.trim()).filter((x) => x.length > 1);
+  const MODE_TEST = /[?&]test=1/.test(location.search);
+  let testsAjoutes = false;
+  // Mode test (?test=1 dans l'adresse) : 3 soirées fictives autour de toi, pour essayer le Check-in et la fiche soirée
+  function ajouterSoireesTest(c) {
+    if (testsAjoutes || !c) return; testsAjoutes = true;
+    const auj = iso(new Date()), h = (min) => { const x = new Date(Date.now() + min * 60000); return String(x.getHours()).padStart(2, '0') + ':' + String(x.getMinutes()).padStart(2, '0'); };
+    [['test-club', 'Le Club Test', 0.004, 0.006, 'Boîte de nuit · adresse de test', 'club', 'Soirée TEST · Opening', -60, 'Peggy Gou, Solomun b2b Âme, Charlotte de Witte'],
+     ['test-bar', 'Bar Test Plage', -0.006, 0.003, 'Bar de plage · adresse de test', 'club', 'Sunset TEST', 40, 'Black Coffee, Keinemusik'],
+     ['test-resto', 'Resto Festif Test', 0.002, -0.008, 'Restaurant musique live · adresse de test', 'club', 'Dîner DJ set TEST', 180, 'Martin Garrix']]
+      .forEach(([id, nom, dla, dlo, adr, type, titre, min, djs]) => {
+        SUD.lieux[id] = { nom, lat: c[0] + dla, lng: c[1] + dlo, adresse: adr, ville: '' };
+        SUD.soirees.push({ id: 'soiree-' + id, nom: titre, date: auj, heure: h(min), djs, lieu: id, type, test: true });
+      });
+  }
+  function ouvrirFicheSoiree(cle) {
+    const f = CK_FICHES[cle]; if (!f) return;
+    const scr = $('#screen-soiree'); if (!scr) return;
+    const l = f.lieu || {}, gm = l.gid ? gMapsUrl(l.gid) : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([l.nom, l.adresse].filter(Boolean).join(' ') || (l.lat + ',' + l.lng));
+    const fK = (x) => x == null ? '' : x < 1 ? '< 1 km' : Math.round(x) + ' km';
+    scr.innerHTML = `<div class="sf-haut"><button type="button" class="sf-retour" data-soiree-fermer="1" aria-label="Retour au Check-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Check-in</button>${f.test ? '<span class="sf-test">Mode test</span>' : ''}</div>
+      <div class="sf-tete ck-${f.st[1]}"><span class="ck-st ck-st-${f.st[1]}"><i></i>${esc(f.st[0])}</span><em class="fil-tag decl">${esc(f.tag)}</em>
+        <h2>${esc(f.titre)}</h2>${f.sous ? `<p class="sf-sous">${esc(f.sous)}</p>` : ''}
+        <p class="sf-quand">${f.heure ? `<b>${esc(f.heure)}</b> · ` : ''}${esc(f.quand || '')}</p>
+        ${f.temp != null ? `<p class="sf-ambiance"><span class="thermo-mini t${f.temp}"><i></i></span><span class="thermo-txt t${f.temp}">Ambiance ${['froide', 'moyenne', 'chaude'][f.temp]}</span>${f.conf ? ` · ${f.conf} Banger${f.conf > 1 ? 's' : ''} confirment` : ''}</p>` : ''}
+        ${f.com ? `<p class="sf-com fil-com">« ${esc(f.com)} »</p>` : ''}</div>
+      <div class="sf-bloc"><div class="sf-titre">Le lieu</div>
+        <div class="sf-lieu"><div class="sf-photo" ${l.gid ? `data-gphoto="${esc(l.gid)}"` : ''}></div>
+          <b>${esc(l.nom || 'Lieu')}</b>${l.adresse ? `<small>${esc(l.adresse)}</small>` : ''}${f.km != null ? `<small>À ${fK(f.km)} de toi</small>` : ''}
+          <div class="sf-actions"><button type="button" class="sf-btn plein" data-soiree-carte="${cle}">Voir sur la carte</button><a class="sf-btn" href="${gm}" target="_blank" rel="noopener">Google Maps</a></div></div></div>
+      <div class="sf-bloc"><div class="sf-titre">Line-up</div>
+        ${f.djs && f.djs.length ? `<div class="sf-lineup">${f.djs.map((n) => `<button type="button" class="sf-dj" data-dj-pro="${esc(n)}"><span class="sf-av">${avatarDj(n)}</span><b>${esc(n)}</b><span class="sf-fleche" aria-hidden="true">›</span></button>`).join('')}</div>`
+          : '<p class="aide">Line-up non communiqué pour l\'instant.</p>'}</div>
+      ${f.url ? `<a class="btn-plein sf-billets" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">Infos et billets</a>` : ''}`;
+    // la photo Google du lieu arrive après (seulement si le lieu vient de Google Maps)
+    const ph = scr.querySelector('[data-gphoto]'); if (ph) photoGoogle(ph.dataset.gphoto).then((p) => { ph.innerHTML = p ? ficheGoogle(p, ph.dataset.gphoto).replace(/<a class="g-lien"[^]*$/, '') : ''; });
+    document.querySelectorAll('.app > .screen').forEach((x) => { x.hidden = x !== scr; });
+    scr.hidden = false; scr.scrollTop = 0;
+  }
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-soiree-fermer]')) { setTab(state.tab); return; }
+    const vc = e.target.closest('[data-soiree-carte]');
+    if (vc) { const f = CK_FICHES[vc.dataset.soireeCarte]; if (!f || f.lieu.lat == null) return; setTab('map'); setTimeout(() => map && map.setView([f.lieu.lat, f.lieu.lng], 16), 120); return; }
+    const z = e.target.closest('[data-ck-fiche]'); if (!z || !z.closest('#screen-checkin')) return;
+    if (e.target.closest('[data-dj-pro], [data-decl-ok], .ck-dj')) return; // une case du line-up ouvre la fiche du DJ
+    e.preventDefault(); ouvrirFicheSoiree(z.dataset.ckFiche);
+  });
   function renderCheckin(lignesSeules, zoneCarte = false) {
     const box = $('#screen-checkin'); if (!box && !lignesSeules) return;
     // Position : le GPS du téléphone ; pour tester ailleurs, ?position=dubai (ou ibiza, miami, mykonos, tulum) dans l'adresse
@@ -2478,26 +2527,34 @@
     const msDe = (date, hh) => { if (!hh) return null; const [H, M] = hh.split(':').map(Number); const x = new Date(date + 'T00:00:00'); x.setHours(H, M, 0, 0); return x.getTime(); };
     const L = [];
     const ligne = (o) => L.push(o);
+    if (MODE_TEST) ajouterSoireesTest(c);
     // DJ déclarés autour de moi
     DECLS.filter((x) => declDuJour(x) && djDe(x)).forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}; if (l.lat == null) return; const d = km(l.lat, l.lng); if (zoneCarte ? !dansZoneCarte(l.lat, l.lng) : d > r) return;
       const ok = declConfirmee(x), avant = (x.debut - now) / 60000, reste = (x.fin - now) / 60000;
       const st = avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ok ? ['En cours', 'vert'] : ['Annoncé', 'orange'];
-      ligne({ fin: x.fin, conf: x.conf || 0, act: `data-decl-ok="${x.id}"`, km: d, t: x.debut, heure: hm(x.debut), porte: l.nom || 'Spot', st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Déclaré', attr: `data-dj-pro="${esc(dj.nom)}"`, nom: dj.nom,
+      CK_FICHES['d:' + x.id] = { titre: dj.nom, sous: 'Set de ' + dj.nom, tag: ok ? 'Live' : 'Déclaré', st, heure: hm(x.debut), quand: avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : reste > 0 ? 'encore ' + dur(Math.round(reste)) : 'se termine',
+        lieu: { nom: l.nom || 'Spot', adresse: l.adresse || l.zone || '', lat: l.lat, lng: l.lng, gid: l.gid || x.gid }, km: d, djs: [dj.nom], temp: x.temp, com: x.com, conf: ok ? x.conf : 0 };
+      ligne({ fin: x.fin, conf: x.conf || 0, act: `data-decl-ok="${x.id}"`, km: d, t: x.debut, heure: hm(x.debut), porte: l.nom || 'Spot', st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Déclaré', fiche: 'd:' + x.id, attr: `data-ck-fiche="d:${x.id}"`, nom: dj.nom,
         l1: avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : reste > 0 ? 'encore ' + dur(Math.round(reste)) : 'se termine',
         l2: [[(x.temp != null ? `<span class="thermo-mini t${x.temp}" title="Ambiance : ${['Froid', 'Moyen', 'Chaud'][x.temp]}"><i></i></span><span class="thermo-txt t${x.temp}">${['Froid', 'Moyen', 'Chaud'][x.temp]}</span> ` : '') + esc(l.nom || 'Spot') + ' · ' + fK(d)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']].concat(x.com ? [['« ' + esc(x.com) + ' »', 'fil-com']] : []), vol: dj.nom }); });
     // Spots signalés par les Bangers
     SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && s.lat != null).forEach((sp) => { const d = km(sp.lat, sp.lng); if (zoneCarte ? !dansZoneCarte(sp.lat, sp.lng) : d > r) return;
       const n = sp.note || 0, cf = sp.conf || 0, v = n >= 4 && cf >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || cf >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
-      ligne({ fin: (sp.maj || sp.t) + 3 * 3600000, sp, km: d, t: sp.t || sp.maj, heure: hm(sp.t || sp.maj), porte: sp.nom || TYPES_SPOT[sp.type] || 'Spot', st: ['Signalé', 'violet'], k: 'spot', tag: 'Spot', attr: `data-spot-voir="${sp.id}"`, nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot',
+      CK_FICHES['p:' + sp.id] = { titre: sp.nom || TYPES_SPOT[sp.type] || 'Spot', sous: 'Signalé par @' + (sp.par || 'un Banger'), tag: 'Spot', st: ['Signalé', 'violet'], heure: hm(sp.t || sp.maj), quand: 'signalé ' + ilYa(sp.maj || sp.t),
+        lieu: { nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot', adresse: '', lat: sp.lat, lng: sp.lng, gid: sp.gid }, km: d, djs: sp.dj ? [sp.dj] : [], temp: sp.temp, com: sp.com, conf: sp.conf || 0 };
+      ligne({ fin: (sp.maj || sp.t) + 3 * 3600000, sp, km: d, t: sp.t || sp.maj, heure: hm(sp.t || sp.maj), porte: sp.nom || TYPES_SPOT[sp.type] || 'Spot', st: ['Signalé', 'violet'], k: 'spot', tag: 'Spot', fiche: 'p:' + sp.id, attr: `data-ck-fiche="p:${sp.id}"`, nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot',
         l1: `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, l2: [[esc(sp.dj || 'DJ inconnu') + ' · ' + fK(d)], [(sp.temp != null ? `<span class="thermo-mini t${sp.temp}" title="Ambiance : ${['Froid', 'Moyen', 'Chaud'][sp.temp]}"><i></i></span><span class="thermo-txt t${sp.temp}">${['Froid', 'Moyen', 'Chaud'][sp.temp]}</span> ` : '') + 'signalé par @' + esc(sp.par || 'un Banger')]].concat(sp.com ? [['« ' + esc(sp.com) + ' »', 'fil-com']] : []), vol: '' }); });
     // Toutes les soirées du jour, avec ou sans DJ, indépendantes des filtres de l’agenda.
     SUD.soirees.filter((x) => x.date === auj && SUD.lieux[x.lieu]).forEach((x) => { const l = SUD.lieux[x.lieu], d = km(l.lat, l.lng); if (zoneCarte ? !dansZoneCarte(l.lat, l.lng) : d > r) return;
       const deb = msDe(x.date, x.heure), avant = deb ? (deb - now) / 60000 : null, dj = String(x.djs || '').split(/,| b2b | & /i)[0].trim();
       const st = x.date === dem ? ['Demain', 'gris'] : avant == null ? ['Ce soir', 'bleu'] : avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : avant > -360 ? ['En cours', 'vert'] : ['Terminé', 'gris'];
       if (st[0] === 'Terminé') return;
-      ligne({ lieuId: x.lieu, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || '--:--', porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: dj ? `data-dj-pro="${esc(dj)}"` : '', nom: x.nom,
+      const lineup = djsDe(x.djs);
+      CK_FICHES['s:' + x.id] = { titre: x.nom, sous: '', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', st, heure: x.heure || '', quand: avant != null && avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
+        lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: d, djs: lineup, url: radarUrl(x.ticketUrl || x.url), test: x.test };
+      ligne({ lieuId: x.lieu, fiche: 's:' + x.id, djs: lineup, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || '--:--', porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: `data-ck-fiche="s:${x.id}"`, nom: x.nom,
         l1: x.date === dem ? 'demain' + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
-        l2: [[esc(l.nom) + ' · ' + fK(d)], [esc(String(x.djs || '').slice(0, 60))], [x.djs ? 'line-up annoncé' : 'line-up non communiqué', 'fil-att']], vol: dj }); });
+        l2: [[esc(l.nom) + ' · ' + fK(d)], [x.djs ? 'line-up annoncé' : 'line-up non communiqué', 'fil-att']], vol: dj }); });
     // D'abord ce qui est en live en ce moment (DJ en cours, dernier appel, spots signalés), puis le reste ; dans chaque groupe, du plus proche au plus loin
     const enLive = (o) => o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert';
     // Ordre : ce qui est en live d'abord, et parmi eux celui qui se termine le plus tôt ; puis les départs à venir, par heure de fin estimée (début + 5 h si on ne la connaît pas)
@@ -2509,9 +2566,10 @@
       const tourne = o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert';
       // Tout le bandeau devient une barre de progression : du début du set (0 %) jusqu'à la fin (100 %)
       const deb0 = o.t || 0, fin0 = finDe(o), prog = deb0 && now >= deb0 ? Math.min(100, Math.round((now - deb0) / Math.max(1, fin0 - deb0) * 100)) : 0;
-      return `<div class="ck-ligne ck-${o.st[1]}${tourne ? ' ck-tourne' : ''}${prog ? ' ck-prog' : ''}${prog >= 100 ? ' ck-fini' : ''}${o.photo ? ' a-photo' : ''}" style="--prog:${prog}%;--ph:${Math.round(42 - prog * 0.42)}">${prog ? `<i class="ck-barre" aria-hidden="true"></i><span class="ck-pct" title="Avancement du set">${prog >= 100 ? 'Terminé' : prog + ' %'}</span>` : ''}${o.photo ? `<img class="fil-photo" src="${o.photo}" alt="Photo de la soirée">` : ''}
+      const puces = !lignesSeules && o.djs && o.djs.length ? `<div class="ck-lineup"><small>Line-up</small>${o.djs.slice(0, 8).map((n) => `<button type="button" class="ck-dj" data-dj-pro="${esc(n)}">${esc(n)}</button>`).join('')}${o.djs.length > 8 ? `<span class="ck-dj plus">+${o.djs.length - 8}</span>` : ''}</div>` : '';
+      return `<div ${o.fiche ? `data-ck-fiche="${o.fiche}" ` : ''}class="ck-ligne ck-${o.st[1]}${tourne ? ' ck-tourne' : ''}${prog ? ' ck-prog' : ''}${prog >= 100 ? ' ck-fini' : ''}${o.photo ? ' a-photo' : ''}" style="--prog:${prog}%;--ph:${Math.round(42 - prog * 0.42)}">${prog ? `<i class="ck-barre" aria-hidden="true"></i><span class="ck-pct" title="Avancement du set">${prog >= 100 ? 'Terminé' : prog + ' %'}</span>` : ''}${o.photo ? `<img class="fil-photo" src="${o.photo}" alt="Photo de la soirée">` : ''}
         <div class="ck-bande"><span class="ck-h">${flap(o.heure, 5)}</span><span class="ck-porte"><small>Porte</small>${esc(o.porte)}</span><span class="ck-st ck-st-${o.st[1]}"><i></i>${esc(o.st[0])}</span></div>
-        <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em><b>${esc(o.nom)}</b>${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button></div>`; };
+        <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em><b>${esc(o.nom)}</b>${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button>${puces}</div>`; };
     const i = CK_RAYONS.indexOf(r);
     if (lignesSeules) return L.map(rangee);
     box.innerHTML = `<div class="ck-tete"><div><h2>Check-in</h2><small>Départs autour de ${esc(nomPos)} · <b>${r} km</b> · ${L.length} départ${L.length > 1 ? 's' : ''}</small></div><span class="ck-horloge">${flap(hm(now), 5)}</span></div>
@@ -4300,7 +4358,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       ${pins}</svg>`;
     // Check-in : les vraies lignes de la page Check-in (mêmes bandes, mêmes couleurs), qui défilent
     let rows = []; try { rows = renderCheckin(true) || []; } catch (e) { rows = []; }
-    rows = rows.map((r) => r.replace(/<button /g, '<span ').replace(/<\/button>/g, '</span>').replace(/data-(lieu|dj-pro|spot-voir)=/g, 'data-x-$1='));
+    rows = rows.map((r) => r.replace(/<button /g, '<span ').replace(/<\/button>/g, '</span>').replace(/data-(lieu|dj-pro|spot-voir|ck-fiche)=/g, 'data-x-$1='));
     const lignes = rows.concat(rows).join('');
     return `<button class="ag-banniere bc-banniere bc-photo" data-tab="map" aria-label="Ouvrir la carte : Direct autour de moi"><img src="direct-banniere.jpg?v=3" alt="" loading="lazy"></button>
       <button class="ag-banniere bk-banniere" data-tab="checkin" aria-label="Ouvrir le Check-in : les départs de la journée">
@@ -4738,6 +4796,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     $('#screen-agenda').hidden = tab !== 'agenda';
     $('#screen-profil').hidden = tab !== 'profil';
     $('#screen-checkin').hidden = tab !== 'checkin';
+    { const sf = $('#screen-soiree'); if (sf) sf.hidden = true; }
     const pst = document.querySelector('.pastilles'); if (pst) pst.hidden = tab !== 'live'; // boutons Autour de moi / DJ live : seulement sur « En direct »
     if (tab === 'map') { initMap(); setTimeout(() => map && map.invalidateSize(), 0); }
     majPortails();
