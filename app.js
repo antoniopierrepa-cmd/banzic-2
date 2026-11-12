@@ -2604,6 +2604,8 @@
     const dur = (m) => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min';
     const jours = joursCheckin(now), [auj, dem, apres] = jours;
     const nomJour = (date) => date === dem ? 'Demain' : date === apres ? 'Après-demain' : 'Aujourd’hui';
+    const titreJour = (date) => date === dem ? 'Départs de demain' : date === apres ? 'Départs d’après-demain' : 'Départs d’aujourd’hui';
+    const clJour = (date) => date === dem ? 'j-demain' : date === apres ? 'j-apres' : 'j-auj';
     const msDe = (date, hh) => { if (!hh) return null; const [H, M] = hh.split(':').map(Number); const x = new Date(date + 'T00:00:00'); x.setHours(H, M, 0, 0); return x.getTime(); };
     const L = [];
     const ligne = (o) => L.push(o);
@@ -2656,7 +2658,7 @@
       <div class="fd-rail ck-rail"><input type="range" id="fader-ck" min="0" max="${CK_RAYONS.length - 1}" step="1" value="${i}" style="--pct:${i / (CK_RAYONS.length - 1) * 100}%" aria-label="Rayon du check-in" aria-valuetext="${r} kilomètres">
         <div class="fd-graduations" aria-hidden="true">${CK_RAYONS.map((k, j) => `<span class="${j === i ? 'on' : ''}" data-ck-rayon="${j}">${k}</span>`).join('')}</div></div>
       <div class="ck-legende"><span class="ck-st ck-st-or"><i></i>Embarquement</span><span>commence dans moins de 2 h</span><span class="ck-st ck-st-rouge"><i></i>Dernier appel</span><span>commence dans moins de 15 min</span></div>
-      ${jours.map((date) => { const lignes = L.filter((o) => { const j = iso(new Date(o.t || now)); return date === auj ? j <= auj : j === date; }); return `<section class="ck-jour"><h3 class="section-title">${nomJour(date)} <small>${new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} · ${lignes.length}</small></h3>${lignes.length ? `<div class="ck-liste">${lignes.map(rangee).join('')}</div>` : `<p class="empty">Aucune soirée répertoriée à moins de ${r} km pour cette journée.</p>`}</section>`; }).join('')}<p class="aide">Mise à jour automatique. Sans horaire de fin publié, la fin est estimée à six heures après le début ; sans horaire, la soirée reste affichée jusqu’à minuit.</p>`;
+      ${jours.map((date) => { const lignes = L.filter((o) => { const j = iso(new Date(o.t || now)); return date === auj ? j <= auj : j === date; }); return `<section class="ck-jour ${clJour(date)}"><h3 class="ck-jour-bandeau"><span class="cjb-nom">${titreJour(date)}</span><span class="cjb-info"><b>${new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</b><small>${lignes.length} départ${lignes.length > 1 ? 's' : ''}</small></span></h3>${lignes.length ? `<div class="ck-liste">${lignes.map(rangee).join('')}</div>` : `<p class="empty">Aucune soirée répertoriée à moins de ${r} km pour cette journée.</p>`}</section>`; }).join('')}<p class="aide">Mise à jour automatique. Sans horaire de fin publié, la fin est estimée à six heures après le début ; sans horaire, la soirée reste affichée jusqu’à minuit.</p>`;
   }
   const reglerCk = (j) => { state.ckRayon = CK_RAYONS[Math.max(0, Math.min(CK_RAYONS.length - 1, j))]; store.set('ckRayon', state.ckRayon); renderCheckin(); };
   document.addEventListener('change', (e) => { if (e.target.id === 'fader-ck') reglerCk(+e.target.value); });
