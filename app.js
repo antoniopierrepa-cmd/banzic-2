@@ -445,6 +445,7 @@
     $('.map-legend').innerHTML = leg.map(([c, t]) => `<span><i style="background:${c}"></i>${t}</span>`).join('');
     if (state.vueCarte === 'lieux') $('#galerie-lieux').innerHTML = renderCheckin(true, true).join('') || '<div class="empty">Aucune soirée du jour annoncée autour de toi.</div>';
     if (!map) return;
+    if (MODE_TEST) ajouterSoireesTest(centreGeographique());
     layer.clearLayers();
     marqueursSpots();
     marqueursDecls();
@@ -2486,15 +2487,57 @@
     lieuxGoogle(c[0], c[1], 3000).then((gs) => { if (!gs.length) return;
       ['test-club', 'test-bar', 'test-resto'].forEach((id, i) => { const g = gs[i]; if (!g) return;
         Object.assign(SUD.lieux[id], { nom: g.nom, lat: g.lat, lng: g.lng, adresse: g.lib + (g.zone ? ' · ' + g.zone : ''), gid: g.gid }); if (g.photo) G_PHOTOS[g.gid] = g.photo; });
-      if (state.tab === 'checkin') renderCheckin(); });
+      if (state.tab === 'checkin') renderCheckin(); else if (state.tab === 'map') renderMap(); });
   }
+  // Fiches pour la grande carte (mêmes fiches que le Check-in, sans limite de rayon)
+  const durTxt = (m) => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min';
+  const kmDeMoi = (la, lo) => la == null ? null : distKm(centreGeographique(), [la, lo]);
+  function ficheSoireeJour(x) {
+    const l = x.l || SUD.lieux[x.lieu] || {}, now = Date.now();
+    let deb = null; if (x.heure) { const [H, M] = x.heure.split(':').map(Number); const d = new Date(x.date + 'T00:00:00'); d.setHours(H, M, 0, 0); deb = d.getTime(); }
+    const avant = deb ? (deb - now) / 60000 : null;
+    const st = avant == null ? ['Ce soir', 'bleu'] : avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ['En cours', 'vert'];
+    return CK_FICHES['s:' + x.id] = { titre: x.nom, sous: '', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', st, heure: x.heure || '',
+      quand: avant != null && avant > 0 ? 'commence dans ' + durTxt(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
+      lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: kmDeMoi(l.lat, l.lng), djs: djsDe(x.djs), url: radarUrl(x.ticketUrl || x.url), test: x.test };
+  }
+  function ficheDeclCarte(xs) {
+    const x = xs[0], l = lieuDe(x) || {}, ok = xs.some(declConfirmee), now = Date.now(), avant = (x.debut - now) / 60000, reste = (x.fin - now) / 60000;
+    return CK_FICHES['d:' + x.id] = { titre: xs.length > 1 ? l.nom || 'Spot' : (djDe(x) || {}).nom, sous: xs.length > 1 ? xs.length + ' DJ déclarés ici' : 'Set de ' + (djDe(x) || {}).nom, tag: ok ? 'Live' : 'Déclaré',
+      st: avant > 0 ? ['À l\'heure', 'bleu'] : ok ? ['En cours', 'vert'] : ['Annoncé', 'orange'], heure: hm(x.debut) + ' → ' + hm(x.fin),
+      quand: avant > 0 ? 'commence dans ' + durTxt(Math.round(avant)) : reste > 0 ? 'encore ' + durTxt(Math.round(reste)) : 'se termine',
+      lieu: { nom: l.nom || 'Spot', adresse: l.adresse || l.zone || '', lat: l.lat, lng: l.lng, gid: l.gid || x.gid }, km: kmDeMoi(l.lat, l.lng),
+      djs: xs.map((y) => (djDe(y) || {}).nom).filter(Boolean), temp: x.temp, com: x.com, conf: ok ? x.conf : 0 };
+  }
+  function ficheSpotCarte(sp) {
+    return CK_FICHES['p:' + sp.id] = { titre: sp.nom || TYPES_SPOT[sp.type] || 'Spot', sous: 'Signalé par @' + (sp.par || 'un Banger'), tag: 'Spot', st: ['Signalé', 'violet'], heure: hm(sp.t || sp.maj), quand: 'signalé ' + ilYa(sp.maj || sp.t),
+      lieu: { nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot', adresse: '', lat: sp.lat, lng: sp.lng, gid: sp.gid }, km: kmDeMoi(sp.lat, sp.lng), djs: sp.dj ? [sp.dj] : [], temp: sp.temp, com: sp.com, conf: sp.conf || 0 };
+  }
+  // Toucher un point de la carte : une bulle grandit, avec la photo Google du lieu et le DJ qui mixe. Toucher la bulle ouvre la fiche.
+  let bullePt = null;
+  function ouvrirBulleCarte(cle, ll) {
+    const f = CK_FICHES[cle]; if (!f || !map) return;
+    const l = f.lieu || {}, djs = f.djs || [];
+    const html = `<button type="button" class="bc-bulle" data-bulle-fiche="${cle}">
+      <span class="bcb-photo" data-bcb-photo="1"><span class="bcb-st ck-st ck-st-${f.st[1]}"><i></i>${esc(f.st[0])}</span></span>
+      <span class="bcb-txt"><b class="bcb-lieu">${esc(l.nom || f.titre)}</b>${f.titre && f.titre !== l.nom ? `<small class="bcb-soiree">${esc(f.titre)}</small>` : ''}
+        <span class="bcb-djs">${djs.length ? `<small>${f.tag === 'Live' || f.st[1] === 'vert' ? 'Aux platines' : 'Line-up'}</small>${djs.slice(0, 3).map((n) => `<span class="bcb-dj">${avatarDj(n)}<em>${esc(n)}</em></span>`).join('')}${djs.length > 3 ? `<span class="bcb-plus">+${djs.length - 3}</span>` : ''}` : '<small>DJ pas encore annoncé</small>'}</span>
+        <span class="bcb-bas">${f.heure ? esc(f.heure) + ' · ' : ''}${esc(f.quand || '')}<span class="bcb-voir">Voir la soirée ›</span></span></span></button>`;
+    if (bullePt) map.closePopup(bullePt);
+    bullePt = L.popup({ className: 'pop-grandit', closeButton: false, maxWidth: 270, minWidth: 250, offset: [0, -14], autoPanPaddingTopLeft: [16, 84], autoPanPaddingBottomRight: [16, 120] }).setLatLng(ll).setContent(html).openOn(map);
+    (l.gid ? Promise.resolve(l.gid) : gidPour(l)).then((gid) => { if (!gid) return; l.gid = gid; return photoGoogle(gid).then((p) => {
+      const z = bullePt && bullePt.getElement() && bullePt.getElement().querySelector('[data-bulle-fiche="' + cle + '"] [data-bcb-photo]');
+      if (z && p) { z.style.backgroundImage = `url("${gPhotoUrl(p, 520)}")`; z.classList.add('a-photo'); z.insertAdjacentHTML('beforeend', `<span class="bcb-credit">${gAuteur(p) ? esc(gAuteur(p).displayName || '') + ' · ' : ''}Google Maps</span>`); } }); });
+  }
+  window.__bulleCarte = ouvrirBulleCarte;
+  document.addEventListener('click', (e) => { const b = e.target.closest('[data-bulle-fiche]'); if (!b) return; e.preventDefault(); const k = b.dataset.bulleFiche; if (map && bullePt) map.closePopup(bullePt); ouvrirFicheSoiree(k); });
   let CK_OUVERTE = null;
   function ouvrirFicheSoiree(cle) {
     const f = CK_FICHES[cle]; if (!f) return; CK_OUVERTE = cle;
     const scr = $('#screen-soiree'); if (!scr) return;
     const l = f.lieu || {}, gm = l.gid ? gMapsUrl(l.gid) : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([l.nom, l.adresse].filter(Boolean).join(' ') || (l.lat + ',' + l.lng));
     const fK = (x) => x == null ? '' : x < 1 ? '< 1 km' : Math.round(x) + ' km';
-    scr.innerHTML = `<div class="sf-haut"><button type="button" class="sf-retour" data-soiree-fermer="1" aria-label="Retour au Check-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Check-in</button>${f.test ? '<span class="sf-test">Mode test</span>' : ''}</div>
+    scr.innerHTML = `<div class="sf-haut"><button type="button" class="sf-retour" data-soiree-fermer="1" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>${state.tab === 'map' ? 'Carte' : 'Check-in'}</button>${f.test ? '<span class="sf-test">Mode test</span>' : ''}</div>
       <div class="sf-tete ck-${f.st[1]}"><span class="ck-st ck-st-${f.st[1]}"><i></i>${esc(f.st[0])}</span><em class="fil-tag decl">${esc(f.tag)}</em>
         <h2>${esc(f.titre)}</h2>${f.sous ? `<p class="sf-sous">${esc(f.sous)}</p>` : ''}
         <p class="sf-quand">${f.heure ? `<b>${esc(f.heure)}</b> · ` : ''}${esc(f.quand || '')}</p>
@@ -2752,7 +2795,8 @@
       const marker = L.marker([x.l.lat, x.l.lng], { icon: L.divIcon({ className: 'decl-pin', iconSize: [30, 30], iconAnchor: [15, 15], html: '♪' }), title: x.nom + ' · aujourd’hui' });
       const url = radarUrl(x.ticketUrl || x.url);
       marker.bindPopup(`<div class="pop-venue">${esc(x.nom)}</div><div class="pop-slot">${esc(x.l.nom)} · ${x.heure ? esc(x.heure) : 'Horaire non communiqué'} · Soirée annoncée aujourd’hui</div>${x.djs ? `<div class="pop-dj">${esc(x.djs)}</div>` : ''}${url ? `<a class="pop-btn" data-soiree-jour="${esc(x.id)}" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Infos sur la soirée</a>` : ''}`);
-      lierBandeau(marker, `data-soiree-jour="${esc(x.id)}"`).addTo(layer);
+      ficheSoireeJour(x); marker.__fiche = 's:' + x.id;
+      marker.addTo(layer);
     });
   }
   document.addEventListener('click', (e) => {
@@ -3021,7 +3065,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       if (s.type === 'bateau' && s.trace && s.trace.length) {
         L.polyline(s.trace.concat([[s.lat, s.lng]]), { color: '#B58CFF', weight: 2, dashArray: '4 6', opacity: .8 }).addTo(layer);
       }
-      lierBandeau(survolBulle(L.marker([s.lat, s.lng], { icon: iconeSpot(s), zIndexOffset: 500 }).bindPopup(popupSpot(s), OPT_BULLE)), `data-spot-voir="${s.id}"`).addTo(layer);
+      const m = L.marker([s.lat, s.lng], { icon: iconeSpot(s), zIndexOffset: 500 }).bindPopup(popupSpot(s), OPT_BULLE);
+      ficheSpotCarte(s); m.__fiche = 'p:' + s.id; m.addTo(layer);
     });
   }
   function blocSpots() {
@@ -3516,6 +3561,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   if (window.L && L.Layer && !L.Layer.prototype.__sansBulle) {
     const ouvrirDepuisRepere = function () {
       if (window.__zoomRepere) window.__zoomRepere(this);
+      if (this.__fiche && window.__bulleCarte) { window.__bulleCarte(this.__fiche, this.getLatLng()); return; }
       const html = typeof this.__bulle === 'string' ? this.__bulle : '';
       const m = html.match(/data-(lieu|spot-voir|dj-pro|soiree-jour)="([^"]*)"/) || (this.__lieu ? [null, 'lieu', this.__lieu] : null); if (!m) return;
       const attr = `data-${m[1]}="${m[2]}"`;
@@ -3533,7 +3579,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   function marqueursDecls() {
     const groupes = {};
     DECLS.filter((x) => declDuJour(x) && djDe(x) && (() => { const l = lieuDe(x); return l && dansZoneCarte(l.lat, l.lng); })()).forEach((x) => { const l = lieuDe(x), d = djDe(x); if (!l || l.lat == null) return; const k = l.lat.toFixed(4) + ',' + l.lng.toFixed(4);
-      (groupes[k] = groupes[k] || { l, ok: false, html: [], pin: '', nom1: d.nom }); groupes[k].pin = groupes[k].pin || pinDj(d);
+      (groupes[k] = groupes[k] || { l, ok: false, html: [], pin: '', nom1: d.nom, xs: [] }); groupes[k].xs.push(x); groupes[k].pin = groupes[k].pin || pinDj(d);
       const ok = declConfirmee(x); groupes[k].ok = groupes[k].ok || ok;
       groupes[k].html.push(entreeBulle({ k: ok ? 'live' : 'decl', lieu: esc(l.nom), etat: ok ? 'En live' : 'Déclaré', tete: avatarDj(d.nom, 'pb-av'), t: d.nom,
         heure: `${hm(x.debut)} → ${hm(x.fin)}${x.style ? ' · ' + esc(x.style) : ''}`,
@@ -3542,8 +3588,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     Object.values(groupes).forEach((g) => {
       const icone = g.pin ? L.divIcon({ className: 'pin-dj' + (g.ok ? ' ok' : ''), iconSize: [44, 48], iconAnchor: [22, 47], html: `<img src="${g.pin}" alt="">${g.html.length > 1 ? '<sup>' + g.html.length + '</sup>' : ''}` })
         : L.divIcon({ className: 'decl-pin' + (g.ok ? ' ok' : '') + (g.html.length > 1 ? ' plusieurs' : ''), iconSize: [30, 30], iconAnchor: [15, 15], html: g.html.length > 1 ? 'DJ<sup>' + g.html.length + '</sup>' : 'DJ' });
-      lierBandeau(L.marker([g.l.lat, g.l.lng], { icon: icone, zIndexOffset: 600 })
-        .bindPopup(bullesEmpilees(g.html), OPT_BULLE), `data-dj-pro="${esc(g.nom1)}"`).addTo(layer);
+      const m = L.marker([g.l.lat, g.l.lng], { icon: icone, zIndexOffset: 600 }).bindPopup(bullesEmpilees(g.html), OPT_BULLE);
+      ficheDeclCarte(g.xs); m.__fiche = 'd:' + g.xs[0].id; m.addTo(layer);
     });
   }
 
@@ -3552,7 +3598,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   function renderCartesMap() {
     const box = $('#map-cartes'); if (!box) return;
     // Le bandeau d'actu défile en bas de la grande carte, comme sur l'accueil et les pages saison
-    const fil = filDest(true); box.innerHTML = fil || '<p class="demo-note">Aucune soirée du jour répertoriée dans cette zone. Dézoome ou déplace la carte.</p>'; box.hidden = false; box.classList.add('avec-fil'); return;
+    box.innerHTML = ''; box.hidden = true; return; // plus de bannières en bas de la carte : on touche un point, une bulle s'ouvre
     const c = (DEST[state.dest] || {}).centre, dist = (la, lo) => c && la != null ? distKm(c, [la, lo]) : null;
     const kmTxt = (k) => k == null ? '' : ' · ' + (k < 1 ? '< 1' : Math.round(k)) + ' km';
     const ds = declsVisibles().map((x) => { const d = djDe(x), l = lieuDe(x); return `<button class="mc-carte mc-decl" data-mc-ll="${l.lat},${l.lng}">

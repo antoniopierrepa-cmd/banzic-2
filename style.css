@@ -2956,3 +2956,26 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .sf-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05); color: #fff; font: 700 14px/1 inherit; font-family: inherit; text-decoration: none; cursor: pointer; }
 .sf-btn.plein { background: #FF8A3D; border-color: #FF8A3D; color: #160C05; }
 .sf-tete .fil-tag { font-style: normal; }
+
+/* Grande carte : bulle qui grandit au toucher d'un point (photo Google du lieu, DJ qui mixe) */
+.pop-grandit .leaflet-popup-content-wrapper { padding: 0; border-radius: 18px; background: #0F1526; border: 1px solid rgba(255,138,61,.45); box-shadow: 0 14px 40px rgba(0,0,0,.6); overflow: hidden; transform-origin: 50% 100%; animation: bulle-grandit .32s cubic-bezier(.2,1.4,.4,1); }
+.pop-grandit .leaflet-popup-content { margin: 0; width: 260px !important; }
+.pop-grandit .leaflet-popup-tip { background: #0F1526; border: 1px solid rgba(255,138,61,.45); }
+@keyframes bulle-grandit { from { transform: scale(.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.bc-bulle { display: block; width: 100%; padding: 0; border: 0; background: none; color: #fff; text-align: left; font-family: inherit; cursor: pointer; }
+.bcb-photo { position: relative; display: block; height: 130px; background: linear-gradient(135deg, #2A1B4A, #3B1530); background-size: cover; background-position: center; transition: height .3s; }
+.bcb-photo.a-photo { height: 130px; }
+.bcb-st { position: absolute !important; left: 10px; top: 10px; }
+.bcb-credit { position: absolute; right: 8px; bottom: 6px; font-size: 9.5px; color: #fff; background: rgba(0,0,0,.55); padding: 2px 6px; border-radius: 6px; }
+.bcb-txt { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px; }
+.bcb-lieu { font-size: 17px; line-height: 1.2; }
+.bcb-soiree { font-size: 12.5px; color: #C8CEDD; }
+.bcb-djs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+.bcb-djs > small { width: 100%; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #FF8A3D; }
+.bcb-dj { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 3px; border-radius: 999px; background: rgba(255,138,61,.14); border: 1px solid rgba(255,138,61,.35); }
+.bcb-dj > :first-child { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex: none; }
+.bcb-dj > :first-child img { width: 100%; height: 100%; object-fit: cover; }
+.bcb-dj em { font-style: normal; font-weight: 700; font-size: 13px; }
+.bcb-plus { font-size: 12px; color: #9AA3B8; }
+.bcb-bas { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 12px; color: #9AA3B8; }
+.bcb-voir { flex: none; font-weight: 800; color: #FF8A3D; }
