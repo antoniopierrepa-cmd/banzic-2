@@ -15,7 +15,7 @@ La couverture est partielle : principalement Barcelone, puis Madrid, Valence, Al
 
 `data/radar-spain.json` est chargé par `scripts/radar.mjs`, aux côtés des données françaises et belges. Le pays `ES` est conservé sur le lieu, séparément du référentiel des 101 départements français. `countryCoverage.ES` donne le nombre de dates espagnoles publiées.
 
-Les résultats reposent sur les coordonnées et le rayon de 10 à 1 000 km, sans filtre implicite sur le pays du profil. La carte et le Check-in gardent leur comportement « soirées du jour », avec ou sans DJ. L’agenda conserve les prochaines dates. Le filtre facultatif de départements français n’est pas nécessaire pour découvrir l’Espagne.
+Les résultats reposent sur les coordonnées et le rayon de 10 à 100 km, sans filtre implicite sur le pays du profil. La carte et le Check-in gardent leur comportement « soirées du jour », avec ou sans DJ. L’agenda conserve les prochaines dates. Le filtre facultatif de départements français n’est pas nécessaire pour découvrir l’Espagne.
 
 ## Refaire l’import
 

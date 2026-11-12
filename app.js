@@ -711,6 +711,7 @@
   };
 
   function renderAgenda() {
+    if (state.mode === 'geo') { renderAgendaSud(); return; }
     if ((state.annee === 'cal' || state.annee === 'tend') && SM()) { renderSaisonMonde('2026', state.annee); return; }
     if (state.dest !== 'ibiza' && SM()) { if (state.annee === 'prev') renderSaisonMonde('prev', 'cal'); else renderAnnee(); return; }
     if (!['annee', '2025', '2026'].includes(state.annee) || state.dest !== 'ibiza') state.annee = state.dest === 'ibiza' ? (state.annee || 'annee') : 'annee';
@@ -1662,7 +1663,7 @@
     const djs = f === 'tout' || f === 'dj' ? suggestions(q).slice(0, f === 'dj' ? 10 : ls.length > 4 ? 4 : 6) : [];
     const vs = f === 'tout' || f === 'ville' ? villesCherchees(q) : [];
     const k0 = sansAccent(q.trim());
-    const evs = (f === 'tout' || f === 'festival' || f === 'club') ? (SUD.soirees || []).filter((x) => x.date >= iso(new Date()) && (f === 'tout' || (x.type || 'club') === f)
+    const evs = (f === 'tout' || f === 'festival' || f === 'club') ? soireesAvecKm().filter((x) => x.km <= RAYONS[state.rayonIdx] && (f === 'tout' || (x.type || 'club') === f)
       && [x.nom, x.djs, (SUD.lieux[x.lieu] || {}).nom, (SUD.lieux[x.lieu] || {}).ville].some((t) => t && sansAccent(t).includes(k0))).slice(0, 5) : [];
     const fests = (f === 'tout' || f === 'festival') ? DESTS.flatMap((d) => d.evenements.filter((e) => e.url && sansAccent(e.nom).includes(k0)).map((e) => ({ e, d }))).slice(0, 4) : [];
     let h = `<div class="rech-filtres">${[['tout', 'Tout'], ['club', '🪩 Clubs'], ['plage', '🏖️ Plages'], ['festival', '🎪 Festivals'], ['dj', '🎧 DJ'], ['ville', '📍 Villes']]
@@ -1698,11 +1699,53 @@
     }).join('');
     if (fests.length) h += `<div class="sugg-titre">Festivals · ${fests.length}</div>` + fests.map(({ e, d }) =>
       `<a class="sugg" role="option" href="${e.url}" target="_blank" rel="noopener"><b>🎪 ${esc(e.nom)}</b><small>${esc(d.nom)} · ${esc(e.quand)}</small></a>`).join('');
+    if (f === 'tout' || f === 'ville') {
+      h += `<button type="button" class="sugg" data-ville-monde-rechercher="1" ${villesMonde.pending ? 'disabled' : ''}><b>${villesMonde.pending ? 'Recherche en cours…' : '🌍 Chercher une ville dans le monde'}</b><small>Choisis ensuite la ville et le pays · 100 km maximum</small></button>`;
+      if (villesMonde.query === q.trim()) {
+        h += villesMonde.rows.map((v, i) => `<button type="button" class="sugg sugg-ville" role="option" data-ville-monde-index="${i}"><b>📍 ${esc(v[0])}</b><small>${esc(v[1])} · ${esc(v[4] || '')}</small></button>`).join('');
+        if (villesMonde.error) h += `<p role="status">${esc(villesMonde.error)}</p>`;
+        if (villesMonde.rows.length) h += `<small>Géocodage © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · Photon</small>`;
+      }
+    }
     box.innerHTML = h !== vide ? h : vide + `<div class="sugg vide">${esc(T('aucun', { q }))}</div>`;
     box.hidden = false; $('#recherche-dj').setAttribute('aria-expanded', 'true');
   }
   // ---------- Recherche d'une ville dans le monde
   const VILLES = window.VILLES || [];
+  const villesMonde = { query: '', rows: [], pending: false, error: '', last: 0, cache: new Map() };
+  async function chercherVilleMonde() {
+    const q = $('#recherche-dj').value.trim();
+    if (q.length < 2 || villesMonde.pending) return;
+    if (!villesMonde.cache.has(q) && Date.now() - villesMonde.last < 2000) return;
+    villesMonde.query = q; villesMonde.error = ''; villesMonde.rows = [];
+    if (villesMonde.cache.has(q)) { villesMonde.rows = villesMonde.cache.get(q); renderSuggestions(); return; }
+    villesMonde.pending = true; villesMonde.last = Date.now(); renderSuggestions();
+    try {
+      // Recherche explicite seulement, sans GPS transmis ni requête à chaque frappe.
+      const u = new URL('https://photon.komoot.io/api/');
+      u.searchParams.set('q', q); u.searchParams.set('limit', '5'); u.searchParams.set('lang', 'fr');
+      u.searchParams.append('layer', 'city'); u.searchParams.append('layer', 'locality');
+      const response = await fetch(u, { signal: AbortSignal.timeout(8000) });
+      if (!response.ok) throw new Error('geocoder');
+      const data = await response.json();
+      villesMonde.rows = (data.features || []).flatMap((f) => {
+        const p = f.properties || {}, c = f.geometry && f.geometry.coordinates;
+        return p.name && Array.isArray(c) && Number.isFinite(c[0]) && Number.isFinite(c[1]) && Math.abs(c[0]) <= 180 && Math.abs(c[1]) <= 90
+          ? [[p.name, p.country || p.countrycode || '', c[1], c[0], p.state || p.county || '']] : [];
+      });
+      villesMonde.cache.set(q, villesMonde.rows);
+      if (!villesMonde.rows.length) villesMonde.error = 'Ville introuvable. Ajoute le pays à ta recherche.';
+    } catch (e) { villesMonde.error = 'Recherche mondiale indisponible pour le moment. Réessaie ou choisis une ville proposée.'; }
+    finally { villesMonde.pending = false; renderSuggestions(); }
+  }
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-ville-monde-rechercher]')) { chercherVilleMonde(); return; }
+    const b = e.target.closest('[data-ville-monde-index]');
+    if (b && villesMonde.query === $('#recherche-dj').value.trim()) {
+      const v = villesMonde.rows[Number(b.dataset.villeMondeIndex)];
+      if (v) { VILLES.push(v); allerVille(VILLES.length - 1); }
+    }
+  });
   function villesCherchees(q) {
     const k = sansAccent(q.trim()); if (k.length < 2) return [];
     return VILLES.map((v, i) => ({ i, n: sansAccent(v[0]), p: sansAccent(v[1]) }))
@@ -1716,11 +1759,14 @@
     if (state.djOuvert) fermerDj();
     if (map) map.closePopup();
     state.villeChoisie = true;
-    state.zoneGeo = zoneDe([v[2], v[3]], false, v[0]);
+    state.villeRecherche = [v[2], v[3]];
+    state.radarDep = '';
+    state.zoneGeo = { ...zoneDe([v[2], v[3]], false, v[0]), nom: v[0] };
     state.mode = 'geo'; store.set('mode', 'geo');
     changerDest(state.zoneGeo.dest);
     if (map) map.setView([v[2], v[3]], DEST[state.zoneGeo.dest].local ? 13 : DEST[state.zoneGeo.dest].zoom);
-    toast('📍 ' + v[0] + (state.zoneGeo.dest !== 'local' ? ' · destination ' + DEST[state.zoneGeo.dest].nom : ' · DJ et spots autour'));
+    setTab('agenda');
+    toast('📍 ' + v[0] + ' · soirées à 100 km maximum');
   }
 
   function ouvrirLieuRecherche(id) {
@@ -2075,6 +2121,8 @@
   $('#recherche-dj').addEventListener('focus', renderSuggestions);
   $('#recherche-dj').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
+      if (state.rechFiltre === 'ville') { chercherVilleMonde(); return; }
       const ls = lieuxCherches(e.target.value), s = suggestions(e.target.value);
       const k = sansAccent(e.target.value.trim());
       const vs = villesCherchees(e.target.value);
@@ -2082,6 +2130,7 @@
       else if (ls[0] && (sansAccent(ls[0].nom).includes(k) || !s[0])) ouvrirLieuRecherche(ls[0].id);
       else if (s[0]) ouvrirDj(s[0]);
       else if (vs.length) allerVille(vs[0]);
+      else chercherVilleMonde();
     }
     if (e.key === 'Escape') { $('#suggestions-dj').hidden = true; }
   });
@@ -2407,17 +2456,19 @@
     return `<div class="fil-infos fil-dest" aria-label="Fil d'actualité ${esc(d.nom)}"><div class="fil-fenetre"><div class="fil-piste">${lot.join(sep)}${sep}<span class="fil-copie" aria-hidden="true">${lot.join(sep)}${sep}</span></div></div></div>`;
   }
 
-  // ---- Check-in : le tableau des départs façon aéroport, autour de moi (10 à 1 000 km).
+  // ---- Check-in : le tableau des départs façon aéroport, autour de moi (10 à 100 km).
   // Chaque ligne garde le bandeau tel quel ; au-dessus, la bande aéroport : heure, porte (le lieu), statut.
-  const CK_RAYONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 500, 1000];
-  state.ckRayon = store.get('ckRayon', 50);
+  const CK_RAYONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  state.ckRayon = Math.max(10, Math.min(100, Number(store.get('ckRayon', 100)) || 100));
+  state.ckRayon = CK_RAYONS.find((r) => r >= state.ckRayon) || 100;
+  store.set('ckRayon', state.ckRayon);
   // La barre de progression avance toute seule : le Check-in se redessine chaque minute quand il est affiché
   setInterval(() => { if (state.tab === 'checkin' && !document.hidden) { try { renderCheckin(); } catch (e) { /* */ } } }, 60000);
   function renderCheckin(lignesSeules) {
     const box = $('#screen-checkin'); if (!box && !lignesSeules) return;
     // Position : le GPS du téléphone ; pour tester ailleurs, ?position=dubai (ou ibiza, miami, mykonos, tulum) dans l'adresse
     const posTest = (location.search.match(/[?&]position=([a-z]+)/) || [])[1], destTest = posTest && DEST[posTest];
-    const r = state.ckRayon, c = destTest ? destTest.centre : (state.maPos ? [state.maPos.lat, state.maPos.lng] : DEST.local.centre), now = Date.now();
+    const r = state.ckRayon, c = centreGeographique(), now = Date.now();
     const nomPos = destTest ? destTest.nom + ' (position de test)' : (state.zoneGeo && state.zoneGeo.nom) || 'toi';
     const km = (la, lo) => la == null ? 0 : distKm(c, [la, lo]), fK = (x) => x < 1 ? '< 1 km' : Math.round(x) + ' km';
     const dur = (m) => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min';
@@ -2465,7 +2516,7 @@
       <div class="fd-rail ck-rail"><input type="range" id="fader-ck" min="0" max="${CK_RAYONS.length - 1}" step="1" value="${i}" style="--pct:${i / (CK_RAYONS.length - 1) * 100}%" aria-label="Rayon du check-in" aria-valuetext="${r} kilomètres">
         <div class="fd-graduations" aria-hidden="true">${CK_RAYONS.map((k, j) => `<span class="${j === i ? 'on' : ''}" data-ck-rayon="${j}">${k}</span>`).join('')}</div></div>
       <div class="ck-legende"><span class="ck-st ck-st-or"><i></i>Embarquement</span><span>commence dans moins de 2 h</span><span class="ck-st ck-st-rouge"><i></i>Dernier appel</span><span>commence dans moins de 15 min</span></div>
-      ${L.length ? `<div class="ck-liste">${L.map(rangee).join('')}</div>` : `<div class="empty">Aucun départ à moins de ${r} km pour l'instant. Élargis le rayon jusqu’à 1 000 km.</div>`}`;
+      ${L.length ? `<div class="ck-liste">${L.map(rangee).join('')}</div>` : `<div class="empty">Aucun départ à moins de ${r} km pour l'instant. Les annonces restent limitées à 100 km autour de ta position.</div>`}`;
   }
   const reglerCk = (j) => { state.ckRayon = CK_RAYONS[Math.max(0, Math.min(CK_RAYONS.length - 1, j))]; store.set('ckRayon', state.ckRayon); renderCheckin(); };
   document.addEventListener('change', (e) => { if (e.target.id === 'fader-ck') reglerCk(+e.target.value); if (e.target.id === 'map-rayon') { state.ckRayon = CK_RAYONS[+e.target.value]; store.set('ckRayon', state.ckRayon); renderMap(); centrerSurMoi(); } });
@@ -2611,6 +2662,7 @@
   SUD.soirees.push(...RADAR.soirees);
   const radarUrl = (value) => { try { const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch (e) { return ''; } };
   function centreGeographique() {
+    if (state.villeChoisie && state.villeRecherche) return state.villeRecherche;
     return state.maPos ? [state.maPos.lat, state.maPos.lng] : DEST.local.centre;
   }
   function dansRayonCarte(lat, lng) {
@@ -2640,8 +2692,8 @@
   const NOMS_DEP = { '13': 'Bouches-du-Rhône', '83': 'Var', '06': 'Alpes-Maritimes', '75': 'Paris', '77': 'Seine-et-Marne', '92': 'Hauts-de-Seine', '93': 'Seine-Saint-Denis',
     '69': 'Rhône', '42': 'Loire', '38': 'Isère', '74': 'Haute-Savoie', '39': 'Jura', '68': 'Haut-Rhin', '59': 'Nord', '62': 'Pas-de-Calais', '33': 'Gironde',
     '31': 'Haute-Garonne', '34': 'Hérault', '44': 'Loire-Atlantique', '35': 'Ille-et-Vilaine' };
-  // Agenda autour de moi : un fader façon table de mixage règle le rayon (10 → 1000 km) autour de ma position
-  const RAYONS = [10, 50, 100, 200, 500, 1000];
+  // Agenda autour de moi : un fader façon table de mixage règle le rayon (10 → 100 km) autour de ma position
+  const RAYONS = [10, 50, 100];
   // 8 pads façon platine : 1re rangée le type de soirée, 2e rangée le moment (et mes DJ favoris)
   const PADS = [
     { g: 'type', k: 'tout', nom: 'Tout', c: '#C9CFDD' }, { g: 'type', k: 'club', nom: 'Clubs', c: '#3D8BFF' },
@@ -2667,7 +2719,7 @@
   function renderAgendaSud() {
     const r = RAYONS[state.rayonIdx];
     $('#screen-agenda').innerHTML = `<div class="fader-module">
-        <div class="acc-tete fd-tete"><div><h2>Agenda autour de moi</h2><small>Autour de ${esc(state.zoneGeo.nom)} · <b id="fd-km">${r} km</b> · <span id="fd-nb"></span></small></div></div>
+        <div class="acc-tete fd-tete"><div><h2>Agenda autour de moi</h2><small>Autour de ${esc(state.zoneGeo.nom)}${state.maPos || state.villeChoisie ? '' : ' (position approximative)'} · <b id="fd-km">${r} km</b> · <span id="fd-nb"></span></small></div></div>
         <div class="fd-rail">
           <input type="range" id="fader-rayon" min="0" max="${RAYONS.length - 1}" step="1" value="${state.rayonIdx}" aria-label="Rayon de recherche" aria-valuetext="${r} kilomètres">
           <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k}</span>`).join('')}</div>
@@ -2681,7 +2733,7 @@
     listeAgendaSud();
   }
   function listeAgendaSud() {
-    const r = RAYONS[state.rayonIdx], toutes = soireesAvecKm().filter((x) => state.radarDep ? x.l.dep === state.radarDep : x.km <= r);
+    const r = RAYONS[state.rayonIdx], toutes = soireesAvecKm().filter((x) => x.km <= r && (!state.radarDep || x.l.dep === state.radarDep));
     const typ = state.sudType || 'tout', quand = state.sudQuand || null, mesdj = !!state.sudMesDj;
     const liste = toutes.filter((x) => PAD_TEST['type|' + typ](x) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs));
     document.querySelectorAll('[data-pad]').forEach((b) => {
@@ -2694,7 +2746,7 @@
     document.querySelectorAll('.fd-graduations span').forEach((s, i) => s.classList.toggle('on', i === state.rayonIdx));
     const fr = $('#fader-rayon'); if (fr) fr.style.setProperty('--pct', (state.rayonIdx / (RAYONS.length - 1) * 100) + '%');
     let h = '';
-    if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département.' : `Rien d’annoncé à moins de ${r} km. Élargis le rayon ou choisis un département.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
+    if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département à moins de ' + r + ' km.' : `Rien d’annoncé à moins de ${r} km. Le rayon maximal est de 100 km autour de ta position.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
     else {
       if (!liste.length) h += `<div class="empty">Rien pour ces pads dans ce rayon.${mesdj && !state.favs.length ? ' Ajoute des DJ en favori (♥) pour utiliser « Mes DJ ».' : ''}</div>`;
       let mois = '';
@@ -2704,7 +2756,6 @@
         h += ligneSud(x);
       });
     }
-    if (!state.radarDep) h += festivalsFrance(toutes);
     h += `<p class="demo-note">Sources : déclarations des DJ et des Bangers, et le radar Banzic (agendas et billetteries autorisés). Vérifie toujours sur la page de la soirée avant de sortir.</p>`;
     $('#agenda-liste').innerHTML = h;
   }
@@ -2767,16 +2818,6 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         ${url ? `<a class="badge b-soon" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${ticketUrl ? 'Billets' : 'Infos'}</a>` : ''}
       </div>`;
   }
-  // Les grands festivals de toute la France, même loin de toi : ils valent le déplacement
-  function festivalsFrance(proches) {
-    const deja = new Set(proches.map((x) => x.nom + x.date)), centre = DEST.local.centre, auj = iso(new Date());
-    const fs = SUD.soirees.filter((x) => x.type === 'festival' && x.date >= auj && SUD.lieux[x.lieu] && /^\d+$/.test(SUD.lieux[x.lieu].dep) && !deja.has(x.nom + x.date))
-      .map((x) => ({ ...x, l: SUD.lieux[x.lieu], km: distKm(centre, [SUD.lieux[x.lieu].lat, SUD.lieux[x.lieu].lng]) }))
-      .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 20);
-    if (!fs.length) return '';
-    return `<div class="section-title">Grands festivals en France <small>${fs.length} à venir</small></div>` + fs.map(ligneSud).join('');
-  }
-
   function clicAnnee(e) {
     const c = e.target.closest('[data-an]');
     if (c) { const [id, k] = c.dataset.an.split('|'); state.anMois = +k; if (id !== state.dest) changerDest(id); else renderAnnee(); return true; }
@@ -2790,7 +2831,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // près de Mykonos, Tulum, Miami ou Dubaï, on voit cette destination ; ailleurs (Toulon, Marseille…),
   // les DJ déclarés et les spots signalés autour de soi. Démo : ?pos=mykonos|tulum|miami|dubai|toulon|ibiza
   const POS_DEMO = { ibiza: [38.95, 1.42], mykonos: [37.44, 25.35], tulum: [20.17, -87.46], miami: [25.79, -80.15], dubai: [25.10, 55.17], phuket: [7.89, 98.30], toulon: [43.1242, 5.928] };
-  const distKm = (a, b) => { const r = Math.PI / 180, x = (b[1] - a[1]) * r * Math.cos((a[0] + b[0]) / 2 * r), y = (b[0] - a[0]) * r; return Math.sqrt(x * x + y * y) * 6371; };
+  const distKm = (a, b) => { const r = Math.PI / 180, dlat = (b[0] - a[0]) * r, dlng = (b[1] - a[1]) * r, h = Math.sin(dlat / 2) ** 2 + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin(dlng / 2) ** 2; return 6371 * 2 * Math.asin(Math.sqrt(Math.min(1, Math.max(0, h)))); };
   state.mode = store.get('mode', 'geo');
   state.zoneGeo = { dest: 'local', nom: 'Toulon', approx: true };
   // La ville du profil règle la zone « autour de moi » au démarrage (le GPS, s'il répond, la remplace)
@@ -2847,6 +2888,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     navigator.geolocation.getCurrentPosition((p) => {
       const lat = p.coords.latitude, lng = p.coords.longitude;
       state.maPos = { lat, lng, acc: p.coords.accuracy, t: Date.now() };
+      if (state.villeChoisie) { dessinerMoi(); return; }
       state.zoneGeo = zoneDe([lat, lng], false, villeProche(lat, lng));
       if (state.mode === 'geo') {
         changerDest(state.zoneGeo.dest);
@@ -3378,7 +3420,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   function renderCartesMap() {
     const box = $('#map-cartes'); if (!box) return;
     // Le bandeau d'actu défile en bas de la grande carte, comme sur l'accueil et les pages saison
-    const fil = filDest(true); box.innerHTML = `<div class="map-rayon" style="padding:6px 12px;background:rgba(11,15,28,.92);border-radius:12px"><label style="display:flex;align-items:center;gap:8px;font-size:11px">Rayon · ${state.ckRayon} km <input id="map-rayon" type="range" min="0" max="${CK_RAYONS.length - 1}" step="1" value="${Math.max(0, CK_RAYONS.indexOf(state.ckRayon))}" aria-label="Rayon de la carte" aria-valuetext="${state.ckRayon} kilomètres" style="flex:1;min-width:0"></label><small>10 à 1 000 km · sans frontière</small></div>` + fil; box.hidden = false; box.classList.add('avec-fil'); return;
+    const fil = filDest(true); box.innerHTML = `<div class="map-rayon" style="padding:6px 12px;background:rgba(11,15,28,.92);border-radius:12px"><label style="display:flex;align-items:center;gap:8px;font-size:11px">Rayon · ${state.ckRayon} km <input id="map-rayon" type="range" min="0" max="${CK_RAYONS.length - 1}" step="1" value="${Math.max(0, CK_RAYONS.indexOf(state.ckRayon))}" aria-label="Rayon de la carte" aria-valuetext="${state.ckRayon} kilomètres" style="flex:1;min-width:0"></label><small>10 à 100 km autour de toi · sans frontière</small></div>` + fil; box.hidden = false; box.classList.add('avec-fil'); return;
     const c = (DEST[state.dest] || {}).centre, dist = (la, lo) => c && la != null ? distKm(c, [la, lo]) : null;
     const kmTxt = (k) => k == null ? '' : ' · ' + (k < 1 ? '< 1' : Math.round(k)) + ' km';
     const ds = declsVisibles().map((x) => { const d = djDe(x), l = lieuDe(x); return `<button class="mc-carte mc-decl" data-mc-ll="${l.lat},${l.lng}">
@@ -4658,17 +4700,18 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // En ouvrant la carte : on atterrit sur le point bleu de géolocalisation (position réelle du téléphone)
   function centrerSurMoi() {
     if (!map || !estInscrit()) return;
-    // Point GPS au milieu, cercle de 50 km autour : la carte s'ouvre cadrée sur ce cercle
-    const poser = () => { const m = state.maPos, c = m ? [m.lat, m.lng] : ((state.zoneGeo && DEST[state.zoneGeo.dest]) || DEST.local).centre; dessinerMoi();
+    // Point GPS au milieu, cercle limité à 100 km autour de chaque utilisateur
+    const poser = () => { const c = centreGeographique(); dessinerMoi();
       if (!rayonLayer) rayonLayer = L.layerGroup().addTo(map); rayonLayer.clearLayers();
       const cercle = L.circle(c, { radius: state.ckRayon * 1000, color: '#4DA3FF', weight: 1.5, opacity: .7, dashArray: '6 6', fillColor: '#4DA3FF', fillOpacity: .05, interactive: false }).addTo(rayonLayer);
       L.marker(L.latLng(c[0] + state.ckRayon / 111, c[1]), { icon: L.divIcon({ className: 'rayon-label', html: '<span>' + state.ckRayon + ' km</span>', iconSize: [60, 20], iconAnchor: [30, 10] }), interactive: false }).addTo(rayonLayer);
       map.fitBounds(cercle.getBounds(), { padding: [10, 10] }); };
-    if (state.maPos && Date.now() - state.maPos.t < 120000) { poser(); return; }
+    if (state.villeChoisie || (state.maPos && Date.now() - state.maPos.t < 120000)) { poser(); return; }
     poser();
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition((p) => {
       state.maPos = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy, t: Date.now() };
+      if (state.villeChoisie) return;
       state.zoneGeo = zoneDe([state.maPos.lat, state.maPos.lng], false, villeProche(state.maPos.lat, state.maPos.lng));
       if (state.mode === 'geo') changerDest(state.zoneGeo.dest);
       if (state.tab === 'map') poser();

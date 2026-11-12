@@ -6,7 +6,7 @@ La collecte est partielle. Elle ne représente ni tous les établissements de Be
 
 ## Géographie
 
-Les annonces belges ont `country: BE`. Elles ne sont pas des départements français. Le calcul porte sur les coordonnées GPS et le rayon de 10 à 1 000 km, sans frontière ni filtre implicite sur le pays du profil. L’agenda conserve son filtre français facultatif ; par défaut la distance décide. La carte et le Check-in ne montrent que les soirées du jour et les signalements actifs, y compris sans DJ. Les filtres de prochaines sorties restent indépendants de la carte.
+Les annonces belges ont `country: BE`. Elles ne sont pas des départements français. Le calcul porte sur les coordonnées GPS et le rayon de 10 à 100 km, sans frontière ni filtre implicite sur le pays du profil. L’agenda conserve son filtre français facultatif, appliqué à l’intérieur du rayon GPS ; la distance décide toujours. La carte et le Check-in ne montrent que les soirées du jour et les signalements actifs, y compris sans DJ. Les filtres de prochaines sorties restent indépendants de la carte.
 
 Les deux adresses Ciao Bella sont placées approximativement au niveau de la route de Philippeville à Charleroi, car le numéro 221 n’a pas été résolu. Elles portent `positionApproximate: true`, affiché dans l’agenda. Géocodage © OpenStreetMap contributors, ODbL : https://www.openstreetmap.org/copyright . Les autres positions proviennent des fiches de l’organisateur ; vérifier le lieu exact sur la source avant de se déplacer.
 

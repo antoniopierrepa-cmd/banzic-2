@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: '22'
       - run: python -m unittest discover -s tests -p 'test_*.py'
-      - run: node --test tests/radar.test.mjs
+      - run: node --test tests/*.test.mjs
       - run: node --check app.js
       - run: node --check agenda-radar.js
       - name: Valider les annonces et le fichier livré
