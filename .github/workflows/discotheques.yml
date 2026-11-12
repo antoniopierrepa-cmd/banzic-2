@@ -1,0 +1,21 @@
+name: Discothèques de France (OpenStreetMap)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 1 * *'
+permissions:
+  contents: write
+jobs:
+  maj:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/discotheques.mjs
+      - run: |
+          git config user.name "banzic-radar"
+          git config user.email "noreply@anthropic.com"
+          git add discotheques.js
+          git diff --cached --quiet || (git commit -m "Discothèques de France : mise à jour OpenStreetMap" && git push)
