@@ -2860,7 +2860,7 @@
     '69': 'Rhône', '42': 'Loire', '38': 'Isère', '74': 'Haute-Savoie', '39': 'Jura', '68': 'Haut-Rhin', '59': 'Nord', '62': 'Pas-de-Calais', '33': 'Gironde',
     '31': 'Haute-Garonne', '34': 'Hérault', '44': 'Loire-Atlantique', '35': 'Ille-et-Vilaine' };
   // Agenda autour de moi : un fader façon table de mixage règle le rayon (10 → 100 km) autour de ma position
-  const RAYONS = [10, 50, 100];
+  const RAYONS = [10, 20, 50, 100];
   // 8 pads façon platine : 1re rangée le type de soirée, 2e rangée le moment (et mes DJ favoris)
   // Petits logos des pads (dessinés en trait, aux couleurs de chaque pad)
   const ICO_PAD = {
@@ -2902,7 +2902,7 @@
     const r = RAYONS[state.rayonIdx];
     $('#screen-agenda').innerHTML = `<div class="fader-module">
         <div class="acc-tete fd-tete"><div><h2>Agenda autour de moi</h2><small>Autour de ${esc(state.zoneGeo.nom)}${state.maPos || state.villeChoisie ? '' : ' (position approximative)'} · <b id="fd-km">${r} km</b> · <span id="fd-nb"></span></small></div></div>
-        <div class="fd-rail">
+        <button type="button" id="radar-hyeres-weekend" class="acc-chip" style="margin:8px 0 12px">📍 Hyères · 20 km · jeudi à dimanche</button>\n        <div class="fd-rail">
           <input type="range" id="fader-rayon" min="0" max="${RAYONS.length - 1}" step="1" value="${state.rayonIdx}" aria-label="Rayon de recherche" aria-valuetext="${r} kilomètres">
           <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k}</span>`).join('')}</div>
         </div>
@@ -2912,13 +2912,25 @@
         <div class="pads" role="group" aria-label="Filtres">${PADS.map((x) => `<button class="pad${x.moins18 ? ' pad-18' : ''}" style="--pc:${x.c}" data-pad="${x.g}|${x.k}" aria-pressed="false"${x.moins18 ? ' title="Interdit aux moins de 18 ans"' : ''}>${icoPad(x.g === 'type' ? x.k : x.k === 'oui' ? 'mesdj' : x.k)}<span class="pad-nom">${x.nom}</span><small class="pad-nb"></small></button>`).join('')}</div>
       </div>
       <div id="agenda-liste"></div>`;
+    $('#radar-hyeres-weekend')?.addEventListener('click', () => {
+      state.villeChoisie = true;
+      state.villeRecherche = [43.1205, 6.1286];
+      state.zoneGeo = { ...zoneDe([43.1205, 6.1286], false, 'Hyères'), nom: 'Hyères' };
+      state.rayonIdx = RAYONS.indexOf(20);
+      state.radarDep = '';
+      state.radarHyeresWeekend = true;
+      state.sudQuand = null;
+      state.sudAvecDj = false;
+      state.sudTypes = [];
+      renderAgendaSud();
+    });
     listeAgendaSud();
   }
   function listeAgendaSud() {
-    // Ce soir est déjà sur la carte et dans le Check-in : l'agenda montre les 7 prochains jours, à partir de demain
+    // Inclure aussi les soirées de ce soir dans l'agenda, pas uniquement celles de demain.
     // Les dates plus lointaines arrivent en descendant : 7 jours de plus à chaque fois qu'on atteint le bas de la liste
-    const auj0 = iso(new Date()), j7 = auJour(state.agJours || 7);
-    const r = RAYONS[state.rayonIdx], toutesLoin = soireesAvecKm().filter((x) => x.date > auj0 && x.km <= r && (!state.radarDep || x.l.dep === state.radarDep)), toutes = toutesLoin.filter((x) => x.date <= j7 && x.km <= r && (!state.radarDep || x.l.dep === state.radarDep));
+    const auj0 = iso(new Date()), j7 = state.radarHyeresWeekend ? finWeekend() : auJour(state.agJours || 7);
+    const r = RAYONS[state.rayonIdx], toutesLoin = soireesAvecKm().filter((x) => x.date >= auj0 && x.km <= r && (!state.radarDep || x.l.dep === state.radarDep)), toutes = toutesLoin.filter((x) => x.date <= j7 && x.km <= r && (!state.radarDep || x.l.dep === state.radarDep));
     const types = (state.sudTypes || []).filter((k) => PAD_TEST['type|' + k]), quand = state.sudQuand === 'weekend' ? 'weekend' : null, mesdj = !!state.sudMesDj;
     const liste = toutes.filter((x) => (!types.length || types.some((k) => PAD_TEST['type|' + k](x))) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs));
     document.querySelectorAll('[data-pad]').forEach((b) => {
@@ -2931,7 +2943,7 @@
     document.querySelectorAll('.fd-graduations span').forEach((s, i) => s.classList.toggle('on', i === state.rayonIdx));
     const fr = $('#fader-rayon'); if (fr) fr.style.setProperty('--pct', (state.rayonIdx / (RAYONS.length - 1) * 100) + '%');
     let h = '';
-    if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département à moins de ' + r + ' km.' : `Rien d’annoncé dans les 7 prochains jours à moins de ${r} km. Ce soir, regarde la carte et le Check-in.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
+    if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département à moins de ' + r + ' km.' : `Rien d’annoncé dans les 7 prochains jours à moins de ${r} km. Vérifie aussi les lieux et leurs annonces officielles.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
     else {
       if (!liste.length) h += `<div class="empty">Rien pour ces pads dans ce rayon.${mesdj && !state.favs.length ? ' Ajoute des DJ en favori (♥) pour utiliser « Mes DJ ».' : ''}</div>`;
       // Un titre par jour (« SAM. 14 NOV. »), puis les soirées du jour en grandes cartes avec l'affiche
