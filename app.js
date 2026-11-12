@@ -2978,7 +2978,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // Pas d'affiche pour la soirée : on met la photo Google Maps du lieu (chargée seulement quand la carte arrive à l'écran)
   // Toutes les cartes sans affiche reçoivent la photo du lieu, l'une après l'autre ; une photo déjà trouvée revient tout de suite
   const photoLieuFaite = (z, p) => { const u = gPhotoUrl(p, 800), img = z.querySelector('img'); if (!img || z.classList.contains('agc-photo-lieu')) return;
-    img.onerror = null; img.src = u; img.alt = 'Photo du lieu'; z.style.setProperty('--aff', `url("${u}")`); z.classList.add('agc-photo-lieu');
+    img.onerror = null; img.referrerPolicy = 'strict-origin-when-cross-origin'; img.removeAttribute('referrerpolicy'); img.src = u; img.alt = 'Photo du lieu'; z.style.setProperty('--aff', `url("${u}")`); z.classList.add('agc-photo-lieu');
     z.insertAdjacentHTML('beforeend', `<span class="agc-credit">Le lieu · ${gAuteur(p) ? esc(gAuteur(p).displayName || '') + ' · ' : ''}Google Maps</span>`); };
   let filePhotos = Promise.resolve();
   function photosAgenda() {
