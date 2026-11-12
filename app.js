@@ -364,7 +364,7 @@
   }
 
   // ---------- Carte
-  let map, layer, rayonLayer = null;
+  let map, layer;
   function couleur(l, t) {
     const s = statutLieu(l.id, t).code;
     if (s === 'live') return l.type === 'plage' ? '#3DD6C6' : '#FF8A3D';
@@ -419,6 +419,7 @@
     L.control.zoom({ position: 'topright' }).addTo(map);
     layer = L.layerGroup().addTo(map);
     moiLayer = L.layerGroup().addTo(map);
+    map.on('moveend', () => { if (state.tab === 'map') renderMap(); });
     dessinerMoi();
   }
   function renderGalerie() {
@@ -441,7 +442,7 @@
     try { renderCartesMap(); } catch (e) { console.warn(e); }
     const leg = [['#B58CFF', 'Signalé en live'], ['#F2C94C', 'DJ déclaré aujourd’hui'], ['#3DD6C6', 'Soirée du jour']];
     $('.map-legend').innerHTML = leg.map(([c, t]) => `<span><i style="background:${c}"></i>${t}</span>`).join('');
-    if (state.vueCarte === 'lieux') $('#galerie-lieux').innerHTML = renderCheckin(true).join('') || '<div class="empty">Aucune soirée du jour annoncée autour de toi.</div>';
+    if (state.vueCarte === 'lieux') $('#galerie-lieux').innerHTML = renderCheckin(true, true).join('') || '<div class="empty">Aucune soirée du jour annoncée autour de toi.</div>';
     if (!map) return;
     layer.clearLayers();
     marqueursSpots();
@@ -2429,9 +2430,9 @@
       passages.filter((p) => !p.inconnu && p.d > t && p.d - t <= 120).sort((a, b) => a.d - b.d).slice(0, 6).forEach((p) => { const l = lieux[p.lieu];
         xs.push(item('decl', 'Bientôt', `data-lieu="${l.id}"`, p.dj, 'à ' + p.debut, [[esc(l.nom) + (p.salle ? ' · ' + esc(p.salle) : '')], ['dans ' + dur(p.d - t)]], visFil(p.dj, 0, ''))); });
     }
-    (jourSeulement ? DECLS.filter((x) => declDuJour(x) && djDe(x) && (() => { const l = lieuDe(x); return l && dansRayonCarte(l.lat, l.lng); })()) : declsVisibles()).forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}, ok = declConfirmee(x), m = Math.round((x.fin - Date.now()) / 60000);
+    (jourSeulement ? DECLS.filter((x) => declDuJour(x) && djDe(x) && (() => { const l = lieuDe(x); return l && dansZoneCarte(l.lat, l.lng); })()) : declsVisibles()).forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}, ok = declConfirmee(x), m = Math.round((x.fin - Date.now()) / 60000);
       xs.push(item(ok ? 'live' : 'decl', ok ? 'Live' : 'Déclaré', `data-dj-pro="${esc(dj.nom)}"`, dj.nom, m > 0 ? 'encore ' + dur(m) : 'se termine', [[esc(l.nom || 'Spot') + kmL(l.lat, l.lng)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']], visFil(dj.nom, x.conf || 0, `data-decl-ok="${x.id}"`))); });
-    (jourSeulement ? SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && dansRayonCarte(s.lat, s.lng)) : spotsVisibles().filter(spotPublic)).forEach((sp) => { const n = sp.note || 0, c = sp.conf || 0, v = n >= 4 && c >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || c >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
+    (jourSeulement ? SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && dansZoneCarte(s.lat, s.lng)) : spotsVisibles().filter(spotPublic)).forEach((sp) => { const n = sp.note || 0, c = sp.conf || 0, v = n >= 4 && c >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || c >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
       xs.push(item('spot', 'Spot', `data-spot-voir="${sp.id}"`, sp.nom || TYPES_SPOT[sp.type] || 'Spot', `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, [[esc(sp.dj || 'DJ inconnu') + kmL(sp.lat, sp.lng)], ['signalé à ' + hm(sp.t || sp.maj) + ' par @' + esc(sp.par || 'un Banger')]], visSpotC(sp))); });
     const auj = isoAuj();
     if (!jourSeulement && d.id === 'dubai') soireesDubai().filter((r) => r.date === auj).forEach((r) => { const dj = (r.djs || '').split(/,| b2b /i)[0].trim();
@@ -2464,7 +2465,7 @@
   store.set('ckRayon', state.ckRayon);
   // La barre de progression avance toute seule : le Check-in se redessine chaque minute quand il est affiché
   setInterval(() => { if (state.tab === 'checkin' && !document.hidden) { try { renderCheckin(); } catch (e) { /* */ } } }, 60000);
-  function renderCheckin(lignesSeules) {
+  function renderCheckin(lignesSeules, zoneCarte = false) {
     const box = $('#screen-checkin'); if (!box && !lignesSeules) return;
     // Position : le GPS du téléphone ; pour tester ailleurs, ?position=dubai (ou ibiza, miami, mykonos, tulum) dans l'adresse
     const posTest = (location.search.match(/[?&]position=([a-z]+)/) || [])[1], destTest = posTest && DEST[posTest];
@@ -2477,19 +2478,19 @@
     const L = [];
     const ligne = (o) => L.push(o);
     // DJ déclarés autour de moi
-    DECLS.filter((x) => declDuJour(x) && djDe(x)).forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}; if (l.lat == null) return; const d = km(l.lat, l.lng); if (d > r) return;
+    DECLS.filter((x) => declDuJour(x) && djDe(x)).forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}; if (l.lat == null) return; const d = km(l.lat, l.lng); if (zoneCarte ? !dansZoneCarte(l.lat, l.lng) : d > r) return;
       const ok = declConfirmee(x), avant = (x.debut - now) / 60000, reste = (x.fin - now) / 60000;
       const st = avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ok ? ['En cours', 'vert'] : ['Annoncé', 'orange'];
       ligne({ fin: x.fin, conf: x.conf || 0, act: `data-decl-ok="${x.id}"`, km: d, t: x.debut, heure: hm(x.debut), porte: l.nom || 'Spot', st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Déclaré', attr: `data-dj-pro="${esc(dj.nom)}"`, nom: dj.nom,
         l1: avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : reste > 0 ? 'encore ' + dur(Math.round(reste)) : 'se termine',
         l2: [[(x.temp != null ? `<span class="thermo-mini t${x.temp}" title="Ambiance : ${['Froid', 'Moyen', 'Chaud'][x.temp]}"><i></i></span><span class="thermo-txt t${x.temp}">${['Froid', 'Moyen', 'Chaud'][x.temp]}</span> ` : '') + esc(l.nom || 'Spot') + ' · ' + fK(d)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']].concat(x.com ? [['« ' + esc(x.com) + ' »', 'fil-com']] : []), vol: dj.nom }); });
     // Spots signalés par les Bangers
-    SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && s.lat != null).forEach((sp) => { const d = km(sp.lat, sp.lng); if (d > r) return;
+    SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && s.lat != null).forEach((sp) => { const d = km(sp.lat, sp.lng); if (zoneCarte ? !dansZoneCarte(sp.lat, sp.lng) : d > r) return;
       const n = sp.note || 0, cf = sp.conf || 0, v = n >= 4 && cf >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || cf >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
       ligne({ fin: (sp.maj || sp.t) + 3 * 3600000, sp, km: d, t: sp.t || sp.maj, heure: hm(sp.t || sp.maj), porte: sp.nom || TYPES_SPOT[sp.type] || 'Spot', st: ['Signalé', 'violet'], k: 'spot', tag: 'Spot', attr: `data-spot-voir="${sp.id}"`, nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot',
         l1: `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, l2: [[esc(sp.dj || 'DJ inconnu') + ' · ' + fK(d)], [(sp.temp != null ? `<span class="thermo-mini t${sp.temp}" title="Ambiance : ${['Froid', 'Moyen', 'Chaud'][sp.temp]}"><i></i></span><span class="thermo-txt t${sp.temp}">${['Froid', 'Moyen', 'Chaud'][sp.temp]}</span> ` : '') + 'signalé par @' + esc(sp.par || 'un Banger')]].concat(sp.com ? [['« ' + esc(sp.com) + ' »', 'fil-com']] : []), vol: '' }); });
     // Toutes les soirées du jour, avec ou sans DJ, indépendantes des filtres de l’agenda.
-    SUD.soirees.filter((x) => x.date === auj && SUD.lieux[x.lieu]).forEach((x) => { const l = SUD.lieux[x.lieu], d = km(l.lat, l.lng); if (d > r) return;
+    SUD.soirees.filter((x) => x.date === auj && SUD.lieux[x.lieu]).forEach((x) => { const l = SUD.lieux[x.lieu], d = km(l.lat, l.lng); if (zoneCarte ? !dansZoneCarte(l.lat, l.lng) : d > r) return;
       const deb = msDe(x.date, x.heure), avant = deb ? (deb - now) / 60000 : null, dj = String(x.djs || '').split(/,| b2b | & /i)[0].trim();
       const st = x.date === dem ? ['Demain', 'gris'] : avant == null ? ['Ce soir', 'bleu'] : avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : avant > -360 ? ['En cours', 'vert'] : ['Terminé', 'gris'];
       if (st[0] === 'Terminé') return;
@@ -2519,7 +2520,7 @@
       ${L.length ? `<div class="ck-liste">${L.map(rangee).join('')}</div>` : `<div class="empty">Aucun départ à moins de ${r} km pour l'instant. Les annonces restent limitées à 100 km autour de ta position.</div>`}`;
   }
   const reglerCk = (j) => { state.ckRayon = CK_RAYONS[Math.max(0, Math.min(CK_RAYONS.length - 1, j))]; store.set('ckRayon', state.ckRayon); renderCheckin(); };
-  document.addEventListener('change', (e) => { if (e.target.id === 'fader-ck') reglerCk(+e.target.value); if (e.target.id === 'map-rayon') { state.ckRayon = CK_RAYONS[+e.target.value]; store.set('ckRayon', state.ckRayon); renderMap(); centrerSurMoi(); } });
+  document.addEventListener('change', (e) => { if (e.target.id === 'fader-ck') reglerCk(+e.target.value); });
   document.addEventListener('input', (e) => { if (e.target.id === 'fader-ck') { const j = +e.target.value; e.target.style.setProperty('--pct', j / (CK_RAYONS.length - 1) * 100 + '%'); document.querySelectorAll('[data-ck-rayon]').forEach((s, k) => s.classList.toggle('on', k === j)); } });
   document.addEventListener('click', (e) => { const g = e.target.closest('[data-ck-rayon]'); if (g) reglerCk(+g.dataset.ckRayon); });
 
@@ -2665,14 +2666,18 @@
     if (state.villeChoisie && state.villeRecherche) return state.villeRecherche;
     return state.maPos ? [state.maPos.lat, state.maPos.lng] : DEST.local.centre;
   }
-  function dansRayonCarte(lat, lng) {
-    return lat != null && lng != null && distKm(centreGeographique(), [lat, lng]) <= state.ckRayon;
+  function dansZoneCarte(lat, lng) {
+    if (!map || !Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+    const bounds = map.getBounds();
+    // Garde les repères visibles lorsque la carte passe le méridien ±180°.
+    const longitude = lng + 360 * Math.round((bounds.getCenter().lng - lng) / 360);
+    return bounds.contains([lat, longitude]);
   }
   function soireesCarteJour() {
-    const centre = centreGeographique(), auj = iso(new Date());
+    const auj = iso(new Date());
     return SUD.soirees.filter((x) => x.date === auj && SUD.lieux[x.lieu])
       .map((x) => ({ ...x, l: SUD.lieux[x.lieu] }))
-      .filter((x) => distKm(centre, [x.l.lat, x.l.lng]) <= state.ckRayon);
+      .filter((x) => dansZoneCarte(x.l.lat, x.l.lng));
   }
   function marqueursRadar() {
     soireesCarteJour().forEach((x) => {
@@ -2944,7 +2949,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       actions: `<div class="pb-actions"><button class="pb-btn plein" data-spot-ok="${s.id}">${s.type === 'bateau' ? 'Je suis à bord' : 'J\'y suis : il joue'}</button></div>${s.mien && !spotPublic(s) ? `<button class="lien-demo" data-spot-autre="${s.id}">Démo : un autre utilisateur confirme</button>` : ''}` });
   }
   function marqueursSpots() {
-    SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && dansRayonCarte(s.lat, s.lng)).forEach((s) => {
+    SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && dansZoneCarte(s.lat, s.lng)).forEach((s) => {
       if (s.type === 'bateau' && s.trace && s.trace.length) {
         L.polyline(s.trace.concat([[s.lat, s.lng]]), { color: '#B58CFF', weight: 2, dashArray: '4 6', opacity: .8 }).addTo(layer);
       }
@@ -3400,7 +3405,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
 
   function marqueursDecls() {
     const groupes = {};
-    DECLS.filter((x) => declDuJour(x) && djDe(x) && (() => { const l = lieuDe(x); return l && dansRayonCarte(l.lat, l.lng); })()).forEach((x) => { const l = lieuDe(x), d = djDe(x); if (!l || l.lat == null) return; const k = l.lat.toFixed(4) + ',' + l.lng.toFixed(4);
+    DECLS.filter((x) => declDuJour(x) && djDe(x) && (() => { const l = lieuDe(x); return l && dansZoneCarte(l.lat, l.lng); })()).forEach((x) => { const l = lieuDe(x), d = djDe(x); if (!l || l.lat == null) return; const k = l.lat.toFixed(4) + ',' + l.lng.toFixed(4);
       (groupes[k] = groupes[k] || { l, ok: false, html: [], pin: '', nom1: d.nom }); groupes[k].pin = groupes[k].pin || pinDj(d);
       const ok = declConfirmee(x); groupes[k].ok = groupes[k].ok || ok;
       groupes[k].html.push(entreeBulle({ k: ok ? 'live' : 'decl', lieu: esc(l.nom), etat: ok ? 'En live' : 'Déclaré', tete: avatarDj(d.nom, 'pb-av'), t: d.nom,
@@ -3420,7 +3425,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   function renderCartesMap() {
     const box = $('#map-cartes'); if (!box) return;
     // Le bandeau d'actu défile en bas de la grande carte, comme sur l'accueil et les pages saison
-    const fil = filDest(true); box.innerHTML = `<div class="map-rayon" style="padding:6px 12px;background:rgba(11,15,28,.92);border-radius:12px"><label style="display:flex;align-items:center;gap:8px;font-size:11px">Rayon · ${state.ckRayon} km <input id="map-rayon" type="range" min="0" max="${CK_RAYONS.length - 1}" step="1" value="${Math.max(0, CK_RAYONS.indexOf(state.ckRayon))}" aria-label="Rayon de la carte" aria-valuetext="${state.ckRayon} kilomètres" style="flex:1;min-width:0"></label><small>10 à 100 km autour de toi · sans frontière</small></div>` + fil; box.hidden = false; box.classList.add('avec-fil'); return;
+    const fil = filDest(true); box.innerHTML = fil || '<p class="demo-note">Aucune soirée du jour répertoriée dans cette zone. Dézoome ou déplace la carte.</p>'; box.hidden = false; box.classList.add('avec-fil'); return;
     const c = (DEST[state.dest] || {}).centre, dist = (la, lo) => c && la != null ? distKm(c, [la, lo]) : null;
     const kmTxt = (k) => k == null ? '' : ' · ' + (k < 1 ? '< 1' : Math.round(k)) + ' km';
     const ds = declsVisibles().map((x) => { const d = djDe(x), l = lieuDe(x); return `<button class="mc-carte mc-decl" data-mc-ll="${l.lat},${l.lng}">
@@ -4700,12 +4705,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // En ouvrant la carte : on atterrit sur le point bleu de géolocalisation (position réelle du téléphone)
   function centrerSurMoi() {
     if (!map || !estInscrit()) return;
-    // Point GPS au milieu, cercle limité à 100 km autour de chaque utilisateur
-    const poser = () => { const c = centreGeographique(); dessinerMoi();
-      if (!rayonLayer) rayonLayer = L.layerGroup().addTo(map); rayonLayer.clearLayers();
-      const cercle = L.circle(c, { radius: state.ckRayon * 1000, color: '#4DA3FF', weight: 1.5, opacity: .7, dashArray: '6 6', fillColor: '#4DA3FF', fillOpacity: .05, interactive: false }).addTo(rayonLayer);
-      L.marker(L.latLng(c[0] + state.ckRayon / 111, c[1]), { icon: L.divIcon({ className: 'rayon-label', html: '<span>' + state.ckRayon + ' km</span>', iconSize: [60, 20], iconAnchor: [30, 10] }), interactive: false }).addTo(rayonLayer);
-      map.fitBounds(cercle.getBounds(), { padding: [10, 10] }); };
+    // Départ sur la position choisie ; le zoom et le déplacement définissent ensuite la zone.
+    const poser = () => { dessinerMoi(); map.setView(centreGeographique(), 10); renderMap(); };
     if (state.villeChoisie || (state.maPos && Date.now() - state.maPos.t < 120000)) { poser(); return; }
     poser();
     if (!navigator.geolocation) return;
