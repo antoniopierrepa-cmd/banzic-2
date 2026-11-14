@@ -30,6 +30,12 @@
 @media(prefers-reduced-motion:reduce){.bz-vitrine-rail{scroll-behavior:auto}}
 </style>
 <style>
+/* Validation BANGERS dans le bandeau Check-in */
+.bz-ck-bang{display:inline-flex;align-items:center;border-radius:7px;padding:4px 8px;font:800 11px/1.3 Arial,sans-serif;white-space:nowrap}
+.bz-ck-bang-attente{color:#fff;background:#a14c00;border:1px solid #ffbb60;animation:bz-bang-clignote 1.15s ease-in-out infinite}
+.bz-ck-bang-valide{color:#fff;background:#137a46;border:1px solid #6be5a3}
+@keyframes bz-bang-clignote{0%,100%{opacity:1}50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.bz-ck-bang-attente{animation:none}}
 /* Repères vinyles sur la carte des soirées du jour */
 .bz-vinyle-marker{background:transparent!important;border:0!important}
 .bz-vinyle-disque{position:absolute;inset:2px;display:grid;place-items:center;border-radius:50%;background:repeating-radial-gradient(circle at center,#22252c 0 3px,#373942 4px 5px,#17191f 6px 8px);border:2px solid #ECA26D;box-shadow:0 3px 13px #000b,0 0 0 3px #e98d3b35;box-sizing:border-box;transform-style:preserve-3d;backface-visibility:visible}
