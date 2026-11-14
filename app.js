@@ -3206,7 +3206,7 @@
       ${styles ? `<div class="sm-groupe"><small>Ambiance musicale</small><div class="sm-chips">${styles}</div></div>` : '<p class="aide">Aucun style musical annoncé pour l\u2019instant.</p>'}</div>`;
   }
   // Club libertin : réservé aux plus de 18 ans (repéré au nom du lieu ou de la soirée)
-  const estLibertin = (x) => !!(x.libertin || (x.l && x.l.libertin)) || /libertin|échangis|echangis|\bswing/i.test((x.nom || '') + ' ' + ((x.l || SUD.lieux[x.lieu] || {}).nom || ''));
+  const estLibertin = (x) => !!(x.libertin || Number(x.ageMin) >= 18 || (x.l && (x.l.libertin || (x.l.categories || []).includes('libertin')))) || /libertin|échangis|echangis|\bswing/i.test((x.nom || '') + ' ' + ((x.l || SUD.lieux[x.lieu] || {}).nom || ''));
   const auJour = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
   function finWeekend() { const d = new Date(), j = d.getDay(); d.setDate(d.getDate() + (j === 0 ? 0 : 7 - j)); return iso(d); }
   function debutWeekend() { const d = new Date(), j = d.getDay(); if (j >= 5 || j === 0) return iso(d); d.setDate(d.getDate() + (5 - j)); return iso(d); }
