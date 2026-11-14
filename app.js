@@ -3400,6 +3400,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
           <div class="ps-suite"${proches.length ? '' : ' hidden'}>
           <div class="ps-etape">2 · Le DJ</div>
           <div class="ps-dj-ici" hidden></div>
+          <div class="ps-soiree-ici" hidden></div>
           <div class="ps-dj-cartes">
             <button type="button" class="ps-dj-carte" data-ps-dj="connu" style="--pc:#FF8A3D"><i aria-hidden="true"></i><b>Je connais le DJ</b><small>J'écris son nom</small></button>
             <button type="button" class="ps-dj-carte" data-ps-dj="inconnu" style="--pc:#8A93AB"><i aria-hidden="true"></i><b>DJ inconnu</b><small>Je ne sais pas qui joue</small></button>
@@ -3448,6 +3449,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const champ = document.querySelector('#form-spot .ps-dj-champ'); if (!champ) return;
     if (c.dataset.psDj === 'connu') { champ.hidden = false; champ.focus(); } else { champ.value = ''; champ.hidden = true; }
   });
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ps-lineup]'); if (!b) return;
+    document.querySelectorAll('#form-spot .psi-dj').forEach((x) => x.classList.toggle('on', x === b));
+    const ch = document.querySelector('#form-spot .ps-dj-champ'); if (ch) ch.value = b.dataset.psLineup;
+  });
   document.addEventListener('click', (e) => { if (!e.target.closest('[data-ps-nom]')) return; const c = document.querySelector('#form-spot .ps-nom-champ'); if (c) { c.hidden = false; c.focus(); } });
   document.addEventListener('change', (e) => {
     if (!e.target.matches('input[name=note]') || !e.target.closest('.ps-vinyles')) return;
@@ -3468,8 +3474,21 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   }
   // Un DJ déjà déclaré à ce lieu (à moins de 80 m) ? Il est reconnu : on confirme simplement, sans « Je connais / DJ inconnu »
   const declIci = (l) => !l ? null : DECLS.find((x) => declActive(x) && (() => { const ll = lieuDe(x); return ll && ll.lat != null && distKm([l.lat, l.lng], [ll.lat, ll.lng]) < 0.08; })()) || null;
+  // Une soirée annoncée en ce moment dans ce lieu (même endroit, à 150 m près) : on la montre, avec son line-up à toucher
+  const soireeIci = (l) => !l || l.lat == null ? null : SUD.soirees.find((ev) => { const ll = SUD.lieux[ev.lieu];
+    return ll && ll.lat != null && distKm([+l.lat, +l.lng], [ll.lat, ll.lng]) <= 0.15 && soireeCheckinVisible(ev, Date.now(), false) && ev.date <= iso(new Date()); }) || null;
   function majDjIci() {
     const f = $('#form-spot'); if (!f || !posSpot) return;
+    const sv = !declIci(posSpot.connu) && soireeIci(posSpot.connu), zs = f.querySelector('.ps-soiree-ici');
+    if (zs) {
+      const lu = sv ? djsDe(sv.djs) : [];
+      zs.hidden = !sv;
+      zs.innerHTML = !sv ? '' : `<div class="psi-tete"><small>Ce soir ici</small><b>${esc(sv.nom)}</b></div>`
+        + (lu.length ? `<p class="psi-q">Qui est aux platines en ce moment ?</p><div class="psi-djs">${lu.map((n) => `<button type="button" class="psi-dj" data-ps-lineup="${esc(n)}"><span class="psi-av">${avatarDj(n)}</span><b>${esc(n)}</b></button>`).join('')}
+          <button type="button" class="psi-dj psi-inconnu" data-ps-lineup=""><span class="psi-av psi-av-inconnu" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/><path d="M10.6 6.6a1.6 1.6 0 1 1 2.2 1.5c-.5.2-.8.6-.8 1.1"/><circle cx="12" cy="11.3" r=".3" fill="currentColor"/></svg></span><b>DJ inconnu</b></button></div>` : '');
+      const c = f.querySelector('.ps-dj-cartes'), ch = f.querySelector('.ps-dj-champ');
+      if (sv && lu.length) { c.hidden = true; ch.hidden = true; ch.value = ''; return; }
+    }
     const x = declIci(posSpot.connu), d = x && djDe(x), z = f.querySelector('.ps-dj-ici'), c = f.querySelector('.ps-dj-cartes'), ch = f.querySelector('.ps-dj-champ');
     if (x && d) { z.hidden = false; z.innerHTML = `<span class="pdi-av">${avatarDj(d.nom)}</span><span><small>Déjà annoncé ici</small><b>${esc(d.nom)} joue ici</b></span>`; c.hidden = true; ch.hidden = true; f.querySelector('[type=submit]').textContent = 'Confirmer ma présence'; }
     else { z.hidden = true; c.hidden = false; f.querySelector('[type=submit]').textContent = 'Confirmer ma présence'; }
@@ -3500,13 +3519,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       BANG_LIEU[connu.id] = (BANG_LIEU[connu.id] || 0) + 1; store.set('bangLieu', BANG_LIEU); renderMap(); toast('Banguérisé : tu confirmes que ' + ((djDe(x) || {}).nom || 'le DJ') + ' joue ici'); return; } }
     // Un bang sur une soirée déjà annoncée alimente son compteur, sans créer
     // une nouvelle ligne « Spot » dans le Check-in.
-    const soireeDuLieu = SUD.soirees.find((ev) => {
-      const l = SUD.lieux[ev.lieu];
-      return l && l.lat != null && l.lng != null
-        && distKm([connu.lat, connu.lng], [l.lat, l.lng]) <= 0.05
-        && soireeCheckinVisible(ev, Date.now(), false)
-        && ev.date <= iso(new Date());
-    });
+    const soireeDuLieu = soireeIci(connu);
     if (soireeDuLieu) {
       const key = 's:' + soireeDuLieu.id;
       const votes = store.get('bangSoireesMoi', {});
@@ -3516,9 +3529,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       const counts = store.get('bangSoirees', {});
       counts[key] = (counts[key] || 0) + 1;
       store.set('bangSoirees', counts);
+      if (dj) { const pl = store.get('auxPlatines', {}); pl[key] = { nom: dj, t: Date.now() }; store.set('auxPlatines', pl); } // le DJ touché dans le line-up
       sonBanger();
       renderCheckin();
-      toast('Bang ajouté à ' + soireeDuLieu.nom + ' · compteur mis à jour');
+      toast('Bang ajouté à ' + soireeDuLieu.nom + (dj ? ' · ' + dj + ' aux platines' : '') + ' · compteur mis à jour');
       return;
     }
     if (connu.src === 'ibiza' && lieux[connu.id]) { signaler(connu.id, dj || 'DJ inconnu'); renderMap(); return; }

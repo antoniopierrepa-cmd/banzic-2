@@ -3063,3 +3063,18 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 #screen-checkin .ck-vignette { width: 64px; height: 64px; right: 10px; border-radius: 10px; }
 #screen-checkin .ck-lineup { padding: 0 12px 8px; }
 #screen-checkin .ck-pct { bottom: 6px; }
+
+/* Je bangue : la soirée en cours dans le lieu, et son line-up à toucher pour dire qui joue */
+.ps-soiree-ici { margin: 4px 0 10px; padding: 12px; border-radius: 14px; border: 1.5px solid #FF8A3D; background: rgba(255,138,61,.08); display: flex; flex-direction: column; gap: 8px; }
+.psi-tete small { display: block; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #FF8A3D; }
+.psi-tete b { font-size: 16px; }
+.psi-q { margin: 0; font-size: 13.5px; color: #C8CEDD; }
+.psi-djs { display: flex; flex-wrap: wrap; gap: 8px; }
+.psi-dj { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,.18); background: #0F1526; color: #fff; font-family: inherit; cursor: pointer; }
+.psi-dj b { font-size: 14px; }
+.psi-dj.on { border-color: #3DF28A; background: rgba(61,242,138,.14); }
+.psi-av { width: 32px; height: 32px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; flex: none; }
+.psi-av > *:not(svg) { width: 100%; height: 100%; }
+.psi-av-inconnu { background: #262D45; color: #8A93AB; }
+.psi-av-inconnu svg { width: 22px; height: 22px; }
+.psi-inconnu b { color: #9AA3B8; }
