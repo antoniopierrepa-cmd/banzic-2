@@ -1,4 +1,5 @@
 // Discothèques de France depuis l'extrait OpenStreetMap de Geofabrik (filtré par osmium : amenity=nightclub).
+// Champs : [id, nom, lat, lng, ville, site, horaires OpenStreetMap (opening_hours)].
 // Entrée : un GeoJSON-Seq produit par `osmium export`. © les contributeurs OpenStreetMap, licence ODbL.
 import { readFile, writeFile } from 'node:fs/promises';
 const lignes = (await readFile(process.argv[2], 'utf8')).split('\n').filter((l) => l.trim());
@@ -10,7 +11,7 @@ for (const l of lignes) {
   const t = f.properties || {}; if (t.amenity !== 'nightclub' || !t.name || t['disused:amenity']) continue;
   const c = centre(f.geometry || { coordinates: [] }); if (!c) continue;
   const id = String(t['@type'] || 'x')[0] + (t['@id'] || rows.length); if (vus.has(id)) continue; vus.add(id);
-  rows.push([id, String(t.name).slice(0, 60), +c[0].toFixed(5), +c[1].toFixed(5), String(t['addr:city'] || '').slice(0, 40), sur(t.website || t['contact:website'] || '')]);
+  rows.push([id, String(t.name).slice(0, 60), +c[0].toFixed(5), +c[1].toFixed(5), String(t['addr:city'] || '').slice(0, 40), sur(t.website || t['contact:website'] || ''), String(t.opening_hours || '').slice(0, 120)]);
 }
 rows.sort((a, b) => a[0].localeCompare(b[0]));
 if (rows.length < 200) { console.error('Liste incomplète (' + rows.length + '), fichier non modifié'); process.exit(1); }
