@@ -3224,5 +3224,5 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 #screen-checkin .ck-ligne .fil-item { overflow-wrap: anywhere; }
 
 /* Check-in : la ville en gros, pour savoir tout de suite où ça se passe */
-#screen-checkin .ck-ville { display: flex; align-items: center; gap: 6px; margin: 2px 0 4px; color: #FFB347; font: 800 19px/1.15 'Syne', sans-serif; text-transform: uppercase; letter-spacing: .02em; text-shadow: 0 0 14px rgba(255,140,40,.45); }
-#screen-checkin .ck-ville svg { flex: none; width: 19px; height: 19px; }
+#screen-checkin .ck-ville { display: flex; align-items: center; gap: 5px; margin: 2px 0 4px; color: #FFB347; font: 800 16px/1.15 'Syne', sans-serif; text-transform: uppercase; letter-spacing: .02em; text-shadow: 0 0 14px rgba(255,140,40,.45); }
+#screen-checkin .ck-ville svg { flex: none; width: 16px; height: 16px; }
