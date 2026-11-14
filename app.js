@@ -3104,6 +3104,7 @@
   // Petits logos des pads (dessinés en trait, aux couleurs de chaque pad)
   const ICO_PAD = {
     tout: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    avecdj: '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>',
     club: '<circle cx="12" cy="13" r="7"/><path d="M5 13h14M12 6v14M7 9c3 1.5 7 1.5 10 0M7 17c3-1.5 7-1.5 10 0M12 2v4"/>',
     libertin: '<circle cx="12" cy="12" r="10" fill="#fff" stroke="#FF3B3B" stroke-width="2.6"/><text x="12" y="15.4" text-anchor="middle" font-size="9" font-weight="900" fill="#111" stroke="none" font-family="Arial, sans-serif">-18</text>',
     festival: '<path d="M3 20 12 5l9 15z"/><path d="M12 5V2l4 1.5L12 5M9 20l3-5 3 5"/>',
@@ -3115,17 +3116,65 @@
   const icoPad = (k) => `<svg class="pad-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO_PAD[k] || ''}</svg>`;
   const PADS = [
     { g: 'type', k: 'tout', nom: 'Tout', c: '#C9CFDD' }, { g: 'type', k: 'club', nom: 'Discothèques', c: '#3D8BFF' },
-    { g: 'type', k: 'libertin', nom: 'Clubs libertins', c: '#FF5A5A', moins18: true }, { g: 'type', k: 'festival', nom: 'Festivals', c: '#FF8A3D' },
+    { g: 'type', k: 'festival', nom: 'Festivals', c: '#FF8A3D' },
     { g: 'type', k: 'concert', nom: 'Concerts', c: '#F2C53A' }, { g: 'type', k: 'bar', nom: 'Bars festifs', c: '#3DD6C6' },
-    { g: 'quand', k: 'weekend', nom: 'Week-end', c: '#A77BFF' }, { g: 'mesdj', k: 'oui', nom: 'Mes DJ', c: '#3DF28A' }
+    { g: 'quand', k: 'weekend', nom: 'Week-end', c: '#A77BFF' }, { g: 'avecdj', k: 'oui', nom: 'Avec DJ', c: '#FF5FD2' }, { g: 'mesdj', k: 'oui', nom: 'Mes DJ', c: '#3DF28A' }
   ];
+  // Styles musicaux : familles reconnues dans les genres et le nom de la soirée (une soirée peut en avoir plusieurs)
+  const STYLES_AG = [
+    ['techno', 'Techno', /(^|[^a-z])(techno|minimal|ebm|industrial)/], ['hard', 'Hard techno · Hardcore', /hard ?(techno|groove|bounce|dance|trance|style|core|tek)|gabber|uptempo|frenchcore|acidcore|schranz/],
+    ['house', 'House', /house/], ['trance', 'Trance · Psytrance', /trance|psy/], ['bass', 'Drum & bass · Garage', /drum|dnb|d&b|jungle|garage|dubstep|(^|[^a-z])bass/],
+    ['electro', 'Électro · EDM', /electro|edm|(^|[^a-z])dance|electronica/], ['disco', 'Disco · Funk', /disco|funk|eurodance/],
+    ['afro', 'Afro · Amapiano · Latino', /afro|amapiano|latin|reggaeton|dancehall|kizomba|salsa|bachata|arabic|orient|shatta/], ['rap', 'Rap · Hip-hop · R&B', /rap|hip.?hop|r&b|rnb|trap|drill/],
+    ['rock', 'Rock · Métal', /rock|metal|punk|grunge/], ['pop', 'Pop · Variété · 80-90', /(^|[^a-z])pop|variet|annees ?(80|90|2000)|(80|90)'?s|chanson|generaliste|latino pop/],
+    ['jazz', 'Jazz · Soul · Reggae', /jazz|soul|blues|reggae|dub(?!step)|gospel/]
+  ];
+  const _stylesCache = {};
+  function stylesDe(x) {
+    if (_stylesCache[x.id]) return _stylesCache[x.id];
+    const t = sansAccent(String(x.genres || '') + ' ' + x.nom).toLowerCase();
+    return (_stylesCache[x.id] = STYLES_AG.filter(([, , re]) => re.test(t)).map(([k]) => k));
+  }
+  // Discothèque = lieu présent dans notre liste des discothèques de France (OpenStreetMap)
+  const _discoCache = {};
+  const estDiscotheque = (l) => { if (!l) return false; const k = l.lat + ',' + l.lng; if (k in _discoCache) return _discoCache[k];
+    return (_discoCache[k] = !!(window.DISCOTHEQUES || []).find((c) => Math.abs(c[2] - l.lat) < 0.0014 && Math.abs(c[3] - l.lng) < 0.0019)); };
+  const BARS_SOUS = [['karaoke', 'Karaoké', /karaok/], ['blind', 'Blind test', /blind/], ['afterwork', 'Afterwork', /afterwork/], ['apero', 'Apéro musical', /ap[eé]ro/], ['bardj', 'Bar avec DJ', null]];
+  // Sous-menus des pads : on coche ce qu'on cherche (rien de coché = tout le pad)
+  const SOUS_MENUS = {
+    club: { titre: 'Discothèques et clubs', lieux: [['disco', 'Discothèque'], ['club', 'Club'], ['libertin', 'Club libertin', true]], styles: true },
+    bar: { titre: 'Bars festifs', lieux: BARS_SOUS.map(([k, n]) => [k, n]), styles: true },
+    festival: { titre: 'Festivals', lieux: [], styles: true },
+    concert: { titre: 'Concerts', lieux: [], styles: true }
+  };
+  state.sudSous = state.sudSous || { club: [], bar: [], festival: [], concert: [] };
+  function passeLieuSous(x, k, v) {
+    if (k === 'club') return v === 'libertin' ? estLibertin(x) : !estLibertin(x) && (v === 'disco' ? estDiscotheque(x.l) : !estDiscotheque(x.l));
+    if (k === 'bar') { const b = BARS_SOUS.find((y) => y[0] === v); return b[2] ? b[2].test(sansAccent(String(x.genres || '') + ' ' + x.nom).toLowerCase()) : !!(x.djs || x.djSet); }
+    return true;
+  }
+  function passeSous(x, k) {
+    const sel = state.sudSous[k] || [], m = SOUS_MENUS[k]; if (!m || !sel.length) return true;
+    const lieux = sel.filter((v) => m.lieux.some((y) => y[0] === v)), styles = sel.filter((v) => STYLES_AG.some((y) => y[0] === v));
+    return (!lieux.length || lieux.some((v) => passeLieuSous(x, k, v))) && (!styles.length || stylesDe(x).some((v) => styles.includes(v)));
+  }
+  function panneauSous(k, toutes) {
+    const m = SOUS_MENUS[k]; if (!m) return '';
+    const base = toutes.filter(PAD_TEST['type|' + k]), libre = toutes.filter((x) => (x.type || 'club') === 'club' && estLibertin(x)), sel = state.sudSous[k] || [];
+    const chip = (v, nom, n, m18) => `<button type="button" class="sous-chip${sel.includes(v) ? ' on' : ''}" data-sous="${k}|${v}" aria-pressed="${sel.includes(v)}">${m18 ? '<span class="moins18">-18</span>' : ''}${esc(nom)}<small>${n}</small></button>`;
+    const lieux = m.lieux.map(([v, nom, m18]) => chip(v, nom, (v === 'libertin' ? libre : base).filter((x) => passeLieuSous(x, k, v)).length, m18)).join('');
+    const styles = STYLES_AG.map(([v, nom]) => [v, nom, base.filter((x) => stylesDe(x).includes(v)).length]).filter((y) => y[2] || sel.includes(y[0])).map(([v, nom, n]) => chip(v, nom, n)).join('');
+    return `<div class="sous-menu" style="--pc:${(PADS.find((p) => p.k === k) || {}).c}"><div class="sm-tete"><b>${m.titre}</b>${sel.length ? `<button type="button" class="sm-effacer" data-sous-effacer="${k}">Tout décocher</button>` : ''}<button type="button" class="sm-ok" data-sous-ok="1">OK</button></div>
+      ${lieux ? `<div class="sm-groupe"><small>Type de lieu</small><div class="sm-chips">${lieux}</div></div>` : ''}
+      ${styles ? `<div class="sm-groupe"><small>Ambiance musicale</small><div class="sm-chips">${styles}</div></div>` : '<p class="aide">Aucun style musical annoncé pour l\u2019instant.</p>'}</div>`;
+  }
   // Club libertin : réservé aux plus de 18 ans (repéré au nom du lieu ou de la soirée)
   const estLibertin = (x) => /libertin|échangis|echangis|\bswing/i.test((x.nom || '') + ' ' + ((x.l || SUD.lieux[x.lieu] || {}).nom || ''));
   const auJour = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
   function finWeekend() { const d = new Date(), j = d.getDay(); d.setDate(d.getDate() + (j === 0 ? 0 : 7 - j)); return iso(d); }
   function debutWeekend() { const d = new Date(), j = d.getDay(); if (j >= 5 || j === 0) return iso(d); d.setDate(d.getDate() + (5 - j)); return iso(d); }
   const PAD_TEST = {
-    'type|club': (x) => (x.type || 'club') === 'club' && !estLibertin(x), 'type|libertin': (x) => estLibertin(x), 'type|festival': (x) => x.type === 'festival', 'type|concert': (x) => x.type === 'concert',
+    'type|club': (x) => (x.type || 'club') === 'club' && (!estLibertin(x) || (state.sudSous.club || []).includes('libertin')), 'type|libertin': (x) => estLibertin(x), 'type|festival': (x) => x.type === 'festival', 'type|concert': (x) => x.type === 'concert',
     'type|bar': (x) => /^(bar|restaurant|soiree)$/.test(x.type || '') && !estLibertin(x), 'type|tout': () => true,
     'quand|weekend': (x) => x.date >= debutWeekend() && x.date <= finWeekend(), 'quand|semaine': (x) => x.date < auJour(7),
     'mesdj|oui': (x) => !!x.djs && state.favs.some((f) => sansAccent(x.djs).includes(sansAccent(f)))
@@ -3148,7 +3197,8 @@
         </div>
         
         <p class="demo-note">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements français avec annonces' + (RADAR.countryCoverage && RADAR.countryCoverage.BE ? ' · Belgique : ' + RADAR.countryCoverage.BE + ' soirées' : '') + (RADAR.countryCoverage && RADAR.countryCoverage.ES ? ' · Espagne : ' + RADAR.countryCoverage.ES + ' soirées' : '') + ' · collecte partielle.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
-        <div class="pads" role="group" aria-label="Filtres">${PADS.map((x) => `<button class="pad${x.moins18 ? ' pad-18' : ''}" style="--pc:${x.c}" data-pad="${x.g}|${x.k}" aria-pressed="false"${x.moins18 ? ' title="Interdit aux moins de 18 ans"' : ''}>${icoPad(x.g === 'type' ? x.k : x.k === 'oui' ? 'mesdj' : x.k)}<span class="pad-nom">${x.nom}</span><small class="pad-nb"></small></button>`).join('')}</div>
+        <div class="pads" role="group" aria-label="Filtres">${PADS.map((x) => `<button class="pad${x.moins18 ? ' pad-18' : ''}" style="--pc:${x.c}" data-pad="${x.g}|${x.k}" aria-pressed="false"${x.moins18 ? ' title="Interdit aux moins de 18 ans"' : ''}>${icoPad(x.g === 'type' ? x.k : x.g === 'avecdj' ? 'avecdj' : x.k === 'oui' ? 'mesdj' : x.k)}<span class="pad-nom">${x.nom}${SOUS_MENUS[x.k] ? '<i class="pad-fl" aria-hidden="true">▾</i>' : ''}</span><small class="pad-nb"></small></button>`).join('')}</div>
+        <div id="sous-menu-zone"></div>
       </div>
       <div id="agenda-liste"></div>`;
     $('#radar-hyeres-weekend')?.addEventListener('click', () => {
@@ -3171,12 +3221,13 @@
     const auj0 = iso(new Date()), j7 = state.radarHyeresWeekend ? finWeekend() : auJour(state.agJours || 7);
     const r = RAYONS[state.rayonIdx], dansZone = (x) => state.radarDep ? x.l.dep === state.radarDep : dansRayonAg(x, r), toutesLoin = soireesAvecKm().filter((x) => x.date >= auj0 && dansZone(x)), toutes = toutesLoin.filter((x) => x.date <= j7);
     const types = (state.sudTypes || []).filter((k) => PAD_TEST['type|' + k]), quand = state.sudQuand === 'weekend' ? 'weekend' : null, mesdj = !!state.sudMesDj;
-    const liste = toutes.filter((x) => (!types.length || types.some((k) => PAD_TEST['type|' + k](x))) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs));
+    const liste = toutes.filter((x) => (!types.length || types.some((k) => PAD_TEST['type|' + k](x) && passeSous(x, k))) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs));
     document.querySelectorAll('[data-pad]').forEach((b) => {
-      const [g, k] = b.dataset.pad.split('|'), on = g === 'type' ? (k === 'tout' ? !types.length : types.includes(k)) : g === 'quand' ? quand === k : mesdj;
-      b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
-      b.querySelector('.pad-nb').textContent = toutes.filter(PAD_TEST[b.dataset.pad]).length;
+      const [g, k] = b.dataset.pad.split('|'), on = g === 'type' ? (k === 'tout' ? !types.length : types.includes(k)) : g === 'quand' ? quand === k : g === 'avecdj' ? !!state.sudAvecDj : mesdj;
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.classList.toggle('ouvert', state.padOuvert === k && on);
+      b.querySelector('.pad-nb').textContent = g === 'avecdj' ? toutes.filter((x) => x.djSet || !!x.djs).length : toutes.filter((x) => PAD_TEST[b.dataset.pad](x) && (g !== 'type' || passeSous(x, k))).length;
     });
+    { const z = $('#sous-menu-zone'); if (z) z.innerHTML = state.padOuvert && types.includes(state.padOuvert) ? panneauSous(state.padOuvert, toutes) : ''; }
     document.querySelectorAll('.fd-graduations span').forEach((s, i) => s.classList.toggle('on', i === state.rayonIdx));
     const fr = $('#fader-rayon'); if (fr) fr.style.setProperty('--pct', (state.rayonIdx / (RAYONS.length - 1) * 100) + '%');
     let h = '';
@@ -3199,6 +3250,12 @@
     const sent = $('#ag-plus');
     if (sent && 'IntersectionObserver' in window) { const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); state.agJours = (state.agJours || 7) + 7; listeAgendaSud(); } }, { rootMargin: '300px' }); io.observe(sent); }
   }
+  document.addEventListener('click', (e) => {
+    const c = e.target.closest('[data-sous]');
+    if (c) { const [k, v] = c.dataset.sous.split('|'), t = state.sudSous[k] || []; state.sudSous[k] = t.includes(v) ? t.filter((y) => y !== v) : t.concat(v); state.agJours = 7; listeAgendaSud(); return; }
+    const ef = e.target.closest('[data-sous-effacer]'); if (ef) { state.sudSous[ef.dataset.sousEffacer] = []; listeAgendaSud(); return; }
+    if (e.target.closest('[data-sous-ok]')) { state.padOuvert = null; listeAgendaSud(); }
+  });
   document.addEventListener('change', (e) => { if (e.target.id === 'radar-departement') { state.radarDep = e.target.value; listeAgendaSud(); } if (e.target.id === 'radar-avec-dj') { state.sudAvecDj = e.target.checked; listeAgendaSud(); } });
   const reglerRayon = (i) => { state.rayonIdx = Math.max(0, Math.min(RAYONS.length - 1, i)); store.set('rayonIdx', state.rayonIdx);
     const f = $('#fader-rayon'); if (f) { f.value = state.rayonIdx; f.setAttribute('aria-valuetext', kmTxt(RAYONS[state.rayonIdx])); } listeAgendaSud(); };
@@ -3207,7 +3264,11 @@
   document.addEventListener('click', (e) => {
     const pd = e.target.closest('[data-pad]'); if (!pd) return;
     const [g, k] = pd.dataset.pad.split('|');
-    if (g === 'type') { const t = state.sudTypes || []; state.sudTypes = k === 'tout' ? [] : t.includes(k) ? t.filter((y) => y !== k) : t.concat(k); } // plusieurs types à la fois : ex. Discothèques + Festivals
+    if (g === 'type') { const t = state.sudTypes || []; // plusieurs types à la fois : ex. Discothèques + Festivals
+      // Pad avec sous-menu : 1er appui = on le sélectionne et le menu s'ouvre ; appui sur un pad déjà ouvert = on le retire
+      if (k !== 'tout' && t.includes(k) && SOUS_MENUS[k] && state.padOuvert !== k) state.padOuvert = k;
+      else { state.sudTypes = k === 'tout' ? [] : t.includes(k) ? t.filter((y) => y !== k) : t.concat(k); state.padOuvert = SOUS_MENUS[k] && state.sudTypes.includes(k) ? k : null; if (k === 'tout') state.sudSous = { club: [], bar: [], festival: [], concert: [] }; else if (!state.sudTypes.includes(k)) state.sudSous[k] = []; } }
+    else if (g === 'avecdj') state.sudAvecDj = !state.sudAvecDj;
     else if (g === 'quand') state.sudQuand = state.sudQuand === k ? null : k;
     else state.sudMesDj = !state.sudMesDj;
     pd.classList.remove('frappe'); void pd.offsetWidth; pd.classList.add('frappe'); state.agJours = 7;
@@ -3317,6 +3378,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const disco = (window.DISCOTHEQUES || []).find((c) => Math.abs(c[2] - x.l.lat) < 0.0014 && Math.abs(c[3] - x.l.lng) < 0.0019);
     const type = x.type === 'bar' && /^(Karaoké|Blind test|Afterwork|Apéro musical)$/.test(x.genres || '') ? esc(x.genres)
       : estLibertin(x) ? 'Club libertin' : disco && (x.type || 'club') === 'club' ? 'Discothèque' : TYPE_NOM[x.type || 'club'];
+    // Ambiance musicale : les genres annoncés (house, techno, rap…), sans les mentions techniques
+    const genres = [...new Set(String(x.genres || '').split(/,|·|\//).map((g) => g.trim()).filter((g) => g && g.length <= 28 && STYLES_AG.some(([, , re]) => re.test(sansAccent(g).toLowerCase())) && !/annonc|dès|des \d|midi/i.test(g)))];
     // Heures : début annoncé ; fin annoncée, sinon celle du lieu (site du lieu, OpenStreetMap), sinon 5 h estimée pour un club
     const hh = (t) => t === '23:59' || t === '00:00' ? 'minuit' : t ? t.replace(/^(\d):/, '0$1:').replace(':', 'h') : '';
     const mNote = /à (\d{1,2}) ?h ?(\d{2})?/.exec(String(x.scheduleNote || '').replace(/^.*ouvert de/i, '')), osm = disco && disco[6] && typeof horaireOSM === 'function' ? horaireOSM(disco[6], new Date(x.date + 'T12:00:00')) : null;
@@ -3330,6 +3393,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       <div class="agc-txt"><span class="agc-date">${esc(jour)}</span><b class="agc-nom">${esc(x.nom)}</b>
         <span class="agc-ville"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>${esc(x.l.ville || x.l.nom)}${pays ? ' · ' + pays : ''}</span>
         <span class="agc-meta">${type}${horaire ? ' • ' + horaire : ''}</span>
+        ${genres.length ? `<span class="agc-styles">${genres.slice(0, 3).map((g) => `<i>${esc(g)}</i>`).join('')}${genres.length > 3 ? `<i>+${genres.length - 3}</i>` : ''}</span>` : ''}
         ${x.djs ? `<span class="agc-lineup"><i>Line-up</i>${esc(x.djs)}</span>` : ''}</div></div>`;
   }
   // Une ligne de l'agenda

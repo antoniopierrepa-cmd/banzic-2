@@ -3188,3 +3188,30 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 #screen-agenda .agc-h .agc-meta small { font-size: 12px; color: #7E8599; font-weight: 500; }
 #screen-agenda .agc-h .agc-lineup { -webkit-line-clamp: 2; color: #DDE2EE; font-size: 13.5px; font-weight: 600; }
 #screen-agenda .agc-h .agc-lineup i { display: block; font-style: normal; font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #E0A47A; margin-bottom: 1px; }
+
+/* Agenda : ville un peu plus petite pour rester dans la carte, ambiance musicale */
+#screen-agenda .agc-h .agc-ville { font-size: 15.5px; gap: 6px; overflow-wrap: break-word; hyphens: auto; }
+#screen-agenda .agc-h .agc-ville svg { width: 18px; height: 18px; }
+#screen-agenda .agc-h .agc-txt { gap: 6px; }
+#screen-agenda .agc-h .agc-nom { font-size: 17.5px; }
+#screen-agenda .agc-styles { display: flex; flex-wrap: wrap; gap: 5px; }
+#screen-agenda .agc-styles i { font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #E7D3FF; padding: 3px 8px; border-radius: 999px; background: rgba(167,123,255,.16); border: 1px solid rgba(167,123,255,.35); }
+/* Pads : petite flèche pour ceux qui ont un sous-menu, et le sous-menu qui s'ouvre dessous */
+.pad-fl { font-style: normal; font-size: 10px; margin-left: 3px; opacity: .8; display: inline-block; transition: transform .2s; }
+.pad.ouvert .pad-fl { transform: rotate(180deg); }
+.sous-menu { margin: 10px 0 4px; padding: 12px; border-radius: 16px; background: #0F1320; border: 1.5px solid color-mix(in srgb, var(--pc) 55%, transparent); animation: smOuvre .18s ease-out; }
+@keyframes smOuvre { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.sm-tete { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.sm-tete b { flex: 1; font-size: 14.5px; color: color-mix(in srgb, var(--pc) 75%, #fff); }
+.sm-effacer { border: 0; background: none; color: #9AA3B8; font-size: 12.5px; text-decoration: underline; cursor: pointer; }
+.sm-ok { border: 0; border-radius: 999px; padding: 6px 14px; background: var(--pc); color: #0A0D16; font-weight: 800; font-size: 13px; cursor: pointer; }
+.sm-groupe + .sm-groupe { margin-top: 10px; }
+.sm-groupe > small { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #7E8599; margin-bottom: 6px; }
+.sm-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sous-chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); color: #E6E9F2; font-size: 13px; font-weight: 600; cursor: pointer; }
+.sous-chip small { font-size: 11px; color: #7E8599; font-weight: 700; }
+.sous-chip.on { background: var(--pc); border-color: var(--pc); color: #0A0D16; }
+.sous-chip.on small { color: rgba(10,13,22,.65); }
+.sous-chip.on::before { content: '✓'; font-weight: 900; }
+.sous-chip .moins18 { margin: 0 !important; transform: scale(.85); }
+#screen-agenda .agc-h .agc-nom { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
