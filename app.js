@@ -4607,6 +4607,19 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <span class="bk-tableau"><span class="bk-horloge">${flap(hm(Date.now()), 5)}</span><span class="bk-piste" style="--duree:${Math.max(10, rows.length * 3.2)}s">${lignes}</span></span></button>`;
   }
 
+  // Défilement doux du carrousel d'accueil ; arrêt si l'utilisateur interagit.
+  let vitrinePauseJusqua = 0;
+  document.addEventListener('pointerdown', (e) => { if (e.target.closest && e.target.closest('#bz-vitrine-rail')) vitrinePauseJusqua = Date.now() + 30000; });
+  setInterval(() => {
+    const rail = document.getElementById('bz-vitrine-rail');
+    if (!rail || Date.now() < vitrinePauseJusqua || document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (rail.scrollWidth <= rail.clientWidth + 8) return;
+    const card = rail.querySelector('.bz-vitrine-card');
+    const pas = card ? card.getBoundingClientRect().width + 12 : 240;
+    const fin = rail.scrollWidth - rail.clientWidth;
+    rail.scrollTo({ left: rail.scrollLeft + pas >= fin - 8 ? 0 : rail.scrollLeft + pas, behavior: 'smooth' });
+  }, 5500);
+
   function renderAccueil() {
     if (state.pageMontent) { renderPageMontent(); return; }
     if (state.pageTendance) { renderPageTendance(); return; }
@@ -4653,6 +4666,29 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const essaiB = document.documentElement.classList.contains('essai-bannieres');
     h += `<section class="acc-rub">${essaiB ? '' : `<div class="acc-tete"><div><h2 class="h-direct"><span class="ico-diffusion" aria-hidden="true"><i></i><b></b><b></b></span>Direct autour de moi</h2><small>${esc(state.zoneGeo.nom)}${state.zoneGeo.approx ? ' · position de démo' : ''} · passe le doigt sur un point</small></div></div>`}
       ${essaiB ? bannieresDirect() : `<div class="aut-carte">${carteMiniMap(centre0, decls, spotsP, coin, infos)}</div>${legende}${filInfos}`}</section>`;
+    // Test du carrousel de soirées locales : aucune publicité vendue ni annonce fictive.
+    // Le contenu provient uniquement des événements datés du radar.
+    const pubCentre = centreGeographique();
+    const prefMusique = ((state.profil && state.profil.styles) || []).map((g) => sansAccent(String(g).toLowerCase()));
+    const pubCandidates = SUD.soirees.filter((ev) => {
+      const l = SUD.lieux[ev.lieu];
+      if (!l || !Number.isFinite(Number(l.lat)) || !Number.isFinite(Number(l.lng))) return false;
+      if (!ev.date || ev.date < auj || ev.date > iso(new Date(Date.now() + 7 * 86400000))) return false;
+      return distKm(pubCentre, [Number(l.lat), Number(l.lng)]) <= 50;
+    }).map((ev) => {
+      const l = SUD.lieux[ev.lieu], distance = distKm(pubCentre, [Number(l.lat), Number(l.lng)]);
+      const genres = sansAccent(String(ev.genres || ev.nom || '').toLowerCase());
+      const affinite = prefMusique.some((g) => g && genres.includes(g)) ? 1 : 0;
+      return { ev, l, distance, affinite };
+    }).sort((a, b) => b.affinite - a.affinite || a.distance - b.distance || a.ev.date.localeCompare(b.ev.date));
+    const pubUniques = [], pubIds = new Set();
+    pubCandidates.forEach((item) => { const key = item.ev.date + '|' + item.ev.lieu + '|' + sansAccent(item.ev.nom); if (!pubIds.has(key)) { pubIds.add(key); pubUniques.push(item); } });
+    const pubCards = pubUniques.slice(0, 8).map(({ ev, l, distance }, n) => {
+      const url = radarUrl(ev.ticketUrl || ev.url);
+      const contenu = `<span class="bz-vitrine-genre">${esc(ev.genres || ev.type || 'Soirée')}</span><strong>${esc(ev.nom)}</strong><span class="bz-vitrine-lieu">${esc(l.nom)} · ${esc(l.ville || '')}</span><span class="bz-vitrine-bas">${esc(ev.date.split('-').reverse().join('/'))} · ${Math.round(distance)} km${ev.heure ? ' · ' + esc(ev.heure) : ''}</span>`;
+      return url ? `<a class="bz-vitrine-card" href="${url}" target="_blank" rel="noopener noreferrer" style="--bz-hue:${n * 42 + 18}" aria-label="Voir la soirée ${esc(ev.nom)}">${contenu}</a>` : `<div class="bz-vitrine-card" style="--bz-hue:${n * 42 + 18}">${contenu}</div>`;
+    }).join('');
+    if (pubCards) h += `<section class="acc-rub bz-vitrine"><div class="bz-vitrine-tete"><div><h2>À découvrir près de toi</h2><small>Soirées à moins de 50 km · selon tes goûts musicaux</small></div><span class="bz-vitrine-test">Aperçu</span></div><div class="bz-vitrine-rail" id="bz-vitrine-rail" aria-label="Soirées à découvrir">${pubCards}</div></section>`;
     // 1 bis. Agenda autour de moi : de petites cartes par type de sortie, avec le nombre de dates dans le rayon de l'Agenda
     const rayonAg = RAYONS[state.rayonIdx], dansRayon = soireesAvecKm().filter((x) => x.km <= rayonAg);
     const nbType = (k) => k === 'tout' ? dansRayon.length : dansRayon.filter((x) => (x.type || 'club') === k).length;
