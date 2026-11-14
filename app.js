@@ -2652,7 +2652,7 @@
       const deb0 = o.t || 0, fin0 = finDe(o), prog = deb0 && now >= deb0 ? Math.min(100, Math.round((now - deb0) / Math.max(1, fin0 - deb0) * 100)) : 0;
       const puces = !lignesSeules && o.djs && o.djs.length ? `<div class="ck-lineup"><small>Line-up</small>${o.djs.slice(0, 8).map((n) => `<button type="button" class="ck-dj" data-dj-pro="${esc(n)}">${esc(n)}</button>`).join('')}${o.djs.length > 8 ? `<span class="ck-dj plus">+${o.djs.length - 8}</span>` : ''}</div>` : '';
       return `<div ${o.fiche ? `data-ck-fiche="${o.fiche}" ` : ''}class="ck-ligne ck-${o.st[1]}${tourne ? ' ck-tourne' : ''}${prog ? ' ck-prog' : ''}${prog >= 100 ? ' ck-fini' : ''}${o.photo ? ' a-photo' : ''}" style="--prog:${prog}%;--ph:${Math.round(42 - prog * 0.42)}">${prog ? `<i class="ck-barre" aria-hidden="true"></i><span class="ck-pct" title="Avancement du set">${prog >= 100 ? 'Terminé' : prog + ' %'}</span>` : ''}${o.photo ? `<img class="fil-photo" src="${o.photo}" alt="Photo de la soirée">` : ''}
-        <div class="ck-bande"><span class="ck-h">${flap(o.heure, 5)}</span><span class="ck-porte"><small>Porte</small>${esc(o.porte)}</span><span class="ck-st ck-st-${o.st[1]}"><i></i>${esc(o.st[0])}</span></div>
+        <div class="ck-bande"><span class="ck-h">${flap(o.heure, 5)}</span><span class="ck-porte"><small>Porte</small>${esc(o.porte)}</span>${o.adulte ? '<span class="bz-ck-18" aria-label="Réservé aux adultes">18+</span>' : ''}<span class="ck-st ck-st-${o.st[1]}"><i></i>${esc(o.st[0])}</span></div>
         <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em>${o.adulte ? '<span class="bz-ck-18" aria-label="Réservé aux adultes">18+</span>' : ''}<b>${esc(o.nom)}</b>${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button>${puces}</div>`; };
     const i = CK_RAYONS.indexOf(r);
     if (lignesSeules) return L.map(rangee);
@@ -2856,7 +2856,8 @@
   function lieuAdulte(l) {
     if (!l) return false;
     if (Number(l.ageMin) >= 18 || (Array.isArray(l.categories) && l.categories.some(c => /libertin|adult/i.test(c)))) return true;
-    return ADULTES_83.some(n => cleAdulte(n) === cleAdulte(l.nom));
+    const nom = cleAdulte(l.nom || l.name || '');
+    return !!nom && ADULTES_83.some(n => { const ref = cleAdulte(n); return nom === ref || (ref.length >= 5 && (nom.includes(ref) || ref.includes(nom) && nom.length >= 5)); });
   }
   function soireeAdulte(x) {
     return Number(x.ageMin) >= 18 || lieuAdulte(x.l || SUD.lieux[x.lieu]) || /libertin|adult.only|18\\+/i.test(String(x.restriction || ''));
