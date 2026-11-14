@@ -2817,6 +2817,24 @@
       ligne({ ev: { id: 'c:' + id, type: 'club', nom, genres: '', l: { nom, lat: la, lng: lo, ville } }, gp: cle, img: off && off.logo ? off.logo : '', categorie: 'club', fin: choix.fin, fiche: 'c:' + id, djs: [], km: d, t: Math.max(choix.deb, msDe(auj, '00:00')), heure: choix.hd, porte: nom, st, k: 'decl', tag: 'Discothèque', attr: `data-ck-fiche="c:${id}"`, nom,
         l1: (off ? '<span class="ck-officiel">Club officiel</span> ' : '') + (avant > 0 ? 'ouvre dans ' + dur(Math.round(avant)) : 'ouvert jusqu’à ' + choix.hf) + ' · ' + plage, l2: [[esc(ville || nom) + ' · ' + fK(d)]] });
     });
+    // Clubs libertins (OpenStreetMap, amenity=swingerclub) : réservés aux plus de 18 ans ; horaires OpenStreetMap, sinon 22 h → 4 h estimés
+    if (!lignesSeules && !zoneCarte) (window.CLUBS_LIBERTINS || []).forEach(([id, nom, la, lo, ville, site, oh]) => {
+      const d = km(la, lo); if (d > r) return;
+      if (SUD.soirees.some((ev) => (ev.date === auj || ev.date === iso(new Date(now - 864e5))) && SUD.lieux[ev.lieu] && distKm([la, lo], [SUD.lieux[ev.lieu].lat, SUD.lieux[ev.lieu].lng]) < 0.15 && soireeCheckinVisible(ev, now, false))) return;
+      let choix = null;
+      for (const date of [iso(new Date(now - 864e5)), auj]) {
+        const h = horaireOSM(oh, date); if (h === false) continue;
+        const hd = h ? h.debut : '22:00', hf = h ? h.fin : '04:00', deb = msDe(date, hd) + (h && h.lendemain ? 864e5 : 0); let fin = msDe(date, hf) + (h && h.lendemain ? 864e5 : 0); if (fin <= deb) fin += 864e5;
+        if (fin > now) { choix = { date, hd, hf, deb, fin, estime: !h }; break; }
+      }
+      if (!choix) return;
+      const avant = (choix.deb - now) / 60000, st = avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ['Ouvert', 'vert'];
+      const plage = choix.hd + ' → ' + choix.hf + (choix.estime ? ' · à confirmer' : ''), cle = { nom, adresse: ville || '', lat: la, lng: lo };
+      CK_FICHES['l:' + id] = { titre: nom, sous: 'Club libertin · réservé aux plus de 18 ans · ' + (choix.estime ? 'horaires à confirmer auprès du club' : 'horaires OpenStreetMap : ' + choix.hd + ' → ' + choix.hf), tag: 'Club libertin', st, date: choix.date, heure: choix.hd, heureFin: choix.hf,
+        quand: avant > 0 ? 'ouvre dans ' + dur(Math.round(avant)) : 'ouvert jusqu’à ' + choix.hf, lieu: { nom, adresse: ville || '', lat: la, lng: lo, gid: G_IDS[cleLieuG(cle)] }, km: d, djs: [], url: site || '', club: true, source: 'OpenStreetMap (© contributeurs OpenStreetMap)' };
+      ligne({ ev: { id: 'l:' + id, type: 'club', libertin: true, nom, genres: '', l: { nom, lat: la, lng: lo, ville, libertin: true } }, gp: cle, categorie: 'libertin', adulte: true, fin: choix.fin, fiche: 'l:' + id, djs: [], km: d, t: Math.max(choix.deb, msDe(auj, '00:00')), heure: choix.hd, porte: nom, st, k: 'decl', tag: 'Club libertin', attr: `data-ck-fiche="l:${id}"`, nom,
+        l1: (avant > 0 ? 'ouvre dans ' + dur(Math.round(avant)) : 'ouvert jusqu’à ' + choix.hf) + ' · ' + plage, l2: [[esc(ville || nom) + ' · ' + fK(d)]] });
+    });
     // D'abord ce qui est en live en ce moment (DJ en cours, dernier appel, spots signalés), puis le reste ; dans chaque groupe, du plus proche au plus loin
     const enLive = (o) => o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert';
     // Ordre : ce qui est en live d'abord, et parmi eux celui qui se termine le plus tôt ; puis les départs à venir, par heure de fin estimée (début + 5 h si on ne la connaît pas)
@@ -3179,7 +3197,7 @@
       ${styles ? `<div class="sm-groupe"><small>Ambiance musicale</small><div class="sm-chips">${styles}</div></div>` : '<p class="aide">Aucun style musical annoncé pour l\u2019instant.</p>'}</div>`;
   }
   // Club libertin : réservé aux plus de 18 ans (repéré au nom du lieu ou de la soirée)
-  const estLibertin = (x) => /libertin|échangis|echangis|\bswing/i.test((x.nom || '') + ' ' + ((x.l || SUD.lieux[x.lieu] || {}).nom || ''));
+  const estLibertin = (x) => !!(x.libertin || (x.l && x.l.libertin)) || /libertin|échangis|echangis|\bswing/i.test((x.nom || '') + ' ' + ((x.l || SUD.lieux[x.lieu] || {}).nom || ''));
   const auJour = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
   function finWeekend() { const d = new Date(), j = d.getDay(); d.setDate(d.getDate() + (j === 0 ? 0 : 7 - j)); return iso(d); }
   function debutWeekend() { const d = new Date(), j = d.getDay(); if (j >= 5 || j === 0) return iso(d); d.setDate(d.getDate() + (5 - j)); return iso(d); }

@@ -3217,3 +3217,8 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 #screen-agenda .agc-h .agc-nom { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 
 #screen-checkin .ck-pads { margin: 12px 0 10px; }
+
+/* Check-in : la photo (flyer ou lieu) prend presque toute la hauteur du bandeau */
+#screen-checkin .ck-ligne .fil-item:has(.ck-vignette) { padding-right: 124px; min-height: 128px; }
+#screen-checkin .ck-vignette { top: 10px; bottom: 10px; height: auto; width: 104px; transform: none; border-radius: 14px; }
+#screen-checkin .ck-ligne .fil-item { overflow-wrap: anywhere; }
