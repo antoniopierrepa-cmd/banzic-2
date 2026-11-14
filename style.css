@@ -3171,3 +3171,17 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .sf-officiel b { color: #3DC8FF; }
 .sf-officiel small { color: #C9B3C4; font-size: 12.5px; }
 .ck-officiel { display: inline-block; padding: 1px 7px; border-radius: 6px; background: #3DC8FF; color: #06121F; font-weight: 800; font-size: 11px; }
+
+/* Agenda : carte horizontale (photo à gauche, date / nom / ville / type et heure à droite) */
+#screen-agenda .ag-carte.agc-h { display: grid; grid-template-columns: 40% 1fr; gap: 16px; align-items: center; margin: 0 0 14px; padding: 14px; border-radius: 22px; background: #10131D; border: 1px solid rgba(255,255,255,.06); }
+#screen-agenda .agc-h .agc-visuel { aspect-ratio: 4 / 5; border-radius: 16px; }
+#screen-agenda .agc-h .agc-visuel::before { display: none; }
+#screen-agenda .agc-h .agc-visuel img { object-fit: cover; }
+#screen-agenda .agc-h .agc-credit { font-size: 9px; right: 6px; bottom: 6px; }
+#screen-agenda .agc-h .agc-txt { padding: 0; gap: 7px; min-width: 0; }
+#screen-agenda .agc-h .agc-date { color: #E0A47A; font-size: 13.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+#screen-agenda .agc-h .agc-nom { font-size: 19px; line-height: 1.2; color: #fff; overflow-wrap: anywhere; }
+#screen-agenda .agc-h .agc-ville { display: flex; align-items: center; gap: 7px; color: #fff; font: 800 19px/1.15 'Syne', sans-serif; text-transform: uppercase; letter-spacing: .01em; overflow-wrap: break-word; }
+#screen-agenda .agc-h .agc-ville svg { flex: none; width: 22px; height: 22px; color: #E0A47A; }
+#screen-agenda .agc-h .agc-meta { color: #A9AFC0; font-size: 15px; font-weight: 600; }
+#screen-agenda .agc-h .agc-lineup { font-size: 12.5px; color: #8E95A8; -webkit-line-clamp: 1; }

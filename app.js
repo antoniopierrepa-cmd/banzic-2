@@ -3311,16 +3311,17 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const MOIS_CRT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
   function carteAgenda(x) {
     ficheSoireeJour(x);
-    const dt = new Date(x.date + 'T12:00:00'), aff = radarUrl(x.flyerUrl) || afficheSoiree(x), gen = String(x.genres || '').split(/,|·|\//).map((g) => g.trim()).filter(Boolean);
+    const dt = new Date(x.date + 'T12:00:00'), aff = radarUrl(x.flyerUrl) || afficheSoiree(x);
     const pays = x.l.country === 'ES' ? 'Espagne' : x.l.country === 'BE' ? 'Belgique' : '';
-    return `<div class="ag-carte" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
+    const type = x.type === 'bar' && /^(Karaoké|Blind test|Afterwork|Apéro musical)$/.test(x.genres || '') ? esc(x.genres) : TYPE_NOM[x.type || 'club'];
+    const jour = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][dt.getDay()] + ' ' + dt.getDate() + ' ' + dt.toLocaleDateString('fr-FR', { month: 'long' });
+    return `<div class="ag-carte agc-h" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
       <div class="agc-visuel${x.flyerUrl ? '' : ' agc-gp'}" data-gp="${esc(JSON.stringify({ nom: x.l.nom, adresse: x.l.ville || '', lat: x.l.lat, lng: x.l.lng }))}" style="--aff:url('${esc(aff).replace(/'/g, '%27')}')"><img src="${esc(aff)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback;this.parentNode.style.setProperty('--aff','none');this.parentNode.classList.add('agc-gp');window.__photosAgenda&&window.__photosAgenda()" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC'}" loading="lazy" referrerpolicy="no-referrer">
-        <span class="agc-type" style="--tc:${TYPE_COUL[x.type || 'club']}">${x.type === 'bar' && /^(Karaoké|Blind test|Afterwork|Apéro musical)$/.test(x.genres || '') ? esc(x.genres) : TYPE_NOM[x.type || 'club']}</span>${estLibertin(x) ? '<span class="moins18 agc-18" title="Interdit aux moins de 18 ans">-18</span>' : ''}</div>
-      <div class="agc-txt"><b class="agc-nom">${esc(x.nom)}</b>
-        <span class="agc-ville">${x.l.ville ? '📍 ' + esc(x.l.ville) : ''}</span><span class="agc-lieu">${esc(x.l.nom)}${pays ? ', ' + pays : ''}</span>
-        <span class="agc-quand">${['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'][dt.getDay()]} ${dt.getDate()} ${MOIS_CRT[dt.getMonth()]}${x.heure ? ' | ' + esc(x.heure.replace(':', 'h')) : ''}${x.prix && x.prix.length <= 24 ? `<em>${esc(x.prix)}</em>` : ''}</span>
-        ${x.djs ? `<span class="agc-lineup">${esc(x.djs)}</span>` : ''}
-        ${gen.length ? `<span class="agc-tags">${gen.slice(0, 3).map((g) => `<i>${esc(g)}</i>`).join('')}${gen.length > 3 ? `<i>+${gen.length - 3}</i>` : ''}</span>` : ''}</div></div>`;
+        ${estLibertin(x) ? '<span class="moins18 agc-18" title="Interdit aux moins de 18 ans">-18</span>' : ''}</div>
+      <div class="agc-txt"><span class="agc-date">${esc(jour)}</span><b class="agc-nom">${esc(x.nom)}</b>
+        <span class="agc-ville"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>${esc(x.l.ville || x.l.nom)}${pays ? ' · ' + pays : ''}</span>
+        <span class="agc-meta">${type}${x.heure ? ' • ' + esc(x.heure.replace(':', 'h')) : ''}</span>
+        ${x.djs ? `<span class="agc-lineup">${esc(x.djs)}</span>` : ''}</div></div>`;
   }
   // Une ligne de l'agenda
   function ligneSud(x) {
