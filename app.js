@@ -2662,7 +2662,7 @@
       let choix = null;
       for (const date of [iso(new Date(now - 864e5)), auj]) {
         const h = horaireOSM(oh, date); if (h === false) continue; // horaires OpenStreetMap (gratuits) ; fermé ce soir : pas affiché
-        const hd = h ? h.debut : '23:30', hf = h ? h.fin : '04:00', deb = msDe(date, hd); let fin = msDe(date, hf); if (fin <= deb) fin += 864e5;
+        const hd = h ? h.debut : '23:30', hf = h ? h.fin : '04:00', deb = msDe(date, hd) + (h && h.lendemain ? 864e5 : 0); let fin = msDe(date, hf) + (h && h.lendemain ? 864e5 : 0); if (fin <= deb) fin += 864e5;
         if (fin > now) { choix = { date, hd, hf, deb, fin, estime: !h }; break; }
       }
       if (!choix) return;
@@ -3129,24 +3129,34 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   // Horaires d'ouverture OpenStreetMap (opening_hours), gratuits : « Fr-Sa 23:30-05:00 », « Th,Fr,Sa 23:00-06:00; PH off », « 24/7 »…
   // Renvoie { debut, fin } pour le soir de la date, false si le club est fermé ce soir-là, null si on ne sait pas (horaires estimés)
   const JOURS_OSM = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  const MOIS_OSM = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  // Les plages d'ouverture d'un jour donné (undefined : rien n'en parle ; [] : fermé)
+  function plagesOSM(t, d) {
+    const jour = d.getDay(), mois = d.getMonth(); let res, avecJours = false;
+    for (let regle of t.split(';').map((x) => x.trim()).filter(Boolean)) {
+      if (/^(PH|SH)\b/.test(regle)) continue;
+      const mm = regle.match(/^((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(?:-(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec))?(?:,(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(?:-(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec))?)*)\s+(.*)$/);
+      if (mm) { const ok = mm[1].split(',').some((p) => { const [a, b] = p.split('-').map((x) => MOIS_OSM.indexOf(x)); return b == null ? a === mois : (a <= b ? mois >= a && mois <= b : mois >= a || mois <= b); }); if (!ok) continue; regle = mm[2]; }
+      const m = regle.match(/^((?:(?:Mo|Tu|We|Th|Fr|Sa|Su)(?:-(?:Mo|Tu|We|Th|Fr|Sa|Su))?,?)+)?\s*(.*)$/); if (!m) continue;
+      if (m[1]) { avecJours = true; if (!m[1].split(',').filter(Boolean).some((p) => { const [a, b] = p.split('-').map((x) => JOURS_OSM.indexOf(x)); return b == null ? a === jour : (a <= b ? jour >= a && jour <= b : jour >= a || jour <= b); })) continue; }
+      const corps = m[2].trim();
+      if (/^(off|closed)$/i.test(corps)) { res = []; continue; }
+      const pl = [...corps.matchAll(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\+?/g)].map((x) => ({ debut: x[1].padStart(2, '0') + ':' + x[2], fin: (x[3] === '24' ? '00' : x[3].padStart(2, '0')) + ':' + x[4], h: +x[1] }));
+      if (pl.length) res = pl;
+    }
+    return { plages: res, avecJours };
+  }
   function horaireOSM(oh, date) {
     const t = String(oh || '').trim(); if (!t) return null;
     if (/^24\/7$/.test(t)) return { debut: '00:00', fin: '23:59' };
-    const jour = new Date(date + 'T12:00:00').getDay(); let res, avecJours = false;
-    for (const regle of t.split(';').map((x) => x.trim()).filter(Boolean)) {
-      if (/^(PH|SH)\b/.test(regle)) continue;
-      const m = regle.match(/^((?:(?:Mo|Tu|We|Th|Fr|Sa|Su)(?:-(?:Mo|Tu|We|Th|Fr|Sa|Su))?,?)+)?\s*(.*)$/); if (!m) continue;
-      let dansJour = true;
-      if (m[1]) { avecJours = true; dansJour = m[1].split(',').filter(Boolean).some((p) => { const [a, b] = p.split('-').map((x) => JOURS_OSM.indexOf(x)); return b == null ? a === jour : (a <= b ? jour >= a && jour <= b : jour >= a || jour <= b); }); }
-      if (!dansJour) continue;
-      const corps = m[2].trim();
-      if (/^(off|closed)$/i.test(corps)) { res = false; continue; }
-      const plages = [...corps.matchAll(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\+?/g)].map((x) => ({ debut: x[1].padStart(2, '0') + ':' + x[2], fin: (x[3] === '24' ? '00' : x[3].padStart(2, '0')) + ':' + x[4], h: +x[1] }));
-      if (!plages.length) continue;
-      const soir = plages.find((p) => p.h >= 17) || plages[plages.length - 1]; res = { debut: soir.debut, fin: soir.fin };
-    }
-    if (res !== undefined) return res;
-    return avecJours ? false : null;
+    if (/^(off|closed)$/i.test(t)) return false;
+    const d = new Date(date + 'T12:00:00'), d2 = new Date(d.getTime() + 864e5);
+    const a = plagesOSM(t, d), b = plagesOSM(t, d2);
+    const soir = (a.plages || []).find((p) => p.h >= 17); if (soir) return { debut: soir.debut, fin: soir.fin };
+    // « Sa 00:00-06:00 » : c'est la nuit de vendredi à samedi, donc le soir de la veille
+    const nuit = (b.plages || []).find((p) => p.h < 6); if (nuit) return { debut: nuit.debut, fin: nuit.fin, lendemain: true };
+    if (a.plages && a.plages.length) return false; // ouvert seulement en journée ce jour-là
+    return a.plages || a.avecJours ? false : null;
   }
   const MOIS_CRT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
   function carteAgenda(x) {
