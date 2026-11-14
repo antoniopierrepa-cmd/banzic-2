@@ -2840,7 +2840,7 @@
       const plage = choix.hd + ' → ' + choix.hf + (choix.estime ? ' · à confirmer' : ''), cle = { nom, adresse: ville || '', lat: la, lng: lo };
       CK_FICHES['l:' + id] = { titre: nom, sous: 'Club libertin · réservé aux plus de 18 ans · ' + (choix.estime ? 'horaires à confirmer auprès du club' : 'horaires OpenStreetMap : ' + choix.hd + ' → ' + choix.hf), tag: 'Club libertin', st, date: choix.date, heure: choix.hd, heureFin: choix.hf,
         quand: avant > 0 ? 'ouvre dans ' + dur(Math.round(avant)) : 'ouvert jusqu’à ' + choix.hf, lieu: { nom, adresse: ville || '', lat: la, lng: lo, gid: G_IDS[cleLieuG(cle)] }, km: d, djs: [], url: site || '', club: true, source: 'OpenStreetMap (© contributeurs OpenStreetMap)' };
-      ligne({ ville: ville || villeProche(la, lo), ev: { id: 'l:' + id, type: 'club', libertin: true, nom, genres: '', l: { nom, lat: la, lng: lo, ville, libertin: true } }, gp: cle, categorie: 'libertin', adulte: true, fin: choix.fin, fiche: 'l:' + id, djs: [], km: d, t: Math.max(choix.deb, msDe(auj, '00:00')), heure: choix.hd, porte: nom, st, k: 'decl', tag: 'Club libertin', attr: `data-ck-fiche="l:${id}"`, nom,
+      ligne({ ville: ville || villeProche(la, lo), ev: { id: 'l:' + id, type: 'club', libertin: true, nom, genres: '', l: { nom, lat: la, lng: lo, ville, libertin: true } }, gp: cle, categorie: 'libertin', adulte: true, fin: choix.fin, fiche: 'l:' + id, djs: [], km: d, t: Math.max(choix.deb, msDe(auj, '00:00')), heure: choix.hd, porte: nom, st, k: 'decl', tag: 'Club', attr: `data-ck-fiche="l:${id}"`, nom,
         l1: (avant > 0 ? 'ouvre dans ' + dur(Math.round(avant)) : 'ouvert jusqu’à ' + choix.hf) + ' · ' + plage, l2: [[esc(ville || nom) + ' · ' + fK(d)]] });
     });
     // D'abord ce qui est en live en ce moment (DJ en cours, dernier appel, spots signalés), puis le reste ; dans chaque groupe, du plus proche au plus loin
@@ -3044,7 +3044,7 @@
   { const off = SUD.soirees.map((x) => [x.date, SUD.lieux[x.lieu]]).filter((y) => y[1]);
     SUD.soirees.push(...RADAR.soirees.filter((x) => { const l = (RADAR.lieux || {})[x.lieu] || SUD.lieux[x.lieu]; return !l || !off.some(([d, m]) => d === x.date && Math.abs(m.lat - l.lat) < 0.003 && Math.abs(m.lng - l.lng) < 0.004); })); }
   appliquerMonClub(); // la fiche du club revendiqué (horaires, soirées) passe par-dessus les données publiques
-  const radarUrl = (value) => { try { if (/^img\/clubs\/[\w.-]+$/.test(String(value || ''))) return value; const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch (e) { return ''; } };
+  const radarUrl = (value) => { try { if (/^img\/(clubs|flyers)\/[\w.-]+$/.test(String(value || ''))) return value; const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch (e) { return ''; } };
   function centreGeographique() {
     if (state.villeChoisie && state.villeRecherche) return state.villeRecherche;
     return state.maPos ? [state.maPos.lat, state.maPos.lng] : DEST.local.centre;
