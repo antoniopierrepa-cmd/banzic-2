@@ -447,7 +447,8 @@
     if (!map) return;
     if (MODE_TEST) ajouterSoireesTest(centreGeographique());
     layer.clearLayers();
-    marqueursSpots();
+    // Les signalements individuels des BANGERS ne créent plus de repères sur la carte.
+    // Seuls les vinyles des soirées portent le compteur de présences.
     marqueursDecls();
     marqueursRadar();
     marqueursDiscotheques();
