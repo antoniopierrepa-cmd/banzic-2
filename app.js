@@ -2658,7 +2658,8 @@
     const finDe = (o) => o.fin || (o.t || 0) + 5 * 3600000;
     L.sort((a, b) => (enLive(b) ? 1 : 0) - (enLive(a) ? 1 : 0) || finDe(a) - finDe(b) || a.km - b.km);
     const vis = (nom) => nom ? visFil(nom) : '';
-    const rangee = (o) => { const v = o.lieuPin ? `<span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-lieu" src="${o.lieuPin}" alt="">${casqueConf(BANG_LIEU[o.lieuId] || 0)}</span>` : o.k === 'spot' ? (o.sp ? visSpotC(o.sp) : '') : o.vol ? visFil(o.vol, o.conf || 0, o.act || '') : '';
+    const rangee = (o) => { const nbSoiree = o.fiche && o.fiche.startsWith('s:') ? (store.get('bangSoirees', {})[o.fiche] || 0) : 0;
+      const v = o.lieuPin ? `<span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-lieu" src="${o.lieuPin}" alt="">${casqueConf(nbSoiree || BANG_LIEU[o.lieuId] || 0)}</span>` : o.k === 'spot' ? (o.sp ? visSpotC(o.sp) : '') : o.vol ? visFil(o.vol, o.conf || 0, o.act || '') : '';
       // Tout ce qui est en live tourne : le DJ qui joue (son rond), le spot signalé (son épingle)
       const tourne = o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert';
       // Tout le bandeau devient une barre de progression : du début du set (0 %) jusqu'à la fin (100 %)
@@ -3439,6 +3440,29 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     { const x = declIci(connu); if (x) { x.conf = (x.conf || 0) + 1; const com = String(f.get('com') || '').trim().slice(0, 80), tp = f.get('temp') != null ? +f.get('temp') : 1;
       (x.avisSoir = x.avisSoir || []).push({ temp: tp, com, t: Date.now() }); x.temp = tp; if (com) x.com = com; sauverDecls(); BDD.banguer('declarations', x.id, tp, com);
       BANG_LIEU[connu.id] = (BANG_LIEU[connu.id] || 0) + 1; store.set('bangLieu', BANG_LIEU); renderMap(); toast('Banguérisé : tu confirmes que ' + ((djDe(x) || {}).nom || 'le DJ') + ' joue ici'); return; } }
+    // Un bang sur une soirée déjà annoncée alimente son compteur, sans créer
+    // une nouvelle ligne « Spot » dans le Check-in.
+    const soireeDuLieu = SUD.soirees.find((ev) => {
+      const l = SUD.lieux[ev.lieu];
+      return l && l.lat != null && l.lng != null
+        && distKm([connu.lat, connu.lng], [l.lat, l.lng]) <= 0.15
+        && soireeCheckinVisible(ev, Date.now(), false)
+        && ev.date <= iso(new Date());
+    });
+    if (soireeDuLieu) {
+      const key = 's:' + soireeDuLieu.id;
+      const votes = store.get('bangSoireesMoi', {});
+      if (votes[key]) { toast('Tu as déjà bangué cette soirée'); renderCheckin(); return; }
+      votes[key] = Date.now();
+      store.set('bangSoireesMoi', votes);
+      const counts = store.get('bangSoirees', {});
+      counts[key] = (counts[key] || 0) + 1;
+      store.set('bangSoirees', counts);
+      sonBanger();
+      renderCheckin();
+      toast('Bang ajouté à ' + soireeDuLieu.nom + ' · compteur mis à jour');
+      return;
+    }
     if (connu.src === 'ibiza' && lieux[connu.id]) { signaler(connu.id, dj || 'DJ inconnu'); renderMap(); return; }
     const s = { id: 'sp' + Date.now(), dest: (connu && connu.dest) || state.dest, type: connu ? (connu.type === 'plage' ? 'plage' : connu.genre === 'bar' ? 'bar' : 'club') : (f.get('type') || 'bar'),
       nom: connu ? connu.nom : String(f.get('nom') || '').trim(), dj, lat: connu ? connu.lat : lat, lng: connu ? connu.lng : lng,
