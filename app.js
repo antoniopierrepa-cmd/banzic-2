@@ -2546,6 +2546,9 @@
     const f = CK_FICHES[cle]; if (!f) return; CK_OUVERTE = cle;
     const scr = $('#screen-soiree'); if (!scr) return;
     const l = f.lieu || {}, gm = l.gid ? gMapsUrl(l.gid) : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([l.nom, l.adresse].filter(Boolean).join(' ') || (l.lat + ',' + l.lng));
+    const destination = l.lat != null && l.lng != null ? l.lat + ',' + l.lng : [l.nom, l.adresse].filter(Boolean).join(' ');
+    const waze = 'https://waze.com/ul?q=' + encodeURIComponent(destination) + '&navigate=yes';
+    const apple = 'https://maps.apple.com/?daddr=' + encodeURIComponent(destination);
     const fK = (x) => x == null ? '' : x < 1 ? '< 1 km' : Math.round(x) + ' km';
     // Chronologie uniquement sur des horaires réellement annoncés : aucune fermeture inventée.
     const debutChrono = f.date && f.heure ? new Date(f.date + 'T' + f.heure).getTime() : NaN;
@@ -2566,11 +2569,14 @@
       ${chronoHtml}\n      <div class="sf-bloc"><div class="sf-titre">Le lieu</div>
         <div class="sf-lieu"><div class="sf-photo" data-sf-photo="1"></div>
           <b>${esc(l.nom || 'Lieu')}</b>${l.adresse ? `<small>${esc(l.adresse)}</small>` : ''}${f.km != null ? `<small>À ${fK(f.km)} de toi</small>` : ''}
-          <div class="sf-actions"><button type="button" class="sf-btn plein" data-soiree-carte="${cle}">Voir sur la carte</button><a class="sf-btn" data-sf-gm="1" href="${gm}" target="_blank" rel="noopener">Google Maps</a></div></div></div>
+          <div class="sf-actions"><button type="button" class="sf-btn plein" data-soiree-carte="${cle}">Voir sur la carte</button><button type="button" class="sf-btn" data-sf-route-toggle="1" aria-expanded="false">Itinéraire ▾</button></div><div class="sf-route-options" hidden style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"><a class="sf-btn" data-sf-gm="1" href="${gm}" target="_blank" rel="noopener">Google Maps</a><a class="sf-btn" href="${waze}" target="_blank" rel="noopener">Waze</a><a class="sf-btn" href="${apple}" target="_blank" rel="noopener">Plans Apple</a></div></div></div>
       <div class="sf-bloc"><div class="sf-titre">${f.club ? 'Soirées' : 'Line-up'}</div>
         ${f.djs && f.djs.length ? `<div class="sf-lineup">${f.djs.map((n) => `<button type="button" class="sf-dj" data-dj-pro="${esc(n)}"><span class="sf-av">${avatarDj(n)}</span><b>${esc(n)}</b><span class="sf-fleche" aria-hidden="true">›</span></button>`).join('')}</div>`
           : `<p class="aide">${f.club ? 'Aucune soirée annoncée pour l\'instant.' : 'Line-up non communiqué pour l\'instant.'}</p>`}</div>
       ${f.url ? `<a class="btn-plein sf-billets" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${f.club ? 'Site du club' : f.billets ? 'Billets' : 'Infos sur la soirée'}</a>` : ''}${f.club ? `<div class="sf-revendiquer"><b>C'est votre club ?</b><p>Revendiquez cette fiche pour annoncer vos soirées et les proposer aux Bangers de votre région.</p><button type="button" class="sf-btn" data-club-revendiquer="1">C'est mon club</button></div>` : ''}${f.source ? `<p class="aide sf-source">Source : ${esc(f.source)}</p>` : ''}`;
+    const routeBtn = scr.querySelector('[data-sf-route-toggle]'), routeOptions = scr.querySelector('.sf-route-options');
+    if (routeOptions) { routeOptions.hidden = true; routeOptions.style.display = 'none'; }
+    if (routeBtn && routeOptions) routeBtn.addEventListener('click', () => { routeOptions.hidden = !routeOptions.hidden; routeOptions.style.display = routeOptions.hidden ? 'none' : 'flex'; routeBtn.setAttribute('aria-expanded', String(!routeOptions.hidden)); });
     // la photo Google du lieu arrive après (seulement si le lieu vient de Google Maps)
     const ph = scr.querySelector('[data-sf-photo]');
     (l.gid ? Promise.resolve(l.gid) : gidPour(l)).then((gid) => { if (!gid) return; l.gid = gid;
