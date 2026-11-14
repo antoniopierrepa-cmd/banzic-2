@@ -2655,22 +2655,21 @@
         l2: [[esc(l.nom) + ' · ' + fK(d)], [x.type === 'club' ? ((x.heure || '23:30') + ' → ' + (x.heureFin || '05:00') + (!x.heureFin || !x.heure ? ' · estimé' : '')) : (x.heureFin ? (x.heure || '?') + ' → ' + x.heureFin : ''), 'fil-att'], [x.djs ? 'line-up annoncé' : 'line-up non communiqué', 'fil-att']], vol: dj }); });
     // Discothèques ouvertes ce soir (toutes, automatiquement) : vrais horaires Google Maps quand on les a, sinon 23 h 30 - 4 h estimés.
     // Une discothèque qui a déjà une soirée annoncée ce soir n'apparaît pas deux fois ; fermée ce soir d'après Google : pas affichée.
-    if (!lignesSeules && !zoneCarte) (window.DISCOTHEQUES || []).forEach(([id, nom, la, lo, ville, site]) => {
+    if (!lignesSeules && !zoneCarte) (window.DISCOTHEQUES || []).forEach(([id, nom, la, lo, ville, site, oh]) => {
       const d = km(la, lo); if (d > r) return;
       if (SUD.soirees.some((ev) => (ev.date === auj || ev.date === iso(new Date(now - 864e5))) && SUD.lieux[ev.lieu] && distKm([la, lo], [SUD.lieux[ev.lieu].lat, SUD.lieux[ev.lieu].lng]) < 0.15 && soireeCheckinVisible(ev, now, false))) return;
-      const cle = { nom, adresse: ville || '', lat: la, lng: lo }, gid = G_IDS[cleLieuG(cle)], per = gid ? G_HORAIRES[gid] : undefined;
+      const cle = { nom, adresse: ville || '', lat: la, lng: lo }, gid = G_IDS[cleLieuG(cle)];
       let choix = null;
       for (const date of [iso(new Date(now - 864e5)), auj]) {
-        const h = per ? horaireDuSoir(per, date) : null; if (h === false) continue;
+        const h = horaireOSM(oh, date); if (h === false) continue; // horaires OpenStreetMap (gratuits) ; fermé ce soir : pas affiché
         const hd = h ? h.debut : '23:30', hf = h ? h.fin : '04:00', deb = msDe(date, hd); let fin = msDe(date, hf); if (fin <= deb) fin += 864e5;
         if (fin > now) { choix = { date, hd, hf, deb, fin, estime: !h }; break; }
       }
-      if (gid === undefined || (gid && per === undefined)) demanderHoraires(cle);
       if (!choix) return;
       const avant = (choix.deb - now) / 60000, st = avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ['Ouvert', 'vert'];
       const plage = choix.hd + ' → ' + choix.hf + (choix.estime ? ' · estimé' : '');
-      CK_FICHES['c:' + id] = { titre: nom, sous: choix.estime ? 'Horaires estimés : 23 h 30 → 4 h' : 'Horaires Google Maps : ' + choix.hd + ' → ' + choix.hf, tag: 'Discothèque', st, date: choix.date, heure: choix.hd, heureFin: choix.hf,
-        quand: avant > 0 ? 'ouvre dans ' + dur(Math.round(avant)) : 'ouvert jusqu’à ' + choix.hf, lieu: { nom, adresse: ville || '', lat: la, lng: lo, gid }, km: d, djs: [], url: site || '', club: true, source: 'OpenStreetMap (© contributeurs OpenStreetMap)' + (choix.estime ? '' : ' · horaires Google Maps') };
+      CK_FICHES['c:' + id] = { titre: nom, sous: choix.estime ? 'Horaires estimés : 23 h 30 → 4 h' : 'Horaires OpenStreetMap : ' + choix.hd + ' → ' + choix.hf, tag: 'Discothèque', st, date: choix.date, heure: choix.hd, heureFin: choix.hf,
+        quand: avant > 0 ? 'ouvre dans ' + dur(Math.round(avant)) : 'ouvert jusqu’à ' + choix.hf, lieu: { nom, adresse: ville || '', lat: la, lng: lo, gid }, km: d, djs: [], url: site || '', club: true, source: 'OpenStreetMap (© contributeurs OpenStreetMap)' + '' };
       ligne({ gp: cle, categorie: 'club', fin: choix.fin, fiche: 'c:' + id, djs: [], km: d, t: Math.max(choix.deb, msDe(auj, '00:00')), heure: choix.hd, porte: nom, st, k: 'decl', tag: 'Discothèque', attr: `data-ck-fiche="c:${id}"`, nom,
         l1: (avant > 0 ? 'ouvre dans ' + dur(Math.round(avant)) : 'ouvert jusqu’à ' + choix.hf) + ' · ' + plage, l2: [[esc(ville || nom) + ' · ' + fK(d)]] });
     });
@@ -3127,24 +3126,27 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     });
   }
   window.__photosCheckin = photosCheckin;
-  // Horaires d'ouverture Google Maps d'une discothèque (gardés le temps de la session seulement)
-  const G_HORAIRES = {}, H_DEMANDES = new Set();
-  let rafraichirCk = null;
-  function demanderHoraires(l) {
-    const k = cleLieuG(l); if (H_DEMANDES.has(k) || !GKEY) return; H_DEMANDES.add(k);
-    filePhotos = filePhotos.then(() => gidPour(l)).then((gid) => { if (!gid || G_HORAIRES[gid] !== undefined) return;
-      return fetch('https://places.googleapis.com/v1/places/' + encodeURIComponent(gid), { headers: { 'X-Goog-Api-Key': GKEY, 'X-Goog-FieldMask': 'regularOpeningHours' } })
-        .then((r) => r.ok ? r.json() : {}).then((j) => { G_HORAIRES[gid] = (j.regularOpeningHours && j.regularOpeningHours.periods) || null; }); })
-      .then(() => { clearTimeout(rafraichirCk); rafraichirCk = setTimeout(() => { if (state.tab === 'checkin' && $('#screen-checkin') && !$('#screen-checkin').hidden) renderCheckin(); }, 1500); })
-      .catch(() => {});
-  }
-  // L'ouverture du soir pour une date : { debut, fin } ; false si le club est fermé ce soir-là ; null si Google ne donne pas d'horaires
-  function horaireDuSoir(periods, date) {
-    if (!Array.isArray(periods) || !periods.length) return null;
-    const jour = new Date(date + 'T12:00:00').getDay(), hh = (t) => String(t.hour || 0).padStart(2, '0') + ':' + String(t.minute || 0).padStart(2, '0');
-    if (periods.length === 1 && periods[0].open && !periods[0].close) return { debut: '00:00', fin: '23:59' }; // ouvert 24 h/24
-    const p = periods.find((x) => x.open && x.open.day === jour && (x.open.hour >= 17 || x.open.hour < 2));
-    return p ? { debut: hh(p.open), fin: p.close ? hh(p.close) : '06:00' } : false;
+  // Horaires d'ouverture OpenStreetMap (opening_hours), gratuits : « Fr-Sa 23:30-05:00 », « Th,Fr,Sa 23:00-06:00; PH off », « 24/7 »…
+  // Renvoie { debut, fin } pour le soir de la date, false si le club est fermé ce soir-là, null si on ne sait pas (horaires estimés)
+  const JOURS_OSM = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  function horaireOSM(oh, date) {
+    const t = String(oh || '').trim(); if (!t) return null;
+    if (/^24\/7$/.test(t)) return { debut: '00:00', fin: '23:59' };
+    const jour = new Date(date + 'T12:00:00').getDay(); let res, avecJours = false;
+    for (const regle of t.split(';').map((x) => x.trim()).filter(Boolean)) {
+      if (/^(PH|SH)\b/.test(regle)) continue;
+      const m = regle.match(/^((?:(?:Mo|Tu|We|Th|Fr|Sa|Su)(?:-(?:Mo|Tu|We|Th|Fr|Sa|Su))?,?)+)?\s*(.*)$/); if (!m) continue;
+      let dansJour = true;
+      if (m[1]) { avecJours = true; dansJour = m[1].split(',').filter(Boolean).some((p) => { const [a, b] = p.split('-').map((x) => JOURS_OSM.indexOf(x)); return b == null ? a === jour : (a <= b ? jour >= a && jour <= b : jour >= a || jour <= b); }); }
+      if (!dansJour) continue;
+      const corps = m[2].trim();
+      if (/^(off|closed)$/i.test(corps)) { res = false; continue; }
+      const plages = [...corps.matchAll(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\+?/g)].map((x) => ({ debut: x[1].padStart(2, '0') + ':' + x[2], fin: (x[3] === '24' ? '00' : x[3].padStart(2, '0')) + ':' + x[4], h: +x[1] }));
+      if (!plages.length) continue;
+      const soir = plages.find((p) => p.h >= 17) || plages[plages.length - 1]; res = { debut: soir.debut, fin: soir.fin };
+    }
+    if (res !== undefined) return res;
+    return avecJours ? false : null;
   }
   const MOIS_CRT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
   function carteAgenda(x) {
