@@ -3113,10 +3113,10 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 #screen-agenda .radar-dep select { border-radius: 14px; }
 
 /* BANZIC 2 : filtres tactiles harmonisés Agenda / Check-in */
-#screen-agenda .pads { display:flex; flex-wrap:wrap; gap:8px; }
-#screen-agenda .pad { width:auto; flex:0 0 auto; min-height:42px !important; height:42px !important; aspect-ratio:auto; border-radius:999px !important; padding:0 13px !important; flex-direction:row !important; gap:6px !important; font-size:12px; }
-#screen-agenda .pad-ico { width:16px; height:16px; }
-#screen-agenda .pad-nb { font-size:10px; }
+#screen-agenda .pads, #screen-checkin .pads { display:flex; flex-wrap:wrap; gap:8px; }
+#screen-agenda .pad, #screen-checkin .pad { width:auto; flex:0 0 auto; min-height:42px !important; height:42px !important; aspect-ratio:auto; border-radius:999px !important; padding:0 13px !important; flex-direction:row !important; gap:6px !important; font-size:12px; }
+#screen-agenda .pad-ico, #screen-checkin .pad-ico { width:16px; height:16px; }
+#screen-agenda .pad-nb, #screen-checkin .pad-nb { font-size:10px; }
 #screen-checkin .ck-filtres button { border-radius:999px !important; min-height:40px; padding:8px 14px !important; }
 #screen-agenda .fd-graduations { display:flex; justify-content:space-between; gap:3px; }
 #screen-agenda .fd-graduations span { font-size:11px; cursor:pointer; }
