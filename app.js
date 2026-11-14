@@ -572,7 +572,7 @@
   }
 
   // ---------- Règle des Bangers : on ne confirme que là où le téléphone se trouve vraiment
-  const RAYON_M = 200;                 // distance maximale pour confirmer dans un lieu
+  const RAYON_M = 150;                 // distance maximale pour confirmer dans un lieu
   const RAYON_BATEAU_M = 500;          // un bateau bouge : marge plus large
   let posDemo = null;                  // prototype seulement : position simulée pour tester sans être à Ibiza
   const fmtDist = (m) => m < 1000 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(m < 10000 ? 1 : 0).replace('.', ',') + ' km';
