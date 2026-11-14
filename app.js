@@ -2678,7 +2678,8 @@
     const enLive = (o) => o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert';
     // Ordre : ce qui est en live d'abord, et parmi eux celui qui se termine le plus tôt ; puis les départs à venir, par heure de fin estimée (début + 5 h si on ne la connaît pas)
     const finDe = (o) => o.fin || (o.t || 0) + 5 * 3600000;
-    L.sort((a, b) => (enLive(b) ? 1 : 0) - (enLive(a) ? 1 : 0) || finDe(a) - finDe(b) || a.km - b.km);
+    // Rangement au kilomètre : le plus proche d'abord, le plus loin ensuite (à distance égale, celui qui commence le plus tôt)
+    L.sort((a, b) => a.km - b.km || (a.t || 0) - (b.t || 0));
     const vis = (nom) => nom ? visFil(nom) : '';
     const rangee = (o) => { const nbSoiree = o.fiche ? (store.get('bangSoirees', {})[o.fiche] || 0) : 0;
       const statutBang = o.fiche ? `<span class="bz-ck-bang ${nbSoiree < 3 ? 'bz-ck-bang-attente' : 'bz-ck-bang-valide'}">${nbSoiree < 3 ? `${nbSoiree} BANGER${nbSoiree !== 1 ? 'S' : ''} À CONFIRMER` : `${nbSoiree} BANGERS CONFIRMÉS · VALIDÉ`}</span>` : '';
