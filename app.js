@@ -3040,9 +3040,11 @@
   const SUD = window.AGENDA_SUD || { lieux: {}, sources: {}, soirees: [] };
   const RADAR = window.AGENDA_RADAR || { departments: {}, coverage: {}, lieux: {}, sources: {}, soirees: [] };
   Object.assign(SUD.lieux, RADAR.lieux); Object.assign(SUD.sources, RADAR.sources);
-  SUD.soirees.push(...RADAR.soirees);
+  // Une soirée déjà saisie depuis l'agenda officiel du lieu (agenda-sud.js) n'est pas répétée par le radar : même date, même endroit (moins de 300 m)
+  { const off = SUD.soirees.map((x) => [x.date, SUD.lieux[x.lieu]]).filter((y) => y[1]);
+    SUD.soirees.push(...RADAR.soirees.filter((x) => { const l = (RADAR.lieux || {})[x.lieu] || SUD.lieux[x.lieu]; return !l || !off.some(([d, m]) => d === x.date && Math.abs(m.lat - l.lat) < 0.003 && Math.abs(m.lng - l.lng) < 0.004); })); }
   appliquerMonClub(); // la fiche du club revendiqué (horaires, soirées) passe par-dessus les données publiques
-  const radarUrl = (value) => { try { const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch (e) { return ''; } };
+  const radarUrl = (value) => { try { if (/^img\/clubs\/[\w.-]+$/.test(String(value || ''))) return value; const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch (e) { return ''; } };
   function centreGeographique() {
     if (state.villeChoisie && state.villeRecherche) return state.villeRecherche;
     return state.maPos ? [state.maPos.lat, state.maPos.lng] : DEST.local.centre;
@@ -3426,7 +3428,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const horaire = debut ? hh(debut) + (fin ? ' → ' + hh(fin) + (finEst ? ' <small>(fin estimée)</small>' : '') : '') : fin ? 'jusqu’à ' + hh(fin) : '';
     const jour = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][dt.getDay()] + ' ' + dt.getDate() + ' ' + dt.toLocaleDateString('fr-FR', { month: 'long' });
     return `<div class="ag-carte agc-h" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
-      <div class="agc-visuel${x.flyerUrl ? '' : ' agc-gp'}" data-gp="${esc(JSON.stringify({ nom: x.l.nom, adresse: x.l.ville || '', lat: x.l.lat, lng: x.l.lng }))}" style="--aff:url('${esc(aff).replace(/'/g, '%27')}')"><img src="${esc(aff)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback;this.parentNode.style.setProperty('--aff','none');this.parentNode.classList.add('agc-gp');window.__photosAgenda&&window.__photosAgenda()" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC'}" loading="lazy" referrerpolicy="no-referrer">
+      <div class="agc-visuel${x.flyerUrl ? '' : ' agc-gp'}${/^img\/clubs\//.test(aff) ? ' agc-logo' : ''}" data-gp="${esc(JSON.stringify({ nom: x.l.nom, adresse: x.l.ville || '', lat: x.l.lat, lng: x.l.lng }))}" style="--aff:url('${esc(aff).replace(/'/g, '%27')}')"><img src="${esc(aff)}" data-fallback="${x.l.visuel || afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback;this.parentNode.style.setProperty('--aff','none');this.parentNode.classList.add('agc-gp');window.__photosAgenda&&window.__photosAgenda()" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC'}" loading="lazy" referrerpolicy="no-referrer">
         ${estLibertin(x) ? '<span class="moins18 agc-18" title="Interdit aux moins de 18 ans">-18</span>' : ''}</div>
       <div class="agc-txt"><span class="agc-date">${esc(jour)}</span><b class="agc-nom">${esc(x.nom)}</b>
         <span class="agc-ville"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>${esc(x.l.ville || x.l.nom)}${pays ? ' · ' + pays : ''}</span>
