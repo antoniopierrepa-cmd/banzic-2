@@ -2956,7 +2956,7 @@
     '69': 'Rhône', '42': 'Loire', '38': 'Isère', '74': 'Haute-Savoie', '39': 'Jura', '68': 'Haut-Rhin', '59': 'Nord', '62': 'Pas-de-Calais', '33': 'Gironde',
     '31': 'Haute-Garonne', '34': 'Hérault', '44': 'Loire-Atlantique', '35': 'Ille-et-Vilaine' };
   // Agenda autour de moi : un fader façon table de mixage règle le rayon (10 → 100 km) autour de ma position
-  const RAYONS = [10, 20, 50, 100];
+  const RAYONS = [10, 20, 30, 50, 100, 1000];
   // 8 pads façon platine : 1re rangée le type de soirée, 2e rangée le moment (et mes DJ favoris)
   // Petits logos des pads (dessinés en trait, aux couleurs de chaque pad)
   const ICO_PAD = {
@@ -2998,11 +2998,11 @@
     const r = RAYONS[state.rayonIdx];
     $('#screen-agenda').innerHTML = `<div class="fader-module">
         <div class="acc-tete fd-tete"><div><h2>Agenda autour de moi</h2></div></div>
-        <button type="button" id="radar-hyeres-weekend" class="acc-chip" style="margin:8px 0 12px">📍 Hyères · 20 km · jeudi à dimanche</button>\n        <div class="fd-rail">
+        <button type="button" id="radar-hyeres-weekend" class="acc-chip" style="margin:8px 0 12px">📍 Hyères · 20 km · jeudi à dimanche</button>\n        <label class="radar-dep">Département <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>
+        <div class="fd-rail">
           <input type="range" id="fader-rayon" min="0" max="${RAYONS.length - 1}" step="1" value="${state.rayonIdx}" aria-label="Rayon de recherche" aria-valuetext="${r} kilomètres">
-          <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k}</span>`).join('')}</div>
+          <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k === 1000 ? 'France' : k}</span>`).join('')}</div>
         </div>
-        <label class="radar-dep">Département <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>
         
         <p class="demo-note">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements français avec annonces' + (RADAR.countryCoverage && RADAR.countryCoverage.BE ? ' · Belgique : ' + RADAR.countryCoverage.BE + ' soirées' : '') + (RADAR.countryCoverage && RADAR.countryCoverage.ES ? ' · Espagne : ' + RADAR.countryCoverage.ES + ' soirées' : '') + ' · collecte partielle.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
         <div class="pads" role="group" aria-label="Filtres">${PADS.map((x) => `<button class="pad${x.moins18 ? ' pad-18' : ''}" style="--pc:${x.c}" data-pad="${x.g}|${x.k}" aria-pressed="false"${x.moins18 ? ' title="Interdit aux moins de 18 ans"' : ''}>${icoPad(x.g === 'type' ? x.k : x.k === 'oui' ? 'mesdj' : x.k)}<span class="pad-nom">${x.nom}</span><small class="pad-nb"></small></button>`).join('')}</div>
