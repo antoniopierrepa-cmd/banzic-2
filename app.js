@@ -2858,7 +2858,9 @@
     ICONE_DISCO = ICONE_DISCO || L.divIcon({ className: 'disco-pin', iconSize: [18, 18], iconAnchor: [9, 9], html: '<i></i>' });
     const b = map.getBounds();
     DISCOS.forEach((c) => { if (!b.contains([c.lat, c.lng])) return;
-      const m = L.marker([c.lat, c.lng], { icon: ICONE_DISCO, zIndexOffset: 100, title: c.nom }).bindPopup('');
+      const adulte = lieuAdulte(c);
+      const icone = adulte ? L.divIcon({ className: 'bz-disco-adulte', iconSize: [26, 26], iconAnchor: [13, 13], html: '<span>18+</span>' }) : ICONE_DISCO;
+      const m = L.marker([c.lat, c.lng], { icon: icone, zIndexOffset: 100, title: c.nom + (adulte ? ' · 18+' : '') }).bindPopup('');
       ficheDisco(c); m.__fiche = 'c:' + c.id; m.addTo(layer); });
   }
   // Repère de soirée : vinyle animé, compteur BANGERS au centre, badge 18+ si applicable.
@@ -3340,7 +3342,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   }
   function formSpot() {
     photoSpot = '';
-    $('#panel-spot').innerHTML = '<div class="ps-titre"><b>Je bangue</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div><p class="aide">Je cherche ta position…</p>';
+    $('#panel-spot').innerHTML = '<div class="ps-titre"><b>BANGER</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div><p class="aide">Je cherche ta position…</p>';
     $('#panel-spot').hidden = false;
     positionSpot((lat, lng, src) => {
       const R = rayonSpot(src), fm = (km) => km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1).replace('.', ',') + ' km';
@@ -3361,7 +3363,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
           <div class="ps-gfiche" id="ps-gfiche">${posSpot.connu && posSpot.connu.gid ? ficheGoogle(posSpot.connu.photo, posSpot.connu.gid) : ''}</div>`;
         if (deja) { $('#ps-zone').innerHTML = html; deja.querySelector('.ps-suite').hidden = !proches.length; majDjIci(); return; }
         $('#panel-spot').innerHTML = `<form id="form-spot" novalidate>
-          <div class="ps-titre"><b>Je bangue</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div>
+          <div class="ps-titre"><b>BANGER</b><button type="button" class="ps-x" data-spot-fermer="1" aria-label="Fermer">×</button></div>
           <div class="ps-etape">1 · Le lieu</div>
           <div id="ps-zone">${html}</div>
           <div class="ps-suite"${proches.length ? '' : ' hidden'}>
@@ -3381,7 +3383,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
           <label class="ps-com"><span class="pst-titre">Un mot sur la soirée</span>
             <input class="search" name="com" maxlength="80" placeholder="Gros son, ça bouge bien…" autocomplete="off">
             <small class="aide">Éphémère : il s'efface à la fin du set, quand la barre de progression arrive au bout.</small></label>
-          <button type="submit" class="btn-plein">Je bangue ici</button></div>
+          <p class="bz-bang-aide">↑ Appuie sur le gros bouton BANGER pour confirmer ta présence</p><button type="submit" class="bz-bang-submit-cache">Confirmer ma présence</button></div>
           <button type="button" class="alerte ps-retour" data-spot-fermer="1">← Annuler</button>
           <p class="aide">Seulement dans un lieu public (bar, resto, club, beach club). Lieux : Banzic, Google Maps et OpenStreetMap. Visible tout de suite pour toi ; les autres le verront quand 2 personnes à côté l'auront confirmé.</p>
         </form>`;
@@ -3438,8 +3440,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   function majDjIci() {
     const f = $('#form-spot'); if (!f || !posSpot) return;
     const x = declIci(posSpot.connu), d = x && djDe(x), z = f.querySelector('.ps-dj-ici'), c = f.querySelector('.ps-dj-cartes'), ch = f.querySelector('.ps-dj-champ');
-    if (x && d) { z.hidden = false; z.innerHTML = `<span class="pdi-av">${avatarDj(d.nom)}</span><span><small>Déjà annoncé ici</small><b>${esc(d.nom)} joue ici</b></span>`; c.hidden = true; ch.hidden = true; f.querySelector('[type=submit]').textContent = 'Confirmer : il joue, je bangue'; }
-    else { z.hidden = true; c.hidden = false; f.querySelector('[type=submit]').textContent = 'Je bangue ici'; }
+    if (x && d) { z.hidden = false; z.innerHTML = `<span class="pdi-av">${avatarDj(d.nom)}</span><span><small>Déjà annoncé ici</small><b>${esc(d.nom)} joue ici</b></span>`; c.hidden = true; ch.hidden = true; f.querySelector('[type=submit]').textContent = 'Confirmer ma présence'; }
+    else { z.hidden = true; c.hidden = false; f.querySelector('[type=submit]').textContent = 'Confirmer ma présence'; }
   }
   let photoSpot = '';
   document.addEventListener('change', (e) => {
@@ -3457,6 +3459,9 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     e.preventDefault();
     const f = new FormData(e.target), dj = String(f.get('dj') || '').trim(), note = f.get('note') ? +f.get('note') : null;
     const { lat, lng, src, connu } = posSpot || {};
+    if (src !== 'gps' || !connu || !Number.isFinite(Number(connu.lat)) || !Number.isFinite(Number(connu.lng)) || distKm([lat, lng], [Number(connu.lat), Number(connu.lng)]) > 0.05) {
+      toast('Active le GPS et rapproche-toi à 50 mètres maximum du lieu pour confirmer.'); return;
+    }
     if (!connu) { toast('Choisis d\'abord le lieu public où tu es : on ne bangue pas chez un particulier'); const l = $('#ps-lieux'); if (l) l.hidden = false; return; }
     $('#panel-spot').hidden = true;
     { const x = declIci(connu); if (x) { x.conf = (x.conf || 0) + 1; const com = String(f.get('com') || '').trim().slice(0, 80), tp = f.get('temp') != null ? +f.get('temp') : 1;
@@ -5040,7 +5045,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   function fermerPlus() { const f = $('#plus-feuille'); if (f) { f.classList.remove('ouvert'); setTimeout(() => { f.hidden = true; }, 200); } }
   document.addEventListener('click', (e) => {
     // BANGER : un Banger n'a qu'une action, « Un DJ joue ici » ; seul un DJ inscrit (formule DJ Live ou DJ Pro) a aussi « Je mixe maintenant »
-    if (e.target.closest('#tab-plus')) { const ici = djIci(); if (ici) { ouvrirNoteDj(ici); return; }
+    if (e.target.closest('#tab-plus')) {
+      const formBang = document.querySelector('#form-spot');
+      if (formBang && !document.querySelector('#panel-spot').hidden) { formBang.requestSubmit(); return; }
+      const ici = djIci(); if (ici) { ouvrirNoteDj(ici); return; }
       if (MON_DJ && (state.ongletProfil || 'dj') === 'dj') { setTab('profil'); state.ongletProfil = 'dj'; state.vueDj = 'mixe'; renderProfil(); } else { setTab('map'); setTimeout(() => { const s = $('#btn-spot'); if (s) s.click(); }, 250); } return; }
     const f = $('#plus-feuille'); if (!f || f.hidden) return;
     const b = e.target.closest('[data-plus]');
