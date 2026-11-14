@@ -1670,7 +1670,7 @@
     const djs = f === 'tout' || f === 'dj' ? suggestions(q).slice(0, f === 'dj' ? 10 : ls.length > 4 ? 4 : 6) : [];
     const vs = f === 'tout' || f === 'ville' ? villesCherchees(q) : [];
     const k0 = sansAccent(q.trim());
-    const evs = (f === 'tout' || f === 'festival' || f === 'club') ? soireesAvecKm().filter((x) => x.km <= RAYONS[state.rayonIdx] && (f === 'tout' || (x.type || 'club') === f)
+    const evs = (f === 'tout' || f === 'festival' || f === 'club') ? soireesAvecKm().filter((x) => dansRayonAg(x, RAYONS[state.rayonIdx]) && (f === 'tout' || (x.type || 'club') === f)
       && [x.nom, x.djs, (SUD.lieux[x.lieu] || {}).nom, (SUD.lieux[x.lieu] || {}).ville].some((t) => t && sansAccent(t).includes(k0))).slice(0, 5) : [];
     const fests = (f === 'tout' || f === 'festival') ? DESTS.flatMap((d) => d.evenements.filter((e) => e.url && sansAccent(e.nom).includes(k0)).map((e) => ({ e, d }))).slice(0, 4) : [];
     let h = `<div class="rech-filtres">${[['tout', 'Tout'], ['club', '🪩 Clubs'], ['plage', '🏖️ Plages'], ['festival', '🎪 Festivals'], ['dj', '🎧 DJ'], ['ville', '📍 Villes']]
@@ -2950,7 +2950,10 @@
     '69': 'Rhône', '42': 'Loire', '38': 'Isère', '74': 'Haute-Savoie', '39': 'Jura', '68': 'Haut-Rhin', '59': 'Nord', '62': 'Pas-de-Calais', '33': 'Gironde',
     '31': 'Haute-Garonne', '34': 'Hérault', '44': 'Loire-Atlantique', '35': 'Ille-et-Vilaine' };
   // Agenda autour de moi : un fader façon table de mixage règle le rayon (10 → 100 km) autour de ma position
-  const RAYONS = [10, 20, 50, 100];
+  // Dernier cran : toute la France (soirées des lieux français uniquement, sans limite de distance)
+  const FRANCE_KM = 1e4, RAYONS = [10, 20, 50, 100, FRANCE_KM];
+  const kmTxt = (r) => r >= FRANCE_KM ? 'sans limite de distance' : r + ' km';
+  const dansRayonAg = (x, r) => r >= FRANCE_KM ? !/^(BE|ES|PT)$/.test(String((x.l || {}).dep || '')) : x.km <= r;
   // 8 pads façon platine : 1re rangée le type de soirée, 2e rangée le moment (et mes DJ favoris)
   // Petits logos des pads (dessinés en trait, aux couleurs de chaque pad)
   const ICO_PAD = {
@@ -2991,10 +2994,10 @@
   function renderAgendaSud() {
     const r = RAYONS[state.rayonIdx];
     $('#screen-agenda').innerHTML = `<div class="fader-module">
-        <div class="acc-tete fd-tete"><div><h2>Agenda autour de moi</h2><small>Autour de ${esc(state.zoneGeo.nom)}${state.maPos || state.villeChoisie ? '' : ' (position approximative)'} · <b id="fd-km">${r} km</b> · <span id="fd-nb"></span></small></div></div>
+        <div class="acc-tete fd-tete"><div><h2>Agenda autour de moi</h2><small><span id="fd-zone">${r >= FRANCE_KM ? 'Partout en France' : 'Autour de ' + esc(state.zoneGeo.nom) + (state.maPos || state.villeChoisie ? '' : ' (position approximative)')}</span> · <b id="fd-km">${kmTxt(r)}</b> · <span id="fd-nb"></span></small></div></div>
         <button type="button" id="radar-hyeres-weekend" class="acc-chip" style="margin:8px 0 12px">📍 Hyères · 20 km · jeudi à dimanche</button>\n        <div class="fd-rail">
-          <input type="range" id="fader-rayon" min="0" max="${RAYONS.length - 1}" step="1" value="${state.rayonIdx}" aria-label="Rayon de recherche" aria-valuetext="${r} kilomètres">
-          <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k}</span>`).join('')}</div>
+          <input type="range" id="fader-rayon" min="0" max="${RAYONS.length - 1}" step="1" value="${state.rayonIdx}" aria-label="Rayon de recherche" aria-valuetext="${r >= FRANCE_KM ? 'Toute la France' : r + ' kilomètres'}">
+          <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k >= FRANCE_KM ? 'France' : k}</span>`).join('')}</div>
         </div>
         <label class="radar-dep">Département français (facultatif) <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>
         <label class="radar-dep"><input type="checkbox" id="radar-avec-dj" ${state.sudAvecDj ? 'checked' : ''}> Avec DJ uniquement</label>
@@ -3020,7 +3023,7 @@
     // Inclure aussi les soirées de ce soir dans l'agenda, pas uniquement celles de demain.
     // Les dates plus lointaines arrivent en descendant : 7 jours de plus à chaque fois qu'on atteint le bas de la liste
     const auj0 = iso(new Date()), j7 = state.radarHyeresWeekend ? finWeekend() : auJour(state.agJours || 7);
-    const r = RAYONS[state.rayonIdx], toutesLoin = soireesAvecKm().filter((x) => x.date >= auj0 && x.km <= r && (!state.radarDep || x.l.dep === state.radarDep)), toutes = toutesLoin.filter((x) => x.date <= j7 && x.km <= r && (!state.radarDep || x.l.dep === state.radarDep));
+    const r = RAYONS[state.rayonIdx], toutesLoin = soireesAvecKm().filter((x) => x.date >= auj0 && dansRayonAg(x, r) && (!state.radarDep || x.l.dep === state.radarDep)), toutes = toutesLoin.filter((x) => x.date <= j7 && dansRayonAg(x, r) && (!state.radarDep || x.l.dep === state.radarDep));
     const types = (state.sudTypes || []).filter((k) => PAD_TEST['type|' + k]), quand = state.sudQuand === 'weekend' ? 'weekend' : null, mesdj = !!state.sudMesDj;
     const liste = toutes.filter((x) => (!types.length || types.some((k) => PAD_TEST['type|' + k](x))) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs));
     document.querySelectorAll('[data-pad]').forEach((b) => {
@@ -3028,12 +3031,12 @@
       b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
       b.querySelector('.pad-nb').textContent = toutes.filter(PAD_TEST[b.dataset.pad]).length;
     });
-    $('#fd-km').textContent = r + ' km';
+    $('#fd-km').textContent = kmTxt(r); { const z = $('#fd-zone'); if (z) z.textContent = r >= FRANCE_KM ? 'Partout en France' : 'Autour de ' + state.zoneGeo.nom + (state.maPos || state.villeChoisie ? '' : ' (position approximative)'); }
     $('#fd-nb').textContent = toutes.length + (toutes.length > 1 ? ' soirées' : ' soirée');
     document.querySelectorAll('.fd-graduations span').forEach((s, i) => s.classList.toggle('on', i === state.rayonIdx));
     const fr = $('#fader-rayon'); if (fr) fr.style.setProperty('--pct', (state.rayonIdx / (RAYONS.length - 1) * 100) + '%');
     let h = '';
-    if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département à moins de ' + r + ' km.' : `Rien d’annoncé dans les 7 prochains jours à moins de ${r} km. Vérifie aussi les lieux et leurs annonces officielles.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
+    if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département' + (r >= FRANCE_KM ? '.' : ' à moins de ' + r + ' km.') : `Rien d’annoncé dans les 7 prochains jours ${r >= FRANCE_KM ? 'en France' : 'à moins de ' + r + ' km'}. Vérifie aussi les lieux et leurs annonces officielles.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
     else {
       if (!liste.length) h += `<div class="empty">Rien pour ces pads dans ce rayon.${mesdj && !state.favs.length ? ' Ajoute des DJ en favori (♥) pour utiliser « Mes DJ ».' : ''}</div>`;
       // Un titre par jour (« SAM. 14 NOV. »), puis les soirées du jour en grandes cartes avec l'affiche
@@ -3054,7 +3057,7 @@
   }
   document.addEventListener('change', (e) => { if (e.target.id === 'radar-departement') { state.radarDep = e.target.value; listeAgendaSud(); } if (e.target.id === 'radar-avec-dj') { state.sudAvecDj = e.target.checked; listeAgendaSud(); } });
   const reglerRayon = (i) => { state.rayonIdx = Math.max(0, Math.min(RAYONS.length - 1, i)); store.set('rayonIdx', state.rayonIdx);
-    const f = $('#fader-rayon'); if (f) { f.value = state.rayonIdx; f.setAttribute('aria-valuetext', RAYONS[state.rayonIdx] + ' kilomètres'); } listeAgendaSud(); };
+    const f = $('#fader-rayon'); if (f) { f.value = state.rayonIdx; f.setAttribute('aria-valuetext', kmTxt(RAYONS[state.rayonIdx])); } listeAgendaSud(); };
   document.addEventListener('input', (e) => { if (e.target.id === 'fader-rayon') reglerRayon(+e.target.value); });
   document.addEventListener('click', (e) => { const g = e.target.closest('.fd-graduations [data-rayon]'); if (g) reglerRayon(+g.dataset.rayon); });
   document.addEventListener('click', (e) => {
@@ -4877,7 +4880,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     }).join('');
     if (pubCards) h += `<section class="acc-rub bz-vitrine"><div class="bz-vitrine-tete"><div><h2>À découvrir près de toi</h2><small>Soirées à moins de 50 km · selon tes goûts musicaux</small></div><span class="bz-vitrine-test">Aperçu</span></div><div class="bz-vitrine-rail" id="bz-vitrine-rail" aria-label="Soirées à découvrir">${pubCards}</div></section>`;
     // 1 bis. Agenda autour de moi : de petites cartes par type de sortie, avec le nombre de dates dans le rayon de l'Agenda
-    const rayonAg = RAYONS[state.rayonIdx], dansRayon = soireesAvecKm().filter((x) => x.km <= rayonAg);
+    const rayonAg = RAYONS[state.rayonIdx], dansRayon = soireesAvecKm().filter((x) => dansRayonAg(x, rayonAg));
     const nbType = (k) => k === 'tout' ? dansRayon.length : dansRayon.filter((x) => (x.type || 'club') === k).length;
     const TYPES_AG = [['tout', 'Agenda', '✦', '#C9CFDD'], ['club', 'Club', '🪩', '#3D8BFF'], ['festival', 'Festival', '🎪', '#FF8A3D'], ['concert', 'Concert', '🎤', '#F2C53A'], ['bar', 'Bar', '🍸', '#A77BFF'], ['resto', 'Restaurant', '🍽️', '#3DF28A']];
     // Agenda autour de moi : la bannière « L'agenda » (visuel fourni par Antonio, textes dans la police de l'appli).
