@@ -1,0 +1,27 @@
+name: Soirées Shotgun (agenda public OpenAgenda) chaque nuit
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 3 * * *'
+permissions:
+  contents: write
+jobs:
+  maj:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Télécharger l'agenda public Shotgun (OpenAgenda, Licence Ouverte), soirées à venir
+        run: |
+          curl -sSfL --retry 3 -o /tmp/shotgun.json 'https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/evenements-publics-openagenda/exports/json?refine=originagenda_title%3A%22Shotgun%22&where=lastdate_end%3E%3Dnow()'
+          node -e "const a=require('/tmp/shotgun.json'); console.log(a.length, 'évènements Shotgun'); if (a.length < 100) process.exit(1)"
+      - run: node scripts/import-shotgun.mjs /tmp/shotgun.json
+      - run: node scripts/radar.mjs
+      - run: |
+          git config user.name "banzic-radar"
+          git config user.email "noreply@anthropic.com"
+          git add data/radar-events.json data/radar-belgium.json data/radar-spain.json agenda-radar.js
+          git diff --cached --quiet || (git commit -m "Radar : soirées Shotgun mises à jour" && git pull --rebase -q && git push)

@@ -5,21 +5,21 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { departments } from './radar.mjs';
 import { estMusiqueClub } from './musique.mjs';
 const norm = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-const STYLES = /techno|electro|house|trance|hardcore|hardstyle|acid|tech house|deep house|afro house|amapiano|disco|hard groove|hard bounce|uptempo|drum & bass|dnb|jungle|dubstep|gabber|frenchcore|hard dance|hardtek|tekno|minimal|garage|ebm|electronica|melodic|progressive|bass|dance\b|club|edm/;
-const PAS_CLUB = /metal|punk|rock|jazz|chanson|variete|classical|folk|blues|soul|reggae|ska|bossa|rai|chaabi/;
+const STYLES = /techno|electro|house|trance|hardcore|hardstyle|acid|tech house|deep house|afro house|amapiano|disco|hard groove|hard bounce|uptempo|drum & bass|dnb|jungle|dubstep|gabber|frenchcore|hard dance|hardtek|tekno|minimal|garage|ebm|electronica|melodic|progressive|bass|dance\b|club|edm|rap|hip.?hop|r&b|rnb|trap|drill|afro|latin|reggaeton|dembow|salsa|bachata|kizomba|zouk|kompa|dancehall|shatta|baile|funk|soul|groove|pop|annees ?(80|90|2000)|80'?s|90'?s|reggae|\bdub\b|coupe.?decale|jersey|urban|urbain|clubbing|soiree|party/;
+const PAS_CLUB = /metal|punk|rock|jazz|chanson|classical|classique|folk|blues|bossa|opera|theatre|humour|conference|exposition/;
 const byName = Object.fromEntries(Object.entries(departments).map(([k, v]) => [norm(v), k]));
 export function convertir(row, checked, today) {
   const kws = (row.keywords_fr || []).map(String), k = norm(kws.join(' ')), titre = row.title_fr || '';
   const electro = STYLES.test(k) || /\bdj\b|dj set|b2b|all night long|rave|clubbing/.test(norm(titre));
-  if (!electro || (PAS_CLUB.test(k) && !/techno|house|electro|trance/.test(k))) return [];
+  if (!electro || (PAS_CLUB.test(k) && !/techno|house|electro|trance|rap|afro|latin|reggaeton|dj/.test(k))) return [];
   if (/annul|report/.test(norm(row.status))) return [];
   const dep = byName[norm(row.location_department)] || '', c = row.location_coordinates || {}, url = row.canonicalurl || '';
   if (!departments[dep] || !row.location_name || !url.startsWith('https://') || c.lat == null) return [];
   const genres = kws.filter((x) => STYLES.test(norm(x))).slice(0, 4).join(', ');
   const type = /festival/.test(norm(titre)) ? 'festival' : 'club';
-  return JSON.parse(row.timings || '[]').map((t) => t.begin).filter((b) => b && b.slice(0, 10) >= today).slice(0, 12).map((b) => ({
+  return (typeof row.timings === 'string' ? JSON.parse(row.timings || '[]') : row.timings || []).map((t) => t.begin).filter((b) => b && b.slice(0, 10) >= today).slice(0, 12).map((b) => ({
     id: 'sg-' + row.uid + '-' + b, src: 'shotgun-fr', nom: titre, date: b.slice(0, 10), heure: b.slice(11, 16), lieu: row.location_name, ville: row.location_city || '', dep,
-    lat: c.lat, lng: c.lon, type, lineup: [], djSet: true, genres, prix: row.conditions_fr || '', url, ticketUrl: '', flyerUrl: '', verifiedAt: checked,
+    lat: c.lat, lng: c.lon, type, lineup: [], djSet: true, genres, prix: row.conditions_fr || '', url, ticketUrl: '', flyerUrl: /^https:\/\//.test(String(row.image || '')) ? String(row.image) : '', verifiedAt: checked,
     evidence: 'Agenda public Shotgun sur OpenAgenda ; date et lieu publiés, styles annoncés par l’organisateur.', sourceName: 'Shotgun (agenda OpenAgenda)',
     sourceUpdatedAt: row.updatedat || '', sourceLicense: 'https://www.etalab.gouv.fr/wp-content/uploads/2014/05/Licence_Ouverte.pdf', sourceRecordUrl: url }));
 }
