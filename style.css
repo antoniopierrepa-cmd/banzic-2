@@ -3106,3 +3106,8 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 #fader-ck::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 4px solid #FF8A3D; box-shadow: 0 2px 8px rgba(0,0,0,.5); cursor: pointer; }
 #fader-ck::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 4px solid #FF8A3D; cursor: pointer; }
 .ckr-bornes { display: flex; justify-content: space-between; font-size: 11px; color: #8A93AB; }
+
+/* Agenda : ville immédiatement lisible sur les cartes de soirée */
+#screen-agenda .agc-ville { display: flex; align-items: center; gap: 5px; color: #FF9A58; font: 800 17px/1.25 'Syne', sans-serif; letter-spacing: .015em; }
+#screen-agenda .agc-lieu { font-size: 12.5px; color: #ADB4C5; }
+#screen-agenda .radar-dep select { border-radius: 14px; }
