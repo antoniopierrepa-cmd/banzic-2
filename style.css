@@ -3215,3 +3215,5 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .sous-chip.on::before { content: '✓'; font-weight: 900; }
 .sous-chip .moins18 { margin: 0 !important; transform: scale(.85); }
 #screen-agenda .agc-h .agc-nom { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+
+#screen-checkin .ck-pads { margin: 12px 0 10px; }
