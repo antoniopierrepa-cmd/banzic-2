@@ -3313,15 +3313,24 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     ficheSoireeJour(x);
     const dt = new Date(x.date + 'T12:00:00'), aff = radarUrl(x.flyerUrl) || afficheSoiree(x);
     const pays = x.l.country === 'ES' ? 'Espagne' : x.l.country === 'BE' ? 'Belgique' : '';
-    const type = x.type === 'bar' && /^(Karaoké|Blind test|Afterwork|Apéro musical)$/.test(x.genres || '') ? esc(x.genres) : TYPE_NOM[x.type || 'club'];
+    // Type de lieu : discothèque (si le lieu est dans notre liste des discothèques), club libertin, karaoké, blind test…, sinon le type de la soirée
+    const disco = (window.DISCOTHEQUES || []).find((c) => Math.abs(c[2] - x.l.lat) < 0.0014 && Math.abs(c[3] - x.l.lng) < 0.0019);
+    const type = x.type === 'bar' && /^(Karaoké|Blind test|Afterwork|Apéro musical)$/.test(x.genres || '') ? esc(x.genres)
+      : estLibertin(x) ? 'Club libertin' : disco && (x.type || 'club') === 'club' ? 'Discothèque' : TYPE_NOM[x.type || 'club'];
+    // Heures : début annoncé ; fin annoncée, sinon celle du lieu (site du lieu, OpenStreetMap), sinon 5 h estimée pour un club
+    const hh = (t) => t === '23:59' || t === '00:00' ? 'minuit' : t ? t.replace(/^(\d):/, '0$1:').replace(':', 'h') : '';
+    const mNote = /à (\d{1,2}) ?h ?(\d{2})?/.exec(String(x.scheduleNote || '').replace(/^.*ouvert de/i, '')), osm = disco && disco[6] && typeof horaireOSM === 'function' ? horaireOSM(disco[6], new Date(x.date + 'T12:00:00')) : null;
+    const mOuv = /ouvert de (\d{1,2}) ?h ?(\d{2})?/i.exec(String(x.scheduleNote || '')), debut = x.heure || (osm && osm.debut) || (mOuv ? String(mOuv[1]).padStart(2, '0') + ':' + (mOuv[2] || '00') : '') || '', finAnn = x.heureFin || (mNote ? String(mNote[1]).padStart(2, '0') + ':' + (mNote[2] || '00') : '') || (osm && osm.fin) || '';
+    const fin = finAnn || ((x.type || 'club') === 'club' ? '05:00' : ''), finEst = !finAnn && !!fin;
+    const horaire = debut ? hh(debut) + (fin ? ' → ' + hh(fin) + (finEst ? ' <small>(fin estimée)</small>' : '') : '') : fin ? 'jusqu’à ' + hh(fin) : '';
     const jour = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][dt.getDay()] + ' ' + dt.getDate() + ' ' + dt.toLocaleDateString('fr-FR', { month: 'long' });
     return `<div class="ag-carte agc-h" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
       <div class="agc-visuel${x.flyerUrl ? '' : ' agc-gp'}" data-gp="${esc(JSON.stringify({ nom: x.l.nom, adresse: x.l.ville || '', lat: x.l.lat, lng: x.l.lng }))}" style="--aff:url('${esc(aff).replace(/'/g, '%27')}')"><img src="${esc(aff)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback;this.parentNode.style.setProperty('--aff','none');this.parentNode.classList.add('agc-gp');window.__photosAgenda&&window.__photosAgenda()" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC'}" loading="lazy" referrerpolicy="no-referrer">
         ${estLibertin(x) ? '<span class="moins18 agc-18" title="Interdit aux moins de 18 ans">-18</span>' : ''}</div>
       <div class="agc-txt"><span class="agc-date">${esc(jour)}</span><b class="agc-nom">${esc(x.nom)}</b>
         <span class="agc-ville"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>${esc(x.l.ville || x.l.nom)}${pays ? ' · ' + pays : ''}</span>
-        <span class="agc-meta">${type}${x.heure ? ' • ' + esc(x.heure.replace(':', 'h')) : ''}</span>
-        ${x.djs ? `<span class="agc-lineup">${esc(x.djs)}</span>` : ''}</div></div>`;
+        <span class="agc-meta">${type}${horaire ? ' • ' + horaire : ''}</span>
+        ${x.djs ? `<span class="agc-lineup"><i>Line-up</i>${esc(x.djs)}</span>` : ''}</div></div>`;
   }
   // Une ligne de l'agenda
   function ligneSud(x) {
