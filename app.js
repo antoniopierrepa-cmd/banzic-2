@@ -572,7 +572,7 @@
   }
 
   // ---------- Règle des Bangers : on ne confirme que là où le téléphone se trouve vraiment
-  const RAYON_M = 150;                 // distance maximale pour confirmer dans un lieu
+  const RAYON_M = 50;                 // distance maximale pour confirmer dans un lieu
   const RAYON_BATEAU_M = 500;          // un bateau bouge : marge plus large
   let posDemo = null;                  // prototype seulement : position simulée pour tester sans être à Ibiza
   const fmtDist = (m) => m < 1000 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(m < 10000 ? 1 : 0).replace('.', ',') + ' km';
@@ -2463,8 +2463,8 @@
   // ---- Check-in : le tableau des départs façon aéroport, autour de moi (10 à 100 km).
   // Chaque ligne garde le bandeau tel quel ; au-dessus, la bande aéroport : heure, porte (le lieu), statut.
   const CK_RAYONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-  state.ckRayon = Math.max(10, Math.min(100, Number(store.get('ckRayon', 100)) || 100));
-  state.ckRayon = CK_RAYONS.find((r) => r >= state.ckRayon) || 100;
+  state.ckRayon = 100;
+  state.ckRayon = 100;
   store.set('ckRayon', state.ckRayon);
   // La barre de progression avance toute seule : le Check-in se redessine chaque minute quand il est affiché
   setInterval(() => { if (state.tab === 'checkin' && !document.hidden) { try { renderCheckin(); } catch (e) { /* */ } } }, 60000);
@@ -2613,7 +2613,7 @@
     const box = $('#screen-checkin'); if (!box && !lignesSeules) return;
     // Position : le GPS du téléphone ; pour tester ailleurs, ?position=dubai (ou ibiza, miami, mykonos, tulum) dans l'adresse
     const posTest = (location.search.match(/[?&]position=([a-z]+)/) || [])[1], destTest = posTest && DEST[posTest];
-    const r = state.ckRayon, c = centreGeographique(), now = Date.now();
+    const r = 100, c = centreGeographique(), now = Date.now();
     const nomPos = destTest ? destTest.nom + ' (position de test)' : (state.zoneGeo && state.zoneGeo.nom) || 'toi';
     const km = (la, lo) => la == null ? 0 : distKm(c, [la, lo]), fK = (x) => x < 1 ? '< 1 km' : Math.round(x) + ' km';
     const dur = (m) => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min';
@@ -2649,7 +2649,7 @@
       const lineup = djsDe(x.djs);
       CK_FICHES['s:' + x.id] = { date: x.date, dateFin: x.dateFin || '', heureFin: x.heureFin || (x.type === 'club' ? '05:00' : ''), titre: x.nom, sous: '', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', st, heure: x.heure || '', quand: x.date > auj ? nomJour(x.date) + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
         lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: d, djs: lineup, url: radarUrl(x.ticketUrl || x.url), test: x.test };
-      ligne({ fin, lieuId: x.lieu, fiche: 's:' + x.id, djs: lineup, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || (x.type === 'club' ? '23:30' : '--:--'), porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: `data-ck-fiche="s:${x.id}"`, nom: x.nom,
+      ligne({ adulte: soireeAdulte(x), fin, lieuId: x.lieu, fiche: 's:' + x.id, djs: lineup, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || (x.type === 'club' ? '23:30' : '--:--'), porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: `data-ck-fiche="s:${x.id}"`, nom: x.nom,
         l1: x.date > auj ? nomJour(x.date).toLowerCase() + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
         l2: [[esc(l.nom) + ' · ' + fK(d)], [x.type === 'club' ? ((x.heure || '23:30') + ' → ' + (x.heureFin || '05:00') + (!x.heureFin || !x.heure ? ' · estimé' : '')) : (x.heureFin ? (x.heure || '?') + ' → ' + x.heureFin : ''), 'fil-att'], [x.djs ? 'line-up annoncé' : 'line-up non communiqué', 'fil-att']], vol: dj }); });
     // D'abord ce qui est en live en ce moment (DJ en cours, dernier appel, spots signalés), puis le reste ; dans chaque groupe, du plus proche au plus loin
@@ -2667,13 +2667,11 @@
       const puces = !lignesSeules && o.djs && o.djs.length ? `<div class="ck-lineup"><small>Line-up</small>${o.djs.slice(0, 8).map((n) => `<button type="button" class="ck-dj" data-dj-pro="${esc(n)}">${esc(n)}</button>`).join('')}${o.djs.length > 8 ? `<span class="ck-dj plus">+${o.djs.length - 8}</span>` : ''}</div>` : '';
       return `<div ${o.fiche ? `data-ck-fiche="${o.fiche}" ` : ''}class="ck-ligne ck-${o.st[1]}${tourne ? ' ck-tourne' : ''}${prog ? ' ck-prog' : ''}${prog >= 100 ? ' ck-fini' : ''}${o.photo ? ' a-photo' : ''}" style="--prog:${prog}%;--ph:${Math.round(42 - prog * 0.42)}">${prog ? `<i class="ck-barre" aria-hidden="true"></i><span class="ck-pct" title="Avancement du set">${prog >= 100 ? 'Terminé' : prog + ' %'}</span>` : ''}${o.photo ? `<img class="fil-photo" src="${o.photo}" alt="Photo de la soirée">` : ''}
         <div class="ck-bande"><span class="ck-h">${flap(o.heure, 5)}</span><span class="ck-porte"><small>Porte</small>${esc(o.porte)}</span><span class="ck-st ck-st-${o.st[1]}"><i></i>${esc(o.st[0])}</span></div>
-        <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em><b>${esc(o.nom)}</b>${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button>${puces}</div>`; };
+        <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em>${o.adulte ? '<span class="bz-ck-18" aria-label="Réservé aux adultes">18+</span>' : ''}<b>${esc(o.nom)}</b>${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button>${puces}</div>`; };
     const i = CK_RAYONS.indexOf(r);
     if (lignesSeules) return L.map(rangee);
     box.innerHTML = `<div class="ck-tete"><div><h2>Check-in</h2><small>Départs autour de ${esc(nomPos)} · <b>${r} km</b> · ${L.length} départ${L.length > 1 ? 's' : ''}</small></div><span class="ck-horloge">${flap(hm(now), 5)}</span></div>
-      <button type="button" id="ck-hyeres" class="acc-chip" style="margin:8px 0 12px">📍 Voir les départs de Hyères · 20 km</button>
-      <div class="fd-rail ck-rail"><input type="range" id="fader-ck" min="0" max="${CK_RAYONS.length - 1}" step="1" value="${i}" style="--pct:${i / (CK_RAYONS.length - 1) * 100}%" aria-label="Rayon du check-in" aria-valuetext="${r} kilomètres">
-        <div class="fd-graduations" aria-hidden="true">${CK_RAYONS.map((k, j) => `<span class="${j === i ? 'on' : ''}" data-ck-rayon="${j}">${k}</span>`).join('')}</div></div>
+
       <div class="ck-legende"><span class="ck-st ck-st-or"><i></i>Embarquement</span><span>commence dans moins de 2 h</span><span class="ck-st ck-st-rouge"><i></i>Dernier appel</span><span>commence dans moins de 15 min</span></div>
       ${jours.map((date) => { const lignes = L.filter((o) => { const j = iso(new Date(o.t || now)); return date === auj ? j <= auj : j === date; }); return `<section class="ck-jour ${clJour(date)}"><h3 class="ck-jour-bandeau"><span class="cjb-nom">${titreJour(date)}</span><span class="cjb-info"><b>${new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</b><small>${lignes.length} départ${lignes.length > 1 ? 's' : ''}</small></span></h3>${lignes.length ? `<div class="ck-liste">${lignes.map(rangee).join('')}</div>` : `<p class="empty">Aucune soirée répertoriée à moins de ${r} km pour cette journée.</p>`}</section>`; }).join('')}<p class="aide">Mise à jour automatique. Sans horaire de fin publié, la fin est estimée à six heures après le début ; sans horaire, la soirée reste affichée jusqu’à minuit.</p>`;
   }
@@ -2864,10 +2862,16 @@
       ficheDisco(c); m.__fiche = 'c:' + c.id; m.addTo(layer); });
   }
   // Repère de soirée : vinyle animé, compteur BANGERS au centre, badge 18+ si applicable.
+  // Registre des établissements adultes du Var : pas de soirées inventées.
+  const ADULTES_83 = ['La Chrysalide','Le 2mil3','Le Calistria','Le Klub','Crazy Lib','Le Rainbow','Eros Cruise','Le Boudoir Club','L Hysteria Club','L Antre Nous','Le Wapiti','Fasylove','L Intimiste','La Dolce Vita','Le Lipstick'];
+  const cleAdulte = (v) => sansAccent(String(v || '').toLowerCase()).replace(/[^a-z0-9]/g,'');
+  function lieuAdulte(l) {
+    if (!l) return false;
+    if (Number(l.ageMin) >= 18 || (Array.isArray(l.categories) && l.categories.some(c => /libertin|adult/i.test(c)))) return true;
+    return ADULTES_83.some(n => cleAdulte(n) === cleAdulte(l.nom));
+  }
   function soireeAdulte(x) {
-    const l = x.l || SUD.lieux[x.lieu] || {};
-    const cats = Array.isArray(l.categories) ? l.categories.join(' ') : '';
-    return x.ageMin >= 18 || l.ageMin >= 18 || /libertin|adult.only|18\\+/i.test(cats + ' ' + (x.restriction || '') + ' ' + (l.restriction || ''));
+    return Number(x.ageMin) >= 18 || lieuAdulte(x.l || SUD.lieux[x.lieu]) || /libertin|adult.only|18\\+/i.test(String(x.restriction || ''));
   }
   function compteurSoiree(x) {
     const local = store.get('bangSoirees', {});
@@ -3463,7 +3467,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const soireeDuLieu = SUD.soirees.find((ev) => {
       const l = SUD.lieux[ev.lieu];
       return l && l.lat != null && l.lng != null
-        && distKm([connu.lat, connu.lng], [l.lat, l.lng]) <= 0.15
+        && distKm([connu.lat, connu.lng], [l.lat, l.lng]) <= 0.05
         && soireeCheckinVisible(ev, Date.now(), false)
         && ev.date <= iso(new Date());
     });
