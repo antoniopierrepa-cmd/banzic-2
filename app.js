@@ -2466,10 +2466,9 @@
 
   // ---- Check-in : le tableau des départs façon aéroport, autour de moi (10 à 100 km).
   // Chaque ligne garde le bandeau tel quel ; au-dessus, la bande aéroport : heure, porte (le lieu), statut.
-  const CK_RAYONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-  state.ckRayon = 100;
-  state.ckRayon = 100;
-  store.set('ckRayon', state.ckRayon);
+  // Rayon réglable par une barre de 5 à 100 km (100 km par défaut), gardé sur le téléphone
+  const CK_RAYONS = [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100];
+  state.ckRayon = CK_RAYONS.includes(store.get('ckRayon', 100)) ? store.get('ckRayon', 100) : 100;
   // La barre de progression avance toute seule : le Check-in se redessine chaque minute quand il est affiché
   setInterval(() => { if (state.tab === 'checkin' && !document.hidden) { try { renderCheckin(); } catch (e) { /* */ } } }, 60000);
   // ---- Fiche d'une soirée (Check-in) : tout le bandeau ouvre une page avec le lieu et le line-up en grand
@@ -2628,7 +2627,7 @@
     const box = $('#screen-checkin'); if (!box && !lignesSeules) return;
     // Position : le GPS du téléphone ; pour tester ailleurs, ?position=dubai (ou ibiza, miami, mykonos, tulum) dans l'adresse
     const posTest = (location.search.match(/[?&]position=([a-z]+)/) || [])[1], destTest = posTest && DEST[posTest];
-    const r = 100, c = centreGeographique(), now = Date.now();
+    const r = lignesSeules ? 100 : state.ckRayon || 100, c = centreGeographique(), now = Date.now();
     const nomPos = destTest ? destTest.nom + ' (position de test)' : (state.zoneGeo && state.zoneGeo.nom) || 'toi';
     const km = (la, lo) => la == null ? 0 : distKm(c, [la, lo]), fK = (x) => x < 1 ? '< 1 km' : Math.round(x) + ' km';
     const dur = (m) => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min';
@@ -2701,6 +2700,9 @@
     const barreFiltres = `<nav class="ck-filtres" aria-label="Filtrer les soirées" style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px">${filtres.map(k => `<button type="button" data-ck-type="${k}" aria-pressed="${filtreTypeCheckin === k}" style="border:1px solid ${filtreTypeCheckin === k ? '#f59e0b' : '#7778'};border-radius:18px;padding:8px 12px;background:${filtreTypeCheckin === k ? '#f59e0b' : '#24242c'};color:${filtreTypeCheckin === k ? '#151515' : '#fff'};font-weight:700;cursor:pointer">${nomsFiltresCheckin[k]} · ${k === 'tous' ? L.length : L.filter(o => o.categorie === k).length}</button>`).join('')}</nav>`;
     box.innerHTML = `<div class="ck-tete"><div><h2>Check-in</h2><small>Départs autour de ${esc(nomPos)} · <b>${r} km</b> · ${L.length} départ${L.length > 1 ? 's' : ''}</small></div><span class="ck-horloge">${flap(hm(now), 5)}</span></div>
 
+      <div class="ck-rayon"><div class="ckr-tete"><span>Distance</span><b id="ckr-val">${r} km</b></div>
+        <input type="range" id="fader-ck" min="0" max="${CK_RAYONS.length - 1}" step="1" value="${Math.max(0, i)}" style="--pct:${Math.max(0, i) / (CK_RAYONS.length - 1) * 100}%" aria-label="Distance autour de toi : ${r} km">
+        <div class="ckr-bornes"><span>5 km · au plus près</span><span>100 km · au plus loin</span></div></div>
       ${barreFiltres}<div class="ck-legende"><span class="ck-st ck-st-or"><i></i>Embarquement</span><span>commence dans moins de 2 h</span><span class="ck-st ck-st-rouge"><i></i>Dernier appel</span><span>commence dans moins de 15 min</span></div>
       ${jours.map((date) => { const lignes = visibles.filter((o) => { const j = iso(new Date(o.t || now)); return date === auj ? j <= auj : j === date; }); return `<section class="ck-jour ${clJour(date)}"><h3 class="ck-jour-bandeau"><span class="cjb-nom">${titreJour(date)}</span><span class="cjb-info"><b>${new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</b><small>${lignes.length} départ${lignes.length > 1 ? 's' : ''}</small></span></h3>${lignes.length ? `<div class="ck-liste">${lignes.map(rangee).join('')}</div>` : `<p class="empty">Aucune soirée répertoriée à moins de ${r} km pour cette journée.</p>`}</section>`; }).join('')}<p class="aide">Mise à jour automatique. Sans horaire de fin publié, la fin est estimée à six heures après le début ; sans horaire, la soirée reste affichée jusqu’à minuit.</p>`;
     setTimeout(() => window.__photosCheckin && window.__photosCheckin(), 0);
@@ -2721,7 +2723,7 @@
   });
   const reglerCk = (j) => { state.ckRayon = CK_RAYONS[Math.max(0, Math.min(CK_RAYONS.length - 1, j))]; store.set('ckRayon', state.ckRayon); renderCheckin(); };
   document.addEventListener('change', (e) => { if (e.target.id === 'fader-ck') reglerCk(+e.target.value); });
-  document.addEventListener('input', (e) => { if (e.target.id === 'fader-ck') { const j = +e.target.value; e.target.style.setProperty('--pct', j / (CK_RAYONS.length - 1) * 100 + '%'); document.querySelectorAll('[data-ck-rayon]').forEach((s, k) => s.classList.toggle('on', k === j)); } });
+  document.addEventListener('input', (e) => { if (e.target.id === 'fader-ck') { const j = +e.target.value; e.target.style.setProperty('--pct', j / (CK_RAYONS.length - 1) * 100 + '%'); document.querySelectorAll('[data-ck-rayon]').forEach((s, k) => s.classList.toggle('on', k === j)); const v = document.getElementById('ckr-val'); if (v) v.textContent = CK_RAYONS[j] + ' km'; } });
   document.addEventListener('click', (e) => { const g = e.target.closest('[data-ck-rayon]'); if (g) reglerCk(+g.dataset.ckRayon); });
 
   // Mini-carte des pages saison, comme celle de l'accueil : DJ en live, déclarés, spots et clubs, avec l'encart au doigt
