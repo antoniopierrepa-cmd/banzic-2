@@ -3047,3 +3047,19 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .ck-vignette.ok { background-size: cover; background-position: center; }
 .ck-festif { display: inline-flex; align-items: center; padding: 4px 9px; margin-left: 6px; border-radius: 7px; background: #0E8F84; color: #E6FFFB; font: 800 11.5px/1.2 inherit; font-family: inherit; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
 .ck-vignette img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
+
+/* Check-in plus fin et équilibré : pas de pin à gauche, vignette photo à droite, textes resserrés */
+#screen-checkin .ck-ligne { border-radius: 14px; }
+#screen-checkin .ck-bande { padding: 5px 10px; gap: 8px; }
+#screen-checkin .ck-h { font-size: 13px; }
+#screen-checkin .ck-ligne .fil-item { display: flex !important; flex-direction: column; align-items: flex-start; gap: 3px; min-height: 0; padding: 8px 86px 9px 12px !important; }
+#screen-checkin .ck-ligne .fil-l1 { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+#screen-checkin .ck-ligne .fil-l1 b { width: 100%; font-size: 15.5px; line-height: 1.25; }
+#screen-checkin .ck-ligne .fil-tag { font-size: 10px !important; padding: 2px 7px !important; }
+#screen-checkin .ck-festif, #screen-checkin .bz-ck-18 { font-size: 10px !important; padding: 2px 7px !important; margin-left: 0; }
+#screen-checkin .bz-ck-bang { font-size: 10px; padding: 2px 7px; }
+#screen-checkin .ck-ligne .fil-t { font-size: 13px; }
+#screen-checkin .ck-ligne .fil-l2 { font-size: 12px; }
+#screen-checkin .ck-vignette { width: 64px; height: 64px; right: 10px; border-radius: 10px; }
+#screen-checkin .ck-lineup { padding: 0 12px 8px; }
+#screen-checkin .ck-pct { bottom: 6px; }

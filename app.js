@@ -2661,7 +2661,8 @@
     const vis = (nom) => nom ? visFil(nom) : '';
     const rangee = (o) => { const nbSoiree = o.fiche && o.fiche.startsWith('s:') ? (store.get('bangSoirees', {})[o.fiche] || 0) : 0;
       const statutBang = o.fiche && o.fiche.startsWith('s:') ? `<span class="bz-ck-bang ${nbSoiree < 3 ? 'bz-ck-bang-attente' : 'bz-ck-bang-valide'}">${nbSoiree < 3 ? `${nbSoiree} BANGER${nbSoiree !== 1 ? 'S' : ''} À CONFIRMER` : `${nbSoiree} BANGERS CONFIRMÉS · VALIDÉ`}</span>` : '';
-      const v = o.lieuPin ? `<span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-lieu" src="${o.lieuPin}" alt="">${casqueConf(nbSoiree || BANG_LIEU[o.lieuId] || 0)}</span>` : o.k === 'spot' ? (o.sp ? visSpotC(o.sp) : '') : o.vol ? visFil(o.vol, o.conf || 0, o.act || '') : '';
+      // Check-in : plus de pin animé à gauche (bandeau plus fin) ; on le garde dans le bandeau défilant de l'accueil
+      const v = !lignesSeules ? '' : o.lieuPin ? `<span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-lieu" src="${o.lieuPin}" alt="">${casqueConf(nbSoiree || BANG_LIEU[o.lieuId] || 0)}</span>` : o.k === 'spot' ? (o.sp ? visSpotC(o.sp) : '') : o.vol ? visFil(o.vol, o.conf || 0, o.act || '') : '';
       // Tout ce qui est en live tourne : le DJ qui joue (son rond), le spot signalé (son épingle)
       const tourne = o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert';
       // Tout le bandeau devient une barre de progression : du début du set (0 %) jusqu'à la fin (100 %)
