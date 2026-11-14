@@ -20,8 +20,9 @@ jobs:
           node -e "const a=require('/tmp/shotgun.json'); console.log(a.length, 'évènements Shotgun'); if (a.length < 100) process.exit(1)"
       - run: node scripts/import-shotgun.mjs /tmp/shotgun.json
       - run: node scripts/radar.mjs
+      - run: sed -i -E "s/agenda-radar\.js\?v=[^\"]+/agenda-radar.js?v=$(date -u +%Y%m%d%H%M)/" index.html
       - run: |
           git config user.name "banzic-radar"
           git config user.email "noreply@anthropic.com"
-          git add data/radar-events.json data/radar-belgium.json data/radar-spain.json agenda-radar.js
+          git add data/radar-events.json data/radar-belgium.json data/radar-spain.json agenda-radar.js index.html
           git diff --cached --quiet || (git commit -m "Radar : soirées Shotgun mises à jour" && git pull --rebase -q && git push)
