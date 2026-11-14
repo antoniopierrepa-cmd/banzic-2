@@ -2657,7 +2657,7 @@
     L.sort((a, b) => (enLive(b) ? 1 : 0) - (enLive(a) ? 1 : 0) || finDe(a) - finDe(b) || a.km - b.km);
     const vis = (nom) => nom ? visFil(nom) : '';
     const rangee = (o) => { const nbSoiree = o.fiche && o.fiche.startsWith('s:') ? (store.get('bangSoirees', {})[o.fiche] || 0) : 0;
-      const statutBang = o.fiche && o.fiche.startsWith('s:') && nbSoiree > 0 ? `<span class="bz-ck-bang ${nbSoiree < 3 ? 'bz-ck-bang-attente' : 'bz-ck-bang-valide'}">${nbSoiree < 3 ? `${nbSoiree} BANGER${nbSoiree > 1 ? 'S' : ''} · À CONFIRMER` : `${nbSoiree} BANGERS · VALIDÉ`}</span>` : '';
+      const statutBang = o.fiche && o.fiche.startsWith('s:') && nbSoiree > 0 ? `<span class="bz-ck-bang ${nbSoiree < 3 ? 'bz-ck-bang-attente' : 'bz-ck-bang-valide'}">${nbSoiree < 3 ? `${nbSoiree} BANGER${nbSoiree > 1 ? 'S' : ''} À CONFIRMER` : `${nbSoiree} BANGERS CONFIRMÉS · VALIDÉ`}</span>` : '';
       const v = o.lieuPin ? `<span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-lieu" src="${o.lieuPin}" alt="">${casqueConf(nbSoiree || BANG_LIEU[o.lieuId] || 0)}</span>` : o.k === 'spot' ? (o.sp ? visSpotC(o.sp) : '') : o.vol ? visFil(o.vol, o.conf || 0, o.act || '') : '';
       // Tout ce qui est en live tourne : le DJ qui joue (son rond), le spot signalé (son épingle)
       const tourne = o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert';
@@ -2903,7 +2903,7 @@
     const n = compteurSoiree(x), adulte = soireeAdulte(x);
     return L.divIcon({
       className: 'bz-vinyle-marker' + (soireeEnCoursCarte(x) ? ' bz-vinyle-en-cours' : ''), iconSize: [48, 48], iconAnchor: [24, 24],
-      html: `<span class="bz-vinyle-disque" aria-hidden="true"><span class="bz-vinyle-centre">${n}</span></span>${adulte ? '<span class="bz-vinyle-adulte">18+</span>' : ''}`
+      html: `<span class="bz-vinyle-disque" aria-hidden="true"><span class="bz-vinyle-centre ${n > 0 ? (n < 3 ? 'bz-vinyle-attente' : 'bz-vinyle-valide') : ''}" title="${n > 0 ? (n < 3 ? 'BANGER à confirmer' : 'BANGER confirmé · validé') : 'Aucun BANGER'}">${n}</span></span>${adulte ? '<span class="bz-vinyle-adulte">18+</span>' : ''}`
     });
   }
   function marqueursRadar() {
@@ -2911,7 +2911,7 @@
       const marker = L.marker([x.l.lat, x.l.lng], { icon: iconeVinyle(x), title: x.nom + ' · aujourd’hui' });
       const url = radarUrl(x.ticketUrl || x.url);
       const n = compteurSoiree(x), adulte = soireeAdulte(x);
-      marker.bindPopup(`<div class="pop-venue">${esc(x.nom)} ${adulte ? '<span class="bz-pop-18">18+</span>' : ''}</div><div class="pop-slot">${esc(x.l.nom)} · ${x.heure ? esc(x.heure) : 'Horaire non communiqué'} · Soirée annoncée aujourd’hui</div><div class="bz-pop-bangers">● ${n} BANGER${n > 1 ? 'S' : ''} confirmé${n > 1 ? 's' : ''}</div>${x.djs ? `<div class="pop-dj">${esc(x.djs)}</div>` : ''}${url ? `<a class="pop-btn" data-soiree-jour="${esc(x.id)}" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Infos sur la soirée</a>` : ''}`);
+      marker.bindPopup(`<div class="pop-venue">${esc(x.nom)} ${adulte ? '<span class="bz-pop-18">18+</span>' : ''}</div><div class="pop-slot">${esc(x.l.nom)} · ${x.heure ? esc(x.heure) : 'Horaire non communiqué'} · Soirée annoncée aujourd’hui</div><div class="bz-pop-bangers">● ${n} BANGER${n > 1 ? 'S' : ''} ${n < 3 ? 'À CONFIRMER' : 'CONFIRMÉS · VALIDÉ'}</div>${x.djs ? `<div class="pop-dj">${esc(x.djs)}</div>` : ''}${url ? `<a class="pop-btn" data-soiree-jour="${esc(x.id)}" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Infos sur la soirée</a>` : ''}`);
       ficheSoireeJour(x); marker.__fiche = 's:' + x.id;
       marker.addTo(layer);
     });
