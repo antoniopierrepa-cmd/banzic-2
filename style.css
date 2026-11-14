@@ -1100,7 +1100,7 @@ nav.tabs .tab { flex: 1 1 0; width: auto; min-width: 0; }
 .fd-graduations span::before { content: ''; position: absolute; top: 0; left: 50%; width: 2px; height: 6px; margin-left: -1px; background: var(--dim); border-radius: 1px; }
 .fd-graduations span.on { color: var(--orange); }
 .fd-graduations span.on::before { background: var(--orange); }
-.fd-graduations span:last-child::after { content: ' km'; font-size: 10px; }
+.fd-graduations span:nth-last-child(2)::after { content: ' km'; font-size: 10px; }
 .fd-pos { margin-top: 8px; font-size: 12px; color: var(--turquoise); }
 
 /* Fader plus fin + 8 pads façon platine */
