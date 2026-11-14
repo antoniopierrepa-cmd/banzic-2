@@ -3078,3 +3078,22 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .psi-av-inconnu { background: #262D45; color: #8A93AB; }
 .psi-av-inconnu svg { width: 22px; height: 22px; }
 .psi-inconnu b { color: #9AA3B8; }
+
+/* Choisir un lieu : recherche ou « Autour de moi », lieu retenu avec sa position */
+.choix-lieu { display: flex; flex-direction: column; gap: 8px; }
+.cl-ligne { display: flex; gap: 8px; }
+.cl-ligne .cl-q { flex: 1; min-width: 0; }
+.cl-res { display: flex; flex-direction: column; gap: 6px; }
+.cl-res:empty { display: none; }
+.cl-item, .cl-choisi { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.12); background: #0F1526; color: #fff; text-align: left; font-family: inherit; cursor: pointer; }
+.cl-choisi { border-color: #3DF28A; background: rgba(61,242,138,.08); cursor: default; }
+.clc-pin { flex: none; width: 22px; height: 22px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: #FF8A3D; box-shadow: inset 0 0 0 6px #FF8A3D, inset 0 0 0 11px #fff; }
+.cl-choisi .clc-pin { background: #3DF28A; box-shadow: inset 0 0 0 6px #3DF28A, inset 0 0 0 11px #0B0F1C; }
+.clc-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.clc-txt b { font-size: 14.5px; } .clc-txt small { font-size: 12px; color: #9AA3B8; }
+.clc-x { flex: none; border: 1px solid rgba(255,255,255,.2); background: transparent; color: #C8CEDD; border-radius: 8px; padding: 5px 9px; font: 600 12px inherit; font-family: inherit; cursor: pointer; }
+/* Fiche DJ : son club attitré */
+.fp-residence { display: flex; align-items: center; gap: 10px; width: 100%; margin: 10px 0 2px; padding: 10px 12px; border-radius: 14px; border: 1px solid rgba(255,138,61,.45); background: rgba(255,138,61,.08); color: #fff; text-align: left; font-family: inherit; cursor: pointer; }
+.fp-residence > span:nth-child(2) { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.fp-residence small { font-size: 11px; color: #9AA3B8; } .fp-residence small:first-child { color: #FF8A3D; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.fp-residence b { font-size: 15.5px; } .fp-residence em { font-style: normal; font-size: 12.5px; font-weight: 700; color: #FF8A3D; flex: none; }

@@ -2029,6 +2029,7 @@
       <div class="fp-corps">
         <div class="fp-badges">${pro ? '<span class="fp-badge b-djbanger"><i class="djb-ico" aria-hidden="true"></i>DJ Banger</span>' : ''}${badgeLiveDj(pro, live)}${tier === 'pro' ? '<span class="fp-badge b-pro">DJ Pro</span>' : tier === 'live' ? '<span class="fp-badge b-live">DJ Live</span>' : '<span class="fp-badge b-std">Fiche line-ups</span>'}${iTop >= 0 ? `<span class="fp-badge b-top">Top 100 · ${iTop ? iTop + 1 + 'e' : '1er'}${mvTop ? ' · ' + mvTop : ''}</span>` : ''}${pro && pro.officiel ? '<span class="fp-badge b-off">Officiel</span>' : ''}</div>
         ${styles.length ? `<div class="fp-puces">${styles.map((x) => `<span class="fp-puce">${esc(x)}</span>`).join('')}</div>` : ''}
+        ${pro && pro.residence && pro.residence.nom ? `<button type="button" class="fp-residence" data-carte-ll="${pro.residence.lat},${pro.residence.lng}"><span class="clc-pin" aria-hidden="true"></span><span><small>Résident</small><b>${esc(pro.residence.nom)}</b>${pro.residence.ville ? `<small>${esc(pro.residence.ville)}</small>` : ''}</span><em>Voir sur la carte ›</em></button>` : ''}
         ${pro ? logosReseaux(pro) : ''}
         ${live.map((x) => `<div class="fp-direct"><span class="fp-pt"></span><span><b>Mixe en ce moment</b><small>${esc(lieuDe(x).nom || 'Spot')} · depuis ${hm(x.debut)} · confirmé par ${x.conf} Banger${x.conf > 1 ? 's' : ''}</small>${liensLiveHtml(x)}</span></div>`).join('')}
         <div class="fp-stats">${stats}</div>
@@ -4083,6 +4084,62 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       <p class="aide">Lance d'abord ton live sur YouTube, puis colle son lien ici. Tu disparais de « DJ en live » quand tu l'arrêtes, ou tout seul au bout de 6 h.</p>
     </form>`;
   }
+  // Choisir un lieu (club, discothèque, bar) : recherche par nom ou « Autour de moi » avec le GPS.
+  // Sources gratuites : les discothèques de France (OpenStreetMap) et les lieux de soirées de Banzic. Le lieu choisi garde sa position GPS.
+  function choixLieuHtml(cle, titre, aide, deja) {
+    return `<div class="champ choix-lieu" data-choix-lieu="${cle}"><span>${titre}${aide ? ` <small class="aide">${aide}</small>` : ''}</span>
+      <span class="cl-ligne"><input class="search cl-q" maxlength="50" placeholder="Nom du club, de la boîte, du bar…" autocomplete="off" aria-label="${esc(titre)}">
+        <button type="button" class="ville-gps" data-cl-gps="${cle}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7.2 2.3L12.5 20z" fill="currentColor"/></svg>Autour de moi</button></span>
+      <div class="cl-res" role="listbox"></div>
+      <div class="cl-choisi"${deja ? '' : ' hidden'}>${deja ? clChoisiHtml(deja) : ''}</div>
+      <input type="hidden" name="${cle}Lieu" value="${deja ? esc(JSON.stringify(deja)) : ''}"></div>`;
+  }
+  const clChoisiHtml = (l) => `<span class="clc-pin" aria-hidden="true"></span><span class="clc-txt"><b>${esc(l.nom)}</b><small>${esc(l.ville || '')}${l.ville ? ' · ' : ''}${l.lat != null ? (+l.lat).toFixed(4) + ', ' + (+l.lng).toFixed(4) : ''}</small></span><button type="button" class="clc-x" data-cl-effacer="1" aria-label="Changer de lieu">Changer</button>`;
+  function lieuxACherche() {
+    const xs = (window.DISCOTHEQUES || []).map(([id, nom, lat, lng, ville]) => ({ id: 'c:' + id, nom, lat, lng, ville, genre: 'Discothèque' }));
+    lieuxPublics().forEach((l) => xs.push({ id: l.id, nom: l.nom, lat: l.lat, lng: l.lng, ville: l.zone || '', genre: 'Lieu de soirée' }));
+    return xs;
+  }
+  function clAfficher(box, liste, ref) {
+    const res = box.querySelector('.cl-res');
+    res.innerHTML = liste.length ? liste.map((l, i) => `<button type="button" class="cl-item" data-cl-i="${i}"><span class="clc-pin" aria-hidden="true"></span><span class="clc-txt"><b>${esc(l.nom)}</b><small>${esc(l.genre)}${l.ville ? ' · ' + esc(l.ville) : ''}${ref ? ' · ' + (l.km < 1 ? Math.round(l.km * 1000) + ' m' : l.km.toFixed(1).replace('.', ',') + ' km') : ''}</small></span></button>`).join('')
+      : '<p class="aide">Aucun lieu trouvé. Essaie un autre nom, ou « Autour de moi ».</p>';
+    box.__liste = liste;
+  }
+  document.addEventListener('input', (e) => {
+    if (!e.target.matches('.cl-q')) return;
+    const box = e.target.closest('[data-choix-lieu]'), q = sansAccent(e.target.value).toLowerCase().trim();
+    if (q.length < 2) { box.querySelector('.cl-res').innerHTML = ''; return; }
+    const ref = state.maPos ? [state.maPos.lat, state.maPos.lng] : map ? [map.getCenter().lat, map.getCenter().lng] : null;
+    const l = lieuxACherche().filter((x) => sansAccent(x.nom).toLowerCase().includes(q)).map((x) => ({ ...x, km: ref ? distKm(ref, [x.lat, x.lng]) : 0 })).sort((a, b) => a.km - b.km).slice(0, 8);
+    clAfficher(box, l, ref);
+  });
+  document.addEventListener('click', (e) => {
+    const g = e.target.closest('[data-cl-gps]');
+    if (g) { const box = g.closest('[data-choix-lieu]'); box.querySelector('.cl-res').innerHTML = '<p class="aide">Je cherche ta position…</p>';
+      maPositionLieu((lat, lng, src) => { const l = lieuxACherche().map((x) => ({ ...x, km: distKm([lat, lng], [x.lat, x.lng]) })).filter((x) => x.km < 3).sort((a, b) => a.km - b.km).slice(0, 8);
+        l.push({ id: 'pos', nom: 'Je suis ici (ma position actuelle)', lat, lng, ville: src === 'gps' ? 'position GPS' : 'centre de la carte', genre: 'Ailleurs', km: 0 });
+        clAfficher(box, l, [lat, lng]); }); return; }
+    const it = e.target.closest('[data-cl-i]');
+    if (it) { const box = it.closest('[data-choix-lieu]'), l = (box.__liste || [])[+it.dataset.clI]; if (!l) return;
+      const v = { id: l.id, nom: l.id === 'pos' ? '' : l.nom, lat: +(+l.lat).toFixed(6), lng: +(+l.lng).toFixed(6), ville: l.ville || '' };
+      box.querySelector('input[type=hidden]').value = JSON.stringify(v);
+      const c = box.querySelector('.cl-choisi'); c.innerHTML = clChoisiHtml({ ...v, nom: v.nom || 'Ma position' }); c.hidden = false;
+      box.querySelector('.cl-res').innerHTML = ''; box.querySelector('.cl-q').value = '';
+      const nl = box.closest('form') && box.closest('form').querySelector('[data-mixe-nomlieu]'); if (nl) nl.hidden = l.id !== 'pos';
+      return; }
+    const x = e.target.closest('[data-cl-effacer]');
+    if (x) { const box = x.closest('[data-choix-lieu]'); box.querySelector('input[type=hidden]').value = ''; box.querySelector('.cl-choisi').hidden = true; box.querySelector('.cl-q').focus(); return; }
+    const vc = e.target.closest('[data-carte-ll]');
+    if (vc) { const [la, lo] = vc.dataset.carteLl.split(',').map(Number); if (typeof fermerDj === 'function') fermerDj(); setTab('map'); setTimeout(() => map && map.setView([la, lo], 16), 150); }
+  });
+  // Position pour « Autour de moi » : le GPS du téléphone, sinon la dernière position connue, sinon le centre de la zone (même si la carte n'a jamais été ouverte)
+  function maPositionLieu(cb) {
+    const repli = () => state.maPos ? cb(state.maPos.lat, state.maPos.lng, 'gps') : map ? cb(map.getCenter().lat, map.getCenter().lng, 'centre') : cb(centreGeographique()[0], centreGeographique()[1], 'centre');
+    if (!navigator.geolocation) return repli();
+    navigator.geolocation.getCurrentPosition((p) => { state.maPos = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy, t: Date.now() }; cb(p.coords.latitude, p.coords.longitude, 'gps'); }, repli, { timeout: 6000, maximumAge: 60000 });
+  }
+  const lieuDe_json = (v) => { try { const o = JSON.parse(v || ''); return o && o.lat != null ? o : null; } catch (e) { return null; } };
   function formDjPro() {
     return `<form id="form-djpro" class="profil-form" novalidate>
       <div class="section-title">Mon profil DJ</div>
@@ -4094,6 +4151,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <button type="button" class="ville-gps" data-ville-gps="1" aria-label="Utiliser ma position"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7.2 2.3L12.5 20z" fill="currentColor"/></svg>Ma position</button></span>
         <datalist id="liste-villes-dj">${(window.VILLES || []).map((v) => `<option value="${esc(v[0])}">`).join('')}</datalist></label>
       <p class="erreur" id="err-ville-dj" hidden>Indique la ville où tu mixes</p>
+      ${choixLieuHtml('resid', 'Résident d\'un club ?', '(facultatif) ta boîte, ton club ou ton bar attitré', null)}
       <div class="champ"><span>Ton profil sur la carte <small class="aide">c'est ta photo de profil, elle s'affiche dans ta bulle, ta fiche et le bandeau</small></span>
         <div class="tete-dj-apercu"><span class="tda-rond"><img src="${photoProfil() || 'avatars-banzic/h01.jpg'}" alt=""></span><small>Pour la changer, modifie ta photo dans ton profil Banger.</small></div></div>
       <div class="champ"><span>Ta formule</span>
@@ -4106,7 +4164,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   function formLiens() {
     return `<form id="form-liens" class="profil-form" novalidate>
       <div class="section-title">Mes liens</div>
-      <p class="conseil" style="margin-top:0">Ils s'affichent sur ta fiche DJ. Colle l'adresse de ta page ou de ta chaîne.</p>
+      ${choixLieuHtml('resid', 'Ton club attitré', '(si tu es résident) il s\'affiche sur ta fiche', MON_DJ.residence || null)}
+      <p class="conseil" style="margin-top:0">Tes liens s'affichent sur ta fiche DJ. Colle l'adresse de ta page ou de ta chaîne.</p>
       ${RESEAUX.map((r) => `<label class="champ"><span>${r.nom}</span><input class="search" name="${r.id}" inputmode="url" autocomplete="off" placeholder="${r.ex}" value="${esc((MON_DJ.liens || {})[r.id] || '')}"></label>`).join('')}
       <button type="submit" class="btn-plein">Enregistrer mes liens</button>
       <button type="button" class="alerte" data-djpro-annuler="1">Annuler</button>
@@ -4132,10 +4191,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const fin = new Date(Date.now() + 2 * 3600000);
     return `<form id="form-mixe" class="profil-form" novalidate>
       <div class="section-title">Je mixe maintenant</div>
-      <label class="champ"><span>Où ?</span><select class="search" name="lieu">
-        <option value="">Ailleurs : bar, resto, bateau… (ma position)</option>
-        ${ls.map((l) => `<option value="${l.id}">${esc(l.nom)}</option>`).join('')}</select></label>
-      <label class="champ"><span>Si ailleurs, le nom de l'endroit</span><input class="search" name="nomLieu" maxlength="40" placeholder="Terrasse du port, catamaran…"></label>
+      ${choixLieuHtml('mixe', 'Où mixes-tu ?', 'cherche la boîte ou le bar, ou touche « Autour de moi »', MON_DJ.residence || null)}
+      <label class="champ" data-mixe-nomlieu="1" hidden><span>Le nom de l'endroit</span><input class="search" name="nomLieu" maxlength="40" placeholder="Terrasse du port, catamaran…"></label>
       <div class="champ"><span>Style joué</span>${(() => { const l = MON_DJ.styles.length ? MON_DJ.styles.concat(GENRES.filter((g) => !MON_DJ.styles.includes(g))) : GENRES; return cartesGenres('style', [l[0]], 'radio', l); })()}</div>
       <label class="champ"><span>Fin estimée</span><input class="search" type="time" name="fin" value="${hm(fin.getTime())}"></label>
       <div class="champ"><span>Où te suivre en direct <small class="aide">(facultatif : touche un ou plusieurs réseaux et colle le lien de ton live)</small></span>
@@ -4161,14 +4218,15 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       const f = new FormData(e.target), nom = String(f.get('nom') || '').trim();
       if (nom.length < 2) { $('#err-djnom').hidden = false; return; }
       if (String(f.get('ville') || '').trim().length < 2) { $('#err-ville-dj').hidden = false; $('#champ-ville-dj').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
-      MON_DJ = { id: 'moi', formule: f.get('formule') || 'live', liens: {}, annonces: [], nom, styles: f.getAll('styles'), ville: String(f.get('ville') || '').trim(), confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 }, mien: true }; INDEX_DJ = null;
+      MON_DJ = { id: 'moi', formule: f.get('formule') || 'live', liens: {}, annonces: [], nom, styles: f.getAll('styles'), ville: String(f.get('ville') || '').trim(), residence: lieuDe_json(f.get('residLieu')), confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 }, mien: true }; INDEX_DJ = null;
       store.set('djPro', MON_DJ); state.vueDj = null; state.nomRevendique = null; renderProfil(); toast('Profil DJ créé · formule ' + formuleDe(MON_DJ).nom + ' (démo)');
     }
     if (e.target.id === 'form-liens') {
       e.preventDefault();
       const f = new FormData(e.target); MON_DJ.liens = {};
       RESEAUX.forEach((r) => { const u = urlPropre(f.get(r.id)); if (u) MON_DJ.liens[r.id] = u; });
-      store.set('djPro', MON_DJ); state.vueDj = null; renderProfil(); toast('Liens enregistrés');
+      MON_DJ.residence = lieuDe_json(f.get('residLieu'));
+      store.set('djPro', MON_DJ); state.vueDj = null; renderProfil(); toast('Liens et club attitré enregistrés');
       return;
     }
     if (e.target.id === 'form-stream') {
@@ -4189,17 +4247,16 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     }
     if (e.target.id === 'form-mixe') {
       e.preventDefault();
-      const f = new FormData(e.target), lieu = f.get('lieu') || null;
+      const f = new FormData(e.target), choisi = lieuDe_json(f.get('mixeLieu')), lieu = null;
       const [h, m] = String(f.get('fin') || '').split(':').map(Number);
       let fin = new Date(); if (!isNaN(h)) { fin.setHours(h, m || 0, 0, 0); if (fin < new Date()) fin = new Date(fin.getTime() + 86400000); } else fin = new Date(Date.now() + 2 * 3600000);
       const liensLive = {}; ['youtube', 'instagram', 'tiktok', 'twitch', 'spotify', 'soundcloud', 'mixcloud'].forEach((id) => { const champ = e.target.querySelector(`[data-mixe-champ="${id}"]`); const u = champ && !champ.hidden ? urlPropre(f.get('live_' + id)) : ''; if (u) liensLive[id] = u; });
       const cree = (lat, lng) => {
-        DECLS.push({ liensLive, id: 'dc' + Date.now(), dj: 'moi', mien: true, dest: state.dest, lieu, nomLieu: String(f.get('nomLieu') || '').trim() || 'Spot', lat, lng, style: f.get('style'), debut: Date.now(), fin: fin.getTime(), conf: 0, contest: 0 });
+        DECLS.push({ liensLive, id: 'dc' + Date.now(), dj: 'moi', mien: true, dest: state.dest, lieu, nomLieu: (choisi && choisi.nom) || String(f.get('nomLieu') || '').trim() || 'Spot', lat, lng, style: f.get('style'), debut: Date.now(), fin: fin.getTime(), conf: 0, contest: 0 });
         sauverDecls(); BDD.envoyerDecl(DECLS[DECLS.length - 1]); state.vueDj = null; renderProfil(); toast('Tu es sur la carte : « Déclaré par le DJ »');
       };
-      if (lieu) cree(null, null);
-      else if (map) positionSpot(cree);
-      else { const c = DEST[state.dest].centre; cree(c[0], c[1]); }
+      if (choisi) cree(choisi.lat, choisi.lng); // le lieu choisi : on le retrouve sur la carte à sa vraie place
+      else maPositionLieu(cree);
     }
   });
   document.addEventListener('click', (e) => {
