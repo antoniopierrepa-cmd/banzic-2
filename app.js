@@ -2625,22 +2625,8 @@
     const L = [];
     const ligne = (o) => L.push(o);
     if (MODE_TEST) ajouterSoireesTest(c);
-    // DJ déclarés autour de moi
-    DECLS.filter((x) => (zoneCarte ? declDuJour(x) : declActive(x) && Number.isFinite(Number(x.debut)) && (x.debut <= now || jours.includes(iso(new Date(x.debut))))) && djDe(x)).forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}; if (l.lat == null) return; const d = km(l.lat, l.lng); if (zoneCarte ? !dansZoneCarte(l.lat, l.lng) : d > r) return;
-      const ok = declConfirmee(x), avant = (x.debut - now) / 60000, reste = (x.fin - now) / 60000;
-      const st = avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ok ? ['En cours', 'vert'] : ['Annoncé', 'orange'];
-      CK_FICHES['d:' + x.id] = { titre: dj.nom, sous: 'Set de ' + dj.nom, tag: ok ? 'Live' : 'Déclaré', st, heure: hm(x.debut), quand: avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : reste > 0 ? 'encore ' + dur(Math.round(reste)) : 'se termine',
-        lieu: { nom: l.nom || 'Spot', adresse: l.adresse || l.zone || '', lat: l.lat, lng: l.lng, gid: l.gid || x.gid }, km: d, djs: [dj.nom], temp: x.temp, com: x.com, conf: ok ? x.conf : 0 };
-      ligne({ fin: x.fin, conf: x.conf || 0, act: `data-decl-ok="${x.id}"`, km: d, t: x.debut, heure: hm(x.debut), porte: l.nom || 'Spot', st, k: ok ? 'live' : 'decl', tag: ok ? 'Live' : 'Déclaré', fiche: 'd:' + x.id, attr: `data-ck-fiche="d:${x.id}"`, nom: dj.nom,
-        l1: avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : reste > 0 ? 'encore ' + dur(Math.round(reste)) : 'se termine',
-        l2: [[(x.temp != null ? `<span class="thermo-mini t${x.temp}" title="Ambiance : ${['Froid', 'Moyen', 'Chaud'][x.temp]}"><i></i></span><span class="thermo-txt t${x.temp}">${['Froid', 'Moyen', 'Chaud'][x.temp]}</span> ` : '') + esc(l.nom || 'Spot') + ' · ' + fK(d)], ok ? [x.conf + ' Bangers confirment', 'fil-ok'] : ['pas encore confirmé', 'fil-att']].concat(x.com ? [['« ' + esc(x.com) + ' »', 'fil-com']] : []), vol: dj.nom }); });
-    // Spots signalés par les Bangers
-    SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && s.lat != null).forEach((sp) => { const d = km(sp.lat, sp.lng); if (zoneCarte ? !dansZoneCarte(sp.lat, sp.lng) : d > r) return;
-      const n = sp.note || 0, cf = sp.conf || 0, v = n >= 4 && cf >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || cf >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
-      CK_FICHES['p:' + sp.id] = { titre: sp.nom || TYPES_SPOT[sp.type] || 'Spot', sous: 'Signalé par @' + (sp.par || 'un Banger'), tag: 'Spot', st: ['Signalé', 'violet'], heure: hm(sp.t || sp.maj), quand: 'signalé ' + ilYa(sp.maj || sp.t),
-        lieu: { nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot', adresse: '', lat: sp.lat, lng: sp.lng, gid: sp.gid }, km: d, djs: sp.dj ? [sp.dj] : [], temp: sp.temp, com: sp.com, conf: sp.conf || 0 };
-      ligne({ fin: (sp.maj || sp.t) + 3 * 3600000, sp, km: d, t: sp.t || sp.maj, heure: hm(sp.t || sp.maj), porte: sp.nom || TYPES_SPOT[sp.type] || 'Spot', st: ['Signalé', 'violet'], k: 'spot', tag: 'Spot', fiche: 'p:' + sp.id, attr: `data-ck-fiche="p:${sp.id}"`, nom: sp.nom || TYPES_SPOT[sp.type] || 'Spot',
-        l1: `<span class="fil-vaut v-${v[1]}">${v[0]}</span>`, l2: [[esc(sp.dj || 'DJ inconnu') + ' · ' + fK(d)], [(sp.temp != null ? `<span class="thermo-mini t${sp.temp}" title="Ambiance : ${['Froid', 'Moyen', 'Chaud'][sp.temp]}"><i></i></span><span class="thermo-txt t${sp.temp}">${['Froid', 'Moyen', 'Chaud'][sp.temp]}</span> ` : '') + 'signalé par @' + esc(sp.par || 'un Banger')]].concat(sp.com ? [['« ' + esc(sp.com) + ' »', 'fil-com']] : []), vol: '' }); });
+    // Les validations individuelles des BANGERS ne créent plus de bandeaux Check-in.
+    // Seules les soirées annoncées alimentent ce tableau ; les compteurs restent sur leurs fiches.
     // Check-in : trois jours glissants ; carte : aujourd’hui uniquement, avec ou sans DJ.
     SUD.soirees.filter((x) => soireeCheckinVisible(x, now, zoneCarte) && SUD.lieux[x.lieu]).forEach((x) => { const l = SUD.lieux[x.lieu], d = km(l.lat, l.lng); if (zoneCarte ? !dansZoneCarte(l.lat, l.lng) : d > r) return;
       const { debut: deb, fin } = horairesCheckin(x), avant = deb ? (deb - now) / 60000 : null, dj = String(x.djs || '').split(/,| b2b | & /i)[0].trim();
@@ -2865,7 +2851,7 @@
   }
   // Repère de soirée : vinyle animé, compteur BANGERS au centre, badge 18+ si applicable.
   // Registre des établissements adultes du Var : pas de soirées inventées.
-  const ADULTES_83 = ['La Chrysalide','Le 2mil3','Le Calistria','Le Klub','Crazy Lib','Le Rainbow','Eros Cruise','Le Boudoir Club','L Hysteria Club','L Antre Nous','Le Wapiti','Fasylove','L Intimiste','La Dolce Vita','Le Lipstick'];
+  const ADULTES_83 = ['La Chrysalide','Le 2mil3','Le Calistria','Le Klub','Crazy Lib','Le Rainbow','Eros Cruise','Le Boudoir Club','L Hysteria Club','L Antre Nous','Le Wapiti','Fasylove','L Intimiste','La Dolce Vita','Le Lipstick','Le 2003','2003'];
   const cleAdulte = (v) => sansAccent(String(v || '').toLowerCase()).replace(/[^a-z0-9]/g,'');
   function lieuAdulte(l) {
     if (!l) return false;
