@@ -2609,6 +2609,17 @@
     return h.fin > now && (zoneCarte ? x.date === jours[0] : jours.includes(x.date) || (x.date < jours[0] && h.debut <= now));
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && state.tab === 'checkin') renderCheckin(); });
+  let filtreTypeCheckin = 'tous';
+  const typeCheckin = (x, l) => {
+    if (soireeAdulte(x)) return 'libertin';
+    const s = [x.type, x.genres, l && l.nom, ...(l && Array.isArray(l.categories) ? l.categories : [])].join(' ').toLowerCase();
+    if (/festival/.test(s)) return 'festival';
+    if (/concert|live music|musique live/.test(s)) return 'concert';
+    if (/bar|pub|afterwork|festif|lounge/.test(s)) return 'bar';
+    if (/club|discoth[eè]que|nightclub|bo[iî]te/.test(s)) return 'club';
+    return 'soiree';
+  };
+  const nomsFiltresCheckin = { tous: 'Toutes', club: 'Discothèques / clubs', bar: 'Bars festifs', libertin: '18+ Libertins', festival: 'Festivals', concert: 'Concerts', soiree: 'Autres soirées' };
   function renderCheckin(lignesSeules, zoneCarte = false) {
     const box = $('#screen-checkin'); if (!box && !lignesSeules) return;
     // Position : le GPS du téléphone ; pour tester ailleurs, ?position=dubai (ou ibiza, miami, mykonos, tulum) dans l'adresse
@@ -2635,7 +2646,7 @@
       const lineup = djsDe(x.djs);
       CK_FICHES['s:' + x.id] = { date: x.date, dateFin: x.dateFin || '', heureFin: x.heureFin || (x.type === 'club' ? '05:00' : ''), titre: x.nom, sous: '', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', st, heure: x.heure || '', quand: x.date > auj ? nomJour(x.date) + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
         lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: d, djs: lineup, url: radarUrl(x.ticketUrl || x.url), test: x.test };
-      ligne({ adulte: soireeAdulte(x), fin, lieuId: x.lieu, fiche: 's:' + x.id, djs: lineup, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || (x.type === 'club' ? '23:30' : '--:--'), porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: `data-ck-fiche="s:${x.id}"`, nom: x.nom,
+      ligne({ categorie: typeCheckin(x, l), adulte: soireeAdulte(x), fin, lieuId: x.lieu, fiche: 's:' + x.id, djs: lineup, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || (x.type === 'club' ? '23:30' : '--:--'), porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: `data-ck-fiche="s:${x.id}"`, nom: x.nom,
         l1: x.date > auj ? nomJour(x.date).toLowerCase() + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
         l2: [[esc(l.nom) + ' · ' + fK(d)], [x.type === 'club' ? ((x.heure || '23:30') + ' → ' + (x.heureFin || '05:00') + (!x.heureFin || !x.heure ? ' · estimé' : '')) : (x.heureFin ? (x.heure || '?') + ' → ' + x.heureFin : ''), 'fil-att'], [x.djs ? 'line-up annoncé' : 'line-up non communiqué', 'fil-att']], vol: dj }); });
     // D'abord ce qui est en live en ce moment (DJ en cours, dernier appel, spots signalés), puis le reste ; dans chaque groupe, du plus proche au plus loin
@@ -2656,11 +2667,22 @@
         <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em>${o.adulte ? '<span class="bz-ck-18" aria-label="Club libertin, réservé aux plus de 18 ans" style="display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:7px;background:#b91c1c;color:#fff;font-weight:800;font-size:12px;line-height:1.2;white-space:nowrap;box-shadow:0 1px 5px #0005">CLUB LIBERTIN · 18+</span>' : ''}<b>${esc(o.nom)}</b>${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button>${puces}</div>`; };
     const i = CK_RAYONS.indexOf(r);
     if (lignesSeules) return L.map(rangee);
+    const typesPresents = [...new Set(L.map(o => o.categorie))];
+    if (filtreTypeCheckin !== 'tous' && !typesPresents.includes(filtreTypeCheckin)) filtreTypeCheckin = 'tous';
+    const visibles = filtreTypeCheckin === 'tous' ? L : L.filter(o => o.categorie === filtreTypeCheckin);
+    const filtres = ['tous', ...Object.keys(nomsFiltresCheckin).filter(k => k !== 'tous' && typesPresents.includes(k))];
+    const barreFiltres = `<nav class="ck-filtres" aria-label="Filtrer les soirées" style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px">${filtres.map(k => `<button type="button" data-ck-type="${k}" aria-pressed="${filtreTypeCheckin === k}" style="border:1px solid ${filtreTypeCheckin === k ? '#f59e0b' : '#7778'};border-radius:18px;padding:8px 12px;background:${filtreTypeCheckin === k ? '#f59e0b' : '#24242c'};color:${filtreTypeCheckin === k ? '#151515' : '#fff'};font-weight:700;cursor:pointer">${nomsFiltresCheckin[k]} · ${k === 'tous' ? L.length : L.filter(o => o.categorie === k).length}</button>`).join('')}</nav>`;
     box.innerHTML = `<div class="ck-tete"><div><h2>Check-in</h2><small>Départs autour de ${esc(nomPos)} · <b>${r} km</b> · ${L.length} départ${L.length > 1 ? 's' : ''}</small></div><span class="ck-horloge">${flap(hm(now), 5)}</span></div>
 
-      <div class="ck-legende"><span class="ck-st ck-st-or"><i></i>Embarquement</span><span>commence dans moins de 2 h</span><span class="ck-st ck-st-rouge"><i></i>Dernier appel</span><span>commence dans moins de 15 min</span></div>
-      ${jours.map((date) => { const lignes = L.filter((o) => { const j = iso(new Date(o.t || now)); return date === auj ? j <= auj : j === date; }); return `<section class="ck-jour ${clJour(date)}"><h3 class="ck-jour-bandeau"><span class="cjb-nom">${titreJour(date)}</span><span class="cjb-info"><b>${new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</b><small>${lignes.length} départ${lignes.length > 1 ? 's' : ''}</small></span></h3>${lignes.length ? `<div class="ck-liste">${lignes.map(rangee).join('')}</div>` : `<p class="empty">Aucune soirée répertoriée à moins de ${r} km pour cette journée.</p>`}</section>`; }).join('')}<p class="aide">Mise à jour automatique. Sans horaire de fin publié, la fin est estimée à six heures après le début ; sans horaire, la soirée reste affichée jusqu’à minuit.</p>`;
+      ${barreFiltres}<div class="ck-legende"><span class="ck-st ck-st-or"><i></i>Embarquement</span><span>commence dans moins de 2 h</span><span class="ck-st ck-st-rouge"><i></i>Dernier appel</span><span>commence dans moins de 15 min</span></div>
+      ${jours.map((date) => { const lignes = visibles.filter((o) => { const j = iso(new Date(o.t || now)); return date === auj ? j <= auj : j === date; }); return `<section class="ck-jour ${clJour(date)}"><h3 class="ck-jour-bandeau"><span class="cjb-nom">${titreJour(date)}</span><span class="cjb-info"><b>${new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</b><small>${lignes.length} départ${lignes.length > 1 ? 's' : ''}</small></span></h3>${lignes.length ? `<div class="ck-liste">${lignes.map(rangee).join('')}</div>` : `<p class="empty">Aucune soirée répertoriée à moins de ${r} km pour cette journée.</p>`}</section>`; }).join('')}<p class="aide">Mise à jour automatique. Sans horaire de fin publié, la fin est estimée à six heures après le début ; sans horaire, la soirée reste affichée jusqu’à minuit.</p>`;
   }
+  document.addEventListener('click', (e) => {
+    const filtre = e.target.closest('[data-ck-type]');
+    if (!filtre) return;
+    filtreTypeCheckin = filtre.dataset.ckType;
+    renderCheckin();
+  });
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#ck-hyeres')) return;
     state.villeChoisie = true;
