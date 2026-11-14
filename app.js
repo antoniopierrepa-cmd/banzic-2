@@ -2889,10 +2889,19 @@
     const local = store.get('bangSoirees', {});
     return Math.max(0, Number(local['s:' + x.id] || 0));
   }
+  function soireeEnCoursCarte(x) {
+    // Pas d'animation sans horaires fiables.
+    if (!x.date || !/^\d{1,2}:\d{2}$/.test(x.heure || '') || !/^\d{1,2}:\d{2}$/.test(x.heureFin || '')) return false;
+    const debut = new Date(x.date + 'T' + x.heure);
+    const fin = new Date((x.dateFin || x.date) + 'T' + x.heureFin);
+    if (fin <= debut && !x.dateFin) fin.setDate(fin.getDate() + 1);
+    const maintenant = new Date();
+    return maintenant >= debut && maintenant < fin;
+  }
   function iconeVinyle(x) {
     const n = compteurSoiree(x), adulte = soireeAdulte(x);
     return L.divIcon({
-      className: 'bz-vinyle-marker', iconSize: [48, 48], iconAnchor: [24, 24],
+      className: 'bz-vinyle-marker' + (soireeEnCoursCarte(x) ? ' bz-vinyle-en-cours' : ''), iconSize: [48, 48], iconAnchor: [24, 24],
       html: `<span class="bz-vinyle-disque" aria-hidden="true"><span class="bz-vinyle-centre">${n}</span></span>${adulte ? '<span class="bz-vinyle-adulte">18+</span>' : ''}`
     });
   }
