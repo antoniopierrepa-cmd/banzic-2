@@ -2546,6 +2546,9 @@
     const f = CK_FICHES[cle]; if (!f) return; CK_OUVERTE = cle;
     const scr = $('#screen-soiree'); if (!scr) return;
     const l = f.lieu || {}, gm = l.gid ? gMapsUrl(l.gid) : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([l.nom, l.adresse].filter(Boolean).join(' ') || (l.lat + ',' + l.lng));
+    const destination = l.lat != null && l.lng != null ? l.lat + ',' + l.lng : [l.nom, l.adresse].filter(Boolean).join(' ');
+    const waze = 'https://waze.com/ul?q=' + encodeURIComponent(destination) + '&navigate=yes';
+    const apple = 'https://maps.apple.com/?daddr=' + encodeURIComponent(destination);
     const fK = (x) => x == null ? '' : x < 1 ? '< 1 km' : Math.round(x) + ' km';
     // Chronologie uniquement sur des horaires réellement annoncés : aucune fermeture inventée.
     const debutChrono = f.date && f.heure ? new Date(f.date + 'T' + f.heure).getTime() : NaN;
@@ -2566,11 +2569,14 @@
       ${chronoHtml}\n      <div class="sf-bloc"><div class="sf-titre">Le lieu</div>
         <div class="sf-lieu"><div class="sf-photo" data-sf-photo="1"></div>
           <b>${esc(l.nom || 'Lieu')}</b>${l.adresse ? `<small>${esc(l.adresse)}</small>` : ''}${f.km != null ? `<small>À ${fK(f.km)} de toi</small>` : ''}
-          <div class="sf-actions"><button type="button" class="sf-btn plein" data-soiree-carte="${cle}">Voir sur la carte</button><a class="sf-btn" data-sf-gm="1" href="${gm}" target="_blank" rel="noopener">Google Maps</a></div></div></div>
+          <div class="sf-actions"><button type="button" class="sf-btn plein" data-soiree-carte="${cle}">Voir sur la carte</button><button type="button" class="sf-btn" data-sf-route-toggle="1" aria-expanded="false">Itinéraire ▾</button></div><div class="sf-route-options" hidden style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"><a class="sf-btn" data-sf-gm="1" href="${gm}" target="_blank" rel="noopener">Google Maps</a><a class="sf-btn" href="${waze}" target="_blank" rel="noopener">Waze</a><a class="sf-btn" href="${apple}" target="_blank" rel="noopener">Plans Apple</a></div></div></div>
       <div class="sf-bloc"><div class="sf-titre">${f.club ? 'Soirées' : 'Line-up'}</div>
         ${f.djs && f.djs.length ? `<div class="sf-lineup">${f.djs.map((n) => `<button type="button" class="sf-dj" data-dj-pro="${esc(n)}"><span class="sf-av">${avatarDj(n)}</span><b>${esc(n)}</b><span class="sf-fleche" aria-hidden="true">›</span></button>`).join('')}</div>`
           : `<p class="aide">${f.club ? 'Aucune soirée annoncée pour l\'instant.' : 'Line-up non communiqué pour l\'instant.'}</p>`}</div>
       ${f.url ? `<a class="btn-plein sf-billets" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${f.club ? 'Site du club' : f.billets ? 'Billets' : 'Infos sur la soirée'}</a>` : ''}${f.club ? `<div class="sf-revendiquer"><b>C'est votre club ?</b><p>Revendiquez cette fiche pour annoncer vos soirées et les proposer aux Bangers de votre région.</p><button type="button" class="sf-btn" data-club-revendiquer="1">C'est mon club</button></div>` : ''}${f.source ? `<p class="aide sf-source">Source : ${esc(f.source)}</p>` : ''}`;
+    const routeBtn = scr.querySelector('[data-sf-route-toggle]'), routeOptions = scr.querySelector('.sf-route-options');
+    if (routeOptions) { routeOptions.hidden = true; routeOptions.style.display = 'none'; }
+    if (routeBtn && routeOptions) routeBtn.addEventListener('click', () => { routeOptions.hidden = !routeOptions.hidden; routeOptions.style.display = routeOptions.hidden ? 'none' : 'flex'; routeBtn.setAttribute('aria-expanded', String(!routeOptions.hidden)); });
     // la photo Google du lieu arrive après (seulement si le lieu vient de Google Maps)
     const ph = scr.querySelector('[data-sf-photo]');
     (l.gid ? Promise.resolve(l.gid) : gidPour(l)).then((gid) => { if (!gid) return; l.gid = gid;
@@ -2950,7 +2956,7 @@
     '69': 'Rhône', '42': 'Loire', '38': 'Isère', '74': 'Haute-Savoie', '39': 'Jura', '68': 'Haut-Rhin', '59': 'Nord', '62': 'Pas-de-Calais', '33': 'Gironde',
     '31': 'Haute-Garonne', '34': 'Hérault', '44': 'Loire-Atlantique', '35': 'Ille-et-Vilaine' };
   // Agenda autour de moi : un fader façon table de mixage règle le rayon (10 → 100 km) autour de ma position
-  const RAYONS = [10, 20, 50, 100];
+  const RAYONS = [10, 20, 30, 50, 100, 1000];
   // 8 pads façon platine : 1re rangée le type de soirée, 2e rangée le moment (et mes DJ favoris)
   // Petits logos des pads (dessinés en trait, aux couleurs de chaque pad)
   const ICO_PAD = {
@@ -2991,13 +2997,13 @@
   function renderAgendaSud() {
     const r = RAYONS[state.rayonIdx];
     $('#screen-agenda').innerHTML = `<div class="fader-module">
-        <div class="acc-tete fd-tete"><div><h2>Agenda autour de moi</h2><small>Autour de ${esc(state.zoneGeo.nom)}${state.maPos || state.villeChoisie ? '' : ' (position approximative)'} · <b id="fd-km">${r} km</b> · <span id="fd-nb"></span></small></div></div>
-        <button type="button" id="radar-hyeres-weekend" class="acc-chip" style="margin:8px 0 12px">📍 Hyères · 20 km · jeudi à dimanche</button>\n        <div class="fd-rail">
+        <div class="acc-tete fd-tete"><div><h2>Agenda autour de moi</h2></div></div>
+        <button type="button" id="radar-hyeres-weekend" class="acc-chip" style="margin:8px 0 12px">📍 Hyères · 20 km · jeudi à dimanche</button>\n        <label class="radar-dep">Département <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>
+        <div class="fd-rail">
           <input type="range" id="fader-rayon" min="0" max="${RAYONS.length - 1}" step="1" value="${state.rayonIdx}" aria-label="Rayon de recherche" aria-valuetext="${r} kilomètres">
-          <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k}</span>`).join('')}</div>
+          <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k === 1000 ? 'France' : k}</span>`).join('')}</div>
         </div>
-        <label class="radar-dep">Département français (facultatif) <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>
-        <label class="radar-dep"><input type="checkbox" id="radar-avec-dj" ${state.sudAvecDj ? 'checked' : ''}> Avec DJ uniquement</label>
+        
         <p class="demo-note">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements français avec annonces' + (RADAR.countryCoverage && RADAR.countryCoverage.BE ? ' · Belgique : ' + RADAR.countryCoverage.BE + ' soirées' : '') + (RADAR.countryCoverage && RADAR.countryCoverage.ES ? ' · Espagne : ' + RADAR.countryCoverage.ES + ' soirées' : '') + ' · collecte partielle.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
         <div class="pads" role="group" aria-label="Filtres">${PADS.map((x) => `<button class="pad${x.moins18 ? ' pad-18' : ''}" style="--pc:${x.c}" data-pad="${x.g}|${x.k}" aria-pressed="false"${x.moins18 ? ' title="Interdit aux moins de 18 ans"' : ''}>${icoPad(x.g === 'type' ? x.k : x.k === 'oui' ? 'mesdj' : x.k)}<span class="pad-nom">${x.nom}</span><small class="pad-nb"></small></button>`).join('')}</div>
       </div>
@@ -3020,7 +3026,7 @@
     // Inclure aussi les soirées de ce soir dans l'agenda, pas uniquement celles de demain.
     // Les dates plus lointaines arrivent en descendant : 7 jours de plus à chaque fois qu'on atteint le bas de la liste
     const auj0 = iso(new Date()), j7 = state.radarHyeresWeekend ? finWeekend() : auJour(state.agJours || 7);
-    const r = RAYONS[state.rayonIdx], toutesLoin = soireesAvecKm().filter((x) => x.date >= auj0 && x.km <= r && (!state.radarDep || x.l.dep === state.radarDep)), toutes = toutesLoin.filter((x) => x.date <= j7 && x.km <= r && (!state.radarDep || x.l.dep === state.radarDep));
+    const r = RAYONS[state.rayonIdx], dansZone = (x) => state.radarDep ? x.l.dep === state.radarDep : x.km <= r, toutesLoin = soireesAvecKm().filter((x) => x.date >= auj0 && dansZone(x)), toutes = toutesLoin.filter((x) => x.date <= j7);
     const types = (state.sudTypes || []).filter((k) => PAD_TEST['type|' + k]), quand = state.sudQuand === 'weekend' ? 'weekend' : null, mesdj = !!state.sudMesDj;
     const liste = toutes.filter((x) => (!types.length || types.some((k) => PAD_TEST['type|' + k](x))) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs));
     document.querySelectorAll('[data-pad]').forEach((b) => {
@@ -3028,12 +3034,10 @@
       b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
       b.querySelector('.pad-nb').textContent = toutes.filter(PAD_TEST[b.dataset.pad]).length;
     });
-    $('#fd-km').textContent = r + ' km';
-    $('#fd-nb').textContent = toutes.length + (toutes.length > 1 ? ' soirées' : ' soirée');
     document.querySelectorAll('.fd-graduations span').forEach((s, i) => s.classList.toggle('on', i === state.rayonIdx));
     const fr = $('#fader-rayon'); if (fr) fr.style.setProperty('--pct', (state.rayonIdx / (RAYONS.length - 1) * 100) + '%');
     let h = '';
-    if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département à moins de ' + r + ' km.' : `Rien d’annoncé dans les 7 prochains jours à moins de ${r} km. Vérifie aussi les lieux et leurs annonces officielles.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
+    if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département.' : `Rien d’annoncé dans les 7 prochains jours à moins de ${r} km. Vérifie aussi les lieux et leurs annonces officielles.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
     else {
       if (!liste.length) h += `<div class="empty">Rien pour ces pads dans ce rayon.${mesdj && !state.favs.length ? ' Ajoute des DJ en favori (♥) pour utiliser « Mes DJ ».' : ''}</div>`;
       // Un titre par jour (« SAM. 14 NOV. »), puis les soirées du jour en grandes cartes avec l'affiche
@@ -3044,7 +3048,7 @@
         h += carteAgenda(x);
       });
     }
-    const reste = soireesAvecKm().filter((x) => x.date > j7 && x.km <= r && (!state.radarDep || x.l.dep === state.radarDep)).length;
+    const reste = soireesAvecKm().filter((x) => x.date > j7 && dansZone(x)).length;
     if (reste) h += `<div class="ag-plus" id="ag-plus"><span class="ag-plus-rond"></span>Les dates suivantes arrivent…</div>`;
     h += `<p class="demo-note">Sources : déclarations des DJ et des Bangers, et le radar Banzic (agendas et billetteries autorisés). Vérifie toujours sur la page de la soirée avant de sortir.</p>`;
     $('#agenda-liste').innerHTML = h;
@@ -3170,7 +3174,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       <div class="agc-visuel${x.flyerUrl ? '' : ' agc-gp'}" data-gp="${esc(JSON.stringify({ nom: x.l.nom, adresse: x.l.ville || '', lat: x.l.lat, lng: x.l.lng }))}" style="--aff:url('${esc(aff).replace(/'/g, '%27')}')"><img src="${esc(aff)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback;this.parentNode.style.setProperty('--aff','none');this.parentNode.classList.add('agc-gp');window.__photosAgenda&&window.__photosAgenda()" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC'}" loading="lazy" referrerpolicy="no-referrer">
         <span class="agc-type" style="--tc:${TYPE_COUL[x.type || 'club']}">${x.type === 'bar' && /^(Karaoké|Blind test|Afterwork|Apéro musical)$/.test(x.genres || '') ? esc(x.genres) : TYPE_NOM[x.type || 'club']}</span>${estLibertin(x) ? '<span class="moins18 agc-18" title="Interdit aux moins de 18 ans">-18</span>' : ''}</div>
       <div class="agc-txt"><b class="agc-nom">${esc(x.nom)}</b>
-        <span class="agc-lieu">${esc(x.l.nom)}${x.l.ville ? ' · ' + esc(x.l.ville) : ''}${pays ? ', ' + pays : ''}</span>
+        <span class="agc-ville">${x.l.ville ? '📍 ' + esc(x.l.ville) : ''}</span><span class="agc-lieu">${esc(x.l.nom)}${pays ? ', ' + pays : ''}</span>
         <span class="agc-quand">${['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'][dt.getDay()]} ${dt.getDate()} ${MOIS_CRT[dt.getMonth()]}${x.heure ? ' | ' + esc(x.heure.replace(':', 'h')) : ''}${x.prix && x.prix.length <= 24 ? `<em>${esc(x.prix)}</em>` : ''}</span>
         ${x.djs ? `<span class="agc-lineup">${esc(x.djs)}</span>` : ''}
         ${gen.length ? `<span class="agc-tags">${gen.slice(0, 3).map((g) => `<i>${esc(g)}</i>`).join('')}${gen.length > 3 ? `<i>+${gen.length - 3}</i>` : ''}</span>` : ''}</div></div>`;
