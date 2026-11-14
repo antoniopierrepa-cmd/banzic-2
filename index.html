@@ -42,6 +42,16 @@
 @keyframes bz-contre-tourne{to{transform:rotate(-360deg)}}
 @media(prefers-reduced-motion:reduce){.bz-vinyle-disque,.bz-vinyle-centre{animation:none}}
 </style>
+<style>
+/* Restriction d'âge lisible dans les bandes Check-in et sur les repères */
+.bz-ck-18{display:inline-flex;align-items:center;justify-content:center;flex:none;background:#B52D44;color:#fff;font:800 11px/1.2 Arial,sans-serif;border:1px solid #F9CBD1;border-radius:12px;padding:3px 6px;margin-right:5px}
+.bz-disco-adulte{background:transparent!important;border:0!important}
+.bz-disco-adulte span{display:grid;place-items:center;width:26px;height:26px;background:#B52D44;border:2px solid #fff;border-radius:50%;color:#fff;font:800 10px Arial,sans-serif;box-shadow:0 2px 8px #0008;box-sizing:border-box}
+.bz-bang-aide{text-align:center;color:#FFB978;font-weight:700;font-size:13px;padding:10px 4px;animation:bz-bang-pulse 2s ease-in-out infinite}
+.bz-bang-submit-cache{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
+@keyframes bz-bang-pulse{50%{opacity:.62}}
+@media(prefers-reduced-motion:reduce){.bz-bang-aide{animation:none}}
+</style>
 </head>
 <body>
 <div class="app">
