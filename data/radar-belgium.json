@@ -1176,6 +1176,32 @@
       "sourceName": "Shotgun / YESTERAVE",
       "sourceRecordUrl": "https://shotgun.live/fr/events/yesterave-parenthese-2026",
       "organizerUrl": "https://shotgun.live/fr/venues/yesterave"
+    },
+    {
+      "id": "ciao-bella-2026-12-11",
+      "src": "ciao-bella",
+      "country": "BE",
+      "dep": "BE",
+      "nom": "Karaoké & Blind test — Ciao Bella",
+      "date": "2026-12-11",
+      "heure": "19:00",
+      "lieu": "Ciao Bella — 221 route de Philippeville",
+      "ville": "Charleroi",
+      "lat": 50.3882104,
+      "lng": 4.461285,
+      "type": "bar",
+      "lineup": [],
+      "djSet": false,
+      "genres": "Karaoké",
+      "prix": "",
+      "url": "https://ciaobellarestaurant.be/evenement-restaurant-charleroi",
+      "ticketUrl": "",
+      "flyerUrl": "https://ciaobellarestaurant.be/__l5e/assets-v1/c5df40f7-ba81-4a17-9900-3a56a00f7bdc/ciao-bella-1-02.jpg",
+      "verifiedAt": "2026-11-12T08:25:15.233145+00:00",
+      "evidence": "Date, horaire et affiche publiés sur le site officiel. Coordonnées approximatives de la rue via Nominatim/OpenStreetMap ; numéro exact non géocodé.",
+      "sourceName": "Ciao Bella · géocodage © OpenStreetMap contributors",
+      "sourceRecordUrl": "https://ciaobellarestaurant.be/evenement-restaurant-charleroi",
+      "positionApproximate": true
     }
   ],
   "unresolved": [

@@ -2649,7 +2649,8 @@
       const lineup = djsDe(x.djs);
       CK_FICHES['s:' + x.id] = { date: x.date, dateFin: x.dateFin || '', heureFin: x.heureFin || (x.type === 'club' ? '05:00' : ''), titre: x.nom, sous: '', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', st, heure: x.heure || '', quand: x.date > auj ? nomJour(x.date) + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
         lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: d, djs: lineup, url: radarUrl(x.ticketUrl || x.url), test: x.test };
-      ligne({ categorie: typeCheckin(x, l), adulte: soireeAdulte(x), fin, lieuId: x.lieu, fiche: 's:' + x.id, djs: lineup, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || (x.type === 'club' ? '23:30' : '--:--'), porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: `data-ck-fiche="s:${x.id}"`, nom: x.nom,
+      ligne({ img: radarUrl(x.flyerUrl) || '', gp: { nom: l.nom, adresse: l.ville || '', lat: l.lat, lng: l.lng }, festif: x.type === 'bar' && /^(Karaoké|Blind test|Afterwork|Apéro musical)$/.test(x.genres || '') ? x.genres : '',
+        categorie: typeCheckin(x, l), adulte: soireeAdulte(x), fin, lieuId: x.lieu, fiche: 's:' + x.id, djs: lineup, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || (x.type === 'club' ? '23:30' : '--:--'), porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: `data-ck-fiche="s:${x.id}"`, nom: x.nom,
         l1: x.date > auj ? nomJour(x.date).toLowerCase() + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
         l2: [[esc(l.nom) + ' · ' + fK(d)], [x.type === 'club' ? ((x.heure || '23:30') + ' → ' + (x.heureFin || '05:00') + (!x.heureFin || !x.heure ? ' · estimé' : '')) : (x.heureFin ? (x.heure || '?') + ' → ' + x.heureFin : ''), 'fil-att'], [x.djs ? 'line-up annoncé' : 'line-up non communiqué', 'fil-att']], vol: dj }); });
     // D'abord ce qui est en live en ce moment (DJ en cours, dernier appel, spots signalés), puis le reste ; dans chaque groupe, du plus proche au plus loin
@@ -2668,7 +2669,7 @@
       const puces = !lignesSeules && o.djs && o.djs.length ? `<div class="ck-lineup"><small>Line-up</small>${o.djs.slice(0, 8).map((n) => `<button type="button" class="ck-dj" data-dj-pro="${esc(n)}">${esc(n)}</button>`).join('')}${o.djs.length > 8 ? `<span class="ck-dj plus">+${o.djs.length - 8}</span>` : ''}</div>` : '';
       return `<div ${o.fiche ? `data-ck-fiche="${o.fiche}" ` : ''}class="ck-ligne ck-${o.st[1]}${tourne ? ' ck-tourne' : ''}${prog ? ' ck-prog' : ''}${prog >= 100 ? ' ck-fini' : ''}${o.photo ? ' a-photo' : ''}" style="--prog:${prog}%;--ph:${Math.round(42 - prog * 0.42)}">${prog ? `<i class="ck-barre" aria-hidden="true"></i><span class="ck-pct" title="Avancement du set">${prog >= 100 ? 'Terminé' : prog + ' %'}</span>` : ''}${o.photo ? `<img class="fil-photo" src="${o.photo}" alt="Photo de la soirée">` : ''}
         <div class="ck-bande"><span class="ck-h">${flap(o.heure, 5)}</span><span class="ck-porte"><small>Porte</small>${esc(o.porte)}</span><span class="ck-st ck-st-${o.st[1]}"><i></i>${esc(o.st[0])}</span></div>
-        <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em>${o.adulte ? '<span class="bz-ck-18" aria-label="Club libertin, réservé aux plus de 18 ans" style="display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:7px;background:#b91c1c;color:#fff;font-weight:800;font-size:12px;line-height:1.2;white-space:nowrap;box-shadow:0 1px 5px #0005">CLUB LIBERTIN · 18+</span>' : ''}<b>${esc(o.nom)}</b>${statutBang}${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span></button>${puces}</div>`; };
+        <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em>${o.festif ? `<span class="ck-festif">${esc(o.festif)}</span>` : ''}${o.adulte ? '<span class="bz-ck-18" aria-label="Club libertin, réservé aux plus de 18 ans" style="display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:7px;background:#b91c1c;color:#fff;font-weight:800;font-size:12px;line-height:1.2;white-space:nowrap;box-shadow:0 1px 5px #0005">CLUB LIBERTIN · 18+</span>' : ''}<b>${esc(o.nom)}</b>${statutBang}${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span>${!lignesSeules && (o.img || o.gp) ? `<span class="ck-vignette${o.img ? ' ok' : ' ck-gp'}" data-gp="${esc(JSON.stringify(o.gp || {}))}" aria-hidden="true">${o.img ? `<img src="${esc(o.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="const z=this.parentNode;this.remove();z.classList.remove('ok');z.classList.add('ck-gp');window.__photosCheckin&&window.__photosCheckin()">` : ''}</span>` : ''}</button>${puces}</div>`; };
     const i = CK_RAYONS.indexOf(r);
     if (lignesSeules) return L.map(rangee);
     const typesPresents = [...new Set(L.map(o => o.categorie))];
@@ -2680,6 +2681,7 @@
 
       ${barreFiltres}<div class="ck-legende"><span class="ck-st ck-st-or"><i></i>Embarquement</span><span>commence dans moins de 2 h</span><span class="ck-st ck-st-rouge"><i></i>Dernier appel</span><span>commence dans moins de 15 min</span></div>
       ${jours.map((date) => { const lignes = visibles.filter((o) => { const j = iso(new Date(o.t || now)); return date === auj ? j <= auj : j === date; }); return `<section class="ck-jour ${clJour(date)}"><h3 class="ck-jour-bandeau"><span class="cjb-nom">${titreJour(date)}</span><span class="cjb-info"><b>${new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</b><small>${lignes.length} départ${lignes.length > 1 ? 's' : ''}</small></span></h3>${lignes.length ? `<div class="ck-liste">${lignes.map(rangee).join('')}</div>` : `<p class="empty">Aucune soirée répertoriée à moins de ${r} km pour cette journée.</p>`}</section>`; }).join('')}<p class="aide">Mise à jour automatique. Sans horaire de fin publié, la fin est estimée à six heures après le début ; sans horaire, la soirée reste affichée jusqu’à minuit.</p>`;
+    setTimeout(() => window.__photosCheckin && window.__photosCheckin(), 0);
   }
   document.addEventListener('click', (e) => {
     const filtre = e.target.closest('[data-ck-type]');
@@ -3092,6 +3094,17 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     });
   }
   window.__photosAgenda = photosAgenda;
+  // Check-in : une vignette par bandeau, l'affiche de la soirée ou, à défaut, la photo Google Maps du lieu
+  function photosCheckin() {
+    if (!GKEY) return;
+    document.querySelectorAll('.ck-vignette.ck-gp:not(.ok)').forEach((z) => {
+      let l = null; try { l = JSON.parse(z.dataset.gp); } catch (e) { return; } if (!l || !l.nom) return;
+      const pose = (p) => { if (!p) return; z.style.backgroundImage = `url("${gPhotoUrl(p, 300)}")`; z.classList.add('ok'); };
+      const gid = G_IDS[cleLieuG(l)]; if (gid && G_PHOTOS[gid]) { pose(G_PHOTOS[gid]); return; } if (gid === null) return;
+      filePhotos = filePhotos.then(() => gidPour(l)).then((g) => g && photoGoogle(g)).then(pose).catch(() => {});
+    });
+  }
+  window.__photosCheckin = photosCheckin;
   const MOIS_CRT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
   function carteAgenda(x) {
     ficheSoireeJour(x);
@@ -3099,7 +3112,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const pays = x.l.country === 'ES' ? 'Espagne' : x.l.country === 'BE' ? 'Belgique' : '';
     return `<div class="ag-carte" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
       <div class="agc-visuel${x.flyerUrl ? '' : ' agc-gp'}" data-gp="${esc(JSON.stringify({ nom: x.l.nom, adresse: x.l.ville || '', lat: x.l.lat, lng: x.l.lng }))}" style="--aff:url('${esc(aff).replace(/'/g, '%27')}')"><img src="${esc(aff)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback;this.parentNode.style.setProperty('--aff','none');this.parentNode.classList.add('agc-gp');window.__photosAgenda&&window.__photosAgenda()" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC'}" loading="lazy" referrerpolicy="no-referrer">
-        <span class="agc-type" style="--tc:${TYPE_COUL[x.type || 'club']}">${TYPE_NOM[x.type || 'club']}</span>${estLibertin(x) ? '<span class="moins18 agc-18" title="Interdit aux moins de 18 ans">-18</span>' : ''}</div>
+        <span class="agc-type" style="--tc:${TYPE_COUL[x.type || 'club']}">${x.type === 'bar' && /^(Karaoké|Blind test|Afterwork|Apéro musical)$/.test(x.genres || '') ? esc(x.genres) : TYPE_NOM[x.type || 'club']}</span>${estLibertin(x) ? '<span class="moins18 agc-18" title="Interdit aux moins de 18 ans">-18</span>' : ''}</div>
       <div class="agc-txt"><b class="agc-nom">${esc(x.nom)}</b>
         <span class="agc-lieu">${esc(x.l.nom)}${x.l.ville ? ' · ' + esc(x.l.ville) : ''}${pays ? ', ' + pays : ''}</span>
         <span class="agc-quand">${['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'][dt.getDay()]} ${dt.getDate()} ${MOIS_CRT[dt.getMonth()]}${x.heure ? ' | ' + esc(x.heure.replace(':', 'h')) : ''}${x.prix && x.prix.length <= 24 ? `<em>${esc(x.prix)}</em>` : ''}</span>
