@@ -2680,8 +2680,8 @@
     const finDe = (o) => o.fin || (o.t || 0) + 5 * 3600000;
     L.sort((a, b) => (enLive(b) ? 1 : 0) - (enLive(a) ? 1 : 0) || finDe(a) - finDe(b) || a.km - b.km);
     const vis = (nom) => nom ? visFil(nom) : '';
-    const rangee = (o) => { const nbSoiree = o.fiche && o.fiche.startsWith('s:') ? (store.get('bangSoirees', {})[o.fiche] || 0) : 0;
-      const statutBang = o.fiche && o.fiche.startsWith('s:') ? `<span class="bz-ck-bang ${nbSoiree < 3 ? 'bz-ck-bang-attente' : 'bz-ck-bang-valide'}">${nbSoiree < 3 ? `${nbSoiree} BANGER${nbSoiree !== 1 ? 'S' : ''} À CONFIRMER` : `${nbSoiree} BANGERS CONFIRMÉS · VALIDÉ`}</span>` : '';
+    const rangee = (o) => { const nbSoiree = o.fiche ? (store.get('bangSoirees', {})[o.fiche] || 0) : 0;
+      const statutBang = o.fiche ? `<span class="bz-ck-bang ${nbSoiree < 3 ? 'bz-ck-bang-attente' : 'bz-ck-bang-valide'}">${nbSoiree < 3 ? `${nbSoiree} BANGER${nbSoiree !== 1 ? 'S' : ''} À CONFIRMER` : `${nbSoiree} BANGERS CONFIRMÉS · VALIDÉ`}</span>` : '';
       // Check-in : plus de pin animé à gauche (bandeau plus fin) ; on le garde dans le bandeau défilant de l'accueil
       const v = !lignesSeules ? '' : o.lieuPin ? `<span class="fil-vis fil-dj fil-pinbox"><img class="fil-pin fil-lieu" src="${o.lieuPin}" alt="">${casqueConf(nbSoiree || BANG_LIEU[o.lieuId] || 0)}</span>` : o.k === 'spot' ? (o.sp ? visSpotC(o.sp) : '') : o.vol ? visFil(o.vol, o.conf || 0, o.act || '') : '';
       // Tout ce qui est en live tourne : le DJ qui joue (son rond), le spot signalé (son épingle)
@@ -3588,6 +3588,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       toast('Bang ajouté à ' + soireeDuLieu.nom + (dj ? ' · ' + dj + ' aux platines' : '') + ' · compteur mis à jour');
       return;
     }
+    // Bang dans une discothèque sans soirée annoncée : il compte pour son bandeau du Check-in (« BANGERS À CONFIRMER »)
+    { const cl = (window.DISCOTHEQUES || []).find((c) => distKm([+connu.lat, +connu.lng], [c[2], c[3]]) < 0.15);
+      if (cl) { const key = 'c:' + cl[0], votes = store.get('bangSoireesMoi', {});
+        if (!votes[key] || Date.now() - votes[key] > 12 * 3600000) { votes[key] = Date.now(); store.set('bangSoireesMoi', votes); const counts = store.get('bangSoirees', {}); counts[key] = (counts[key] || 0) + 1; store.set('bangSoirees', counts); } } }
     if (connu.src === 'ibiza' && lieux[connu.id]) { signaler(connu.id, dj || 'DJ inconnu'); renderMap(); return; }
     const s = { id: 'sp' + Date.now(), dest: (connu && connu.dest) || state.dest, type: connu ? (connu.type === 'plage' ? 'plage' : connu.genre === 'bar' ? 'bar' : 'club') : (f.get('type') || 'bar'),
       nom: connu ? connu.nom : String(f.get('nom') || '').trim(), dj, lat: connu ? connu.lat : lat, lng: connu ? connu.lng : lng,
