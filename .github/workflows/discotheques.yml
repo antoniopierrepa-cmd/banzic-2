@@ -21,7 +21,11 @@ jobs:
           osmium export /tmp/clubs.osm.pbf -f geojsonseq -a type,id -o /tmp/clubs.geojsonseq --overwrite
       - run: node scripts/discotheques-pbf.mjs /tmp/clubs.geojsonseq
       - run: |
+          osmium tags-filter /tmp/france.osm.pbf nwr/amenity=swingerclub -o /tmp/lib.osm.pbf --overwrite
+          osmium export /tmp/lib.osm.pbf -f geojsonseq -a type,id -o /tmp/lib.geojsonseq --overwrite
+          node scripts/libertins-pbf.mjs /tmp/lib.geojsonseq
+      - run: |
           git config user.name "banzic-radar"
           git config user.email "noreply@anthropic.com"
-          git add discotheques.js
+          git add discotheques.js libertins.js
           git diff --cached --quiet || (git commit -m "Discothèques de France : mise à jour OpenStreetMap" && git pull --rebase -q && git push)
