@@ -1498,6 +1498,7 @@
     if (og === 'dj') h = onglets + `<div class="espace-dj-avant">${blocEspaceDj()}</div>
       ${banniereProfil('reglages', 'Mes réglages', 'Compte, alertes, confidentialité', esc(p.ville || 'Ville à renseigner') + ' · ' + FOURNISSEURS[state.compte.fournisseur], '⚙')}`;
     else h = onglets + h;
+    h += banniereClub();
     $('#screen-profil').innerHTML = h;
   }
 
@@ -2537,10 +2538,146 @@
       if (z && p) { z.style.backgroundImage = `url("${gPhotoUrl(p, 520)}")`; z.classList.add('a-photo'); z.insertAdjacentHTML('beforeend', `<span class="bcb-credit">${gAuteur(p) ? esc(gAuteur(p).displayName || '') + ' · ' : ''}Google Maps</span>`); } }); });
   }
   window.__bulleCarte = ouvrirBulleCarte;
-  document.addEventListener('click', (e) => { if (e.target.closest('[data-club-revendiquer]')) toast('Bientôt : les clubs pourront revendiquer leur fiche et annoncer leurs soirées'); });
+  document.addEventListener('click', (e) => { const b = e.target.closest('[data-club-revendiquer]'); if (!b) return; const f = CK_FICHES[b.dataset.clubRevendiquer];
+    ouvrirEspaceClub(f && f.lieu ? { id: b.dataset.clubRevendiquer, nom: f.lieu.nom, ville: f.lieu.adresse || '', lat: f.lieu.lat, lng: f.lieu.lng } : null); });
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-espace-club]')) ouvrirEspaceClub(null); });
   // Agenda : toute la bannière d'une soirée ouvre sa fiche (les boutons Billets / Infos gardent leur lien)
   document.addEventListener('click', (e) => { const z = e.target.closest('[data-ag-fiche]'); if (!z || e.target.closest('a')) return; e.preventDefault(); ouvrirFicheSoiree(z.dataset.agFiche); });
   document.addEventListener('click', (e) => { const b = e.target.closest('[data-bulle-fiche]'); if (!b) return; e.preventDefault(); const k = b.dataset.bulleFiche; if (map && bullePt) map.closePopup(bullePt); ouvrirFicheSoiree(k); });
+  // ================= Espace club : revendiquer sa discothèque, choisir un forfait, remplir sa fiche =================
+  // Démo : tout reste sur ce téléphone (store 'monClub') ; plus tard, base partagée + paiement.
+  const FORFAITS_CLUB = {
+    gratuit: { nom: 'Gratuit', prix: '0 €', an: '0 €', aide: 'Le club sur la carte et dans le Check-in, avec ses horaires OpenStreetMap ou estimés.', plus: [] },
+    officiel: { nom: 'Club Officiel', prix: '29 €/mois', an: '290 €/an', aide: 'Votre vitrine : vrais horaires, logo, photos, soirées et line-ups, badge « Club officiel ».', plus: ['Vrais horaires et jours d’ouverture', 'Logo, photos et flyers', 'Vos soirées et line-ups dans le Check-in, l’agenda et la carte', 'Badge « Club officiel »'] },
+    premium: { nom: 'Club Premium', prix: '79 €/mois', an: '790 €/an', aide: 'Tout Club Officiel, et la pub dans votre zone.', plus: ['Tout le forfait Club Officiel', 'En tête du Check-in dans votre zone (marqué « Sponsorisé »)', 'Notifications aux Bangers proches pour vos soirées (4 par mois)', 'Bulle mise en avant sur la carte et statistiques de vues'] }
+  };
+  const JOURS_CLUB = [[1, 'Lundi'], [2, 'Mardi'], [3, 'Mercredi'], [4, 'Jeudi'], [5, 'Vendredi'], [6, 'Samedi'], [0, 'Dimanche']];
+  let MON_CLUB = store.get('monClub', null), clubBrouillon = null, clubPeriode = 'mois';
+  function banniereClub() {
+    return `<button class="ech-banniere club-banniere" data-espace-club="1"><span class="ech-med cb-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><path d="M5 13h14M12 6v14M7 9c3 1.5 7 1.5 10 0M7 17c3-1.5 7-1.5 10 0M12 2v4"/></svg></span>
+      <span class="ech-txt"><small>${MON_CLUB ? 'Espace club' : 'Vous gérez un club ?'}</small><b>${MON_CLUB ? esc(MON_CLUB.lieu.nom) : 'Revendiquer ma discothèque'}</b><span>${MON_CLUB ? FORFAITS_CLUB[MON_CLUB.forfait].nom + ' · ' + esc(MON_CLUB.statut) : 'Votre fiche, votre logo, vos soirées'}</span></span>
+      <svg class="ech-fl" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
+  }
+  function ouvrirEspaceClub(lieu) {
+    const scr = $('#screen-club'); if (!scr) return;
+    if (!MON_CLUB) clubBrouillon = { lieu: lieu || (clubBrouillon && clubBrouillon.lieu) || null, forfait: (clubBrouillon && clubBrouillon.forfait) || 'officiel' };
+    renderEspaceClub();
+    document.querySelectorAll('.app > .screen').forEach((x) => { x.hidden = x !== scr; }); scr.hidden = false; scr.scrollTop = 0;
+  }
+  const retourClub = `<div class="sf-haut"><button type="button" class="sf-retour" data-soiree-fermer="1" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Retour</button></div>`;
+  function cartesForfaits(choisi) {
+    return `<div class="ec-periode" role="group" aria-label="Paiement"><button type="button" data-club-periode="mois" aria-pressed="${clubPeriode === 'mois'}">Au mois</button><button type="button" data-club-periode="an" aria-pressed="${clubPeriode === 'an'}">À l'année <small>2 mois offerts</small></button></div>
+      <div class="ec-forfaits">${Object.entries(FORFAITS_CLUB).map(([k, f]) => `<button type="button" class="ec-forfait f-${k}${choisi === k ? ' on' : ''}" data-club-forfait="${k}">
+        <span class="ecf-tete"><b>${f.nom}</b><em>${clubPeriode === 'an' ? f.an : f.prix}</em></span><small>${f.aide}</small>${f.plus.length ? `<ul>${f.plus.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</button>`).join('')}</div>`;
+  }
+  function renderEspaceClub() {
+    const scr = $('#screen-club'); if (!scr) return;
+    if (!MON_CLUB) {
+      const b = clubBrouillon || { lieu: null, forfait: 'officiel' };
+      scr.innerHTML = retourClub + `<form id="form-club" class="profil-form ec" novalidate>
+        <div class="ec-titre"><small>Espace club</small><h2>Revendiquer ma discothèque</h2><p>Votre club est déjà sur Banzic. Revendiquez sa fiche pour y mettre votre logo, vos vrais horaires et vos soirées.</p></div>
+        <div class="ps-etape">1 · Votre club</div>
+        ${choixLieuHtml('club', 'Cherchez votre club', 'dans la liste Banzic, ou « Autour de moi »', b.lieu)}
+        <button type="button" class="ec-google" data-club-google="1">Pas dans la liste ? Chercher sur Google Maps</button>
+        <div class="ec-google-res" id="ec-google-res"></div>
+        <div class="ps-etape">2 · Vous</div>
+        <label class="champ"><span>Votre nom</span><input class="search" name="nom" maxlength="40" autocomplete="name" required></label>
+        <label class="champ"><span>Votre rôle</span><select class="search" name="role"><option>Gérant ou gérante</option><option>Propriétaire</option><option>Directeur ou directrice artistique</option><option>Responsable communication</option><option>Autre</option></select></label>
+        <label class="champ"><span>E-mail professionnel</span><input class="search" type="email" name="email" maxlength="80" autocomplete="email" required></label>
+        <label class="champ"><span>Téléphone</span><input class="search" type="tel" name="tel" maxlength="20" autocomplete="tel"></label>
+        <label class="champ"><span>Site ou Instagram du club <small class="aide">pour vérifier que c'est bien vous</small></span><input class="search" name="preuve" maxlength="120" inputmode="url" placeholder="https://… ou @nomduclub"></label>
+        <p class="erreur" id="err-club" hidden></p>
+        <div class="ps-etape">3 · Votre forfait</div>
+        <div id="ec-forfaits">${cartesForfaits(b.forfait)}</div>
+        <button type="submit" class="btn-plein">Revendiquer mon club</button>
+        <p class="aide">Démo : pas de paiement pour l'instant. Votre demande est vérifiée avant que la fiche passe « Club officiel ».</p></form>`;
+      return;
+    }
+    const c = MON_CLUB, h = c.horaires || {};
+    scr.innerHTML = retourClub + `<div class="ec">
+      <div class="ec-titre"><small>Espace club · ${FORFAITS_CLUB[c.forfait].nom}</small><h2>${esc(c.lieu.nom)}</h2><p><span class="ec-statut">${esc(c.statut)}</span> ${esc(c.lieu.ville || '')}</p></div>
+      <form id="form-club-fiche" class="profil-form" novalidate>
+        <div class="ps-etape">Votre logo</div>
+        <div class="ec-logo"><span class="ecl-rond">${c.logo ? `<img src="${c.logo}" alt="Logo du club">` : '<small>Logo</small>'}</span><label class="ec-btn">Choisir une image<input type="file" accept="image/*" data-club-logo="1" hidden></label></div>
+        <div class="ps-etape">Vos horaires d'ouverture</div>
+        <div class="ec-horaires">${JOURS_CLUB.map(([j, nom]) => { const x = h[j] || null; return `<div class="ech-ligne"><label class="ech-jour"><input type="checkbox" name="ouvert${j}"${x ? ' checked' : ''}> ${nom}</label>
+          <input class="search" type="time" name="debut${j}" value="${x ? x.debut : '23:30'}" aria-label="${nom} ouverture"><span>→</span><input class="search" type="time" name="fin${j}" value="${x ? x.fin : '05:00'}" aria-label="${nom} fermeture"></div>`; }).join('')}</div>
+        <div class="ps-etape">Annoncer une soirée</div>
+        <label class="champ"><span>Nom de la soirée</span><input class="search" name="sNom" maxlength="60" placeholder="Opening, Techno Night…"></label>
+        <div class="ec-2"><label class="champ"><span>Date</span><input class="search" type="date" name="sDate" min="${iso(new Date())}" value="${iso(new Date())}"></label><label class="champ"><span>Heure</span><input class="search" type="time" name="sHeure" value="23:30"></label></div>
+        <label class="champ"><span>Line-up <small class="aide">séparez les DJ par des virgules</small></span><input class="search" name="sDjs" maxlength="160" placeholder="DJ A, DJ B b2b DJ C"></label>
+        ${(c.soirees || []).filter((x) => x.date >= iso(new Date())).length ? `<div class="ec-soirees">${c.soirees.filter((x) => x.date >= iso(new Date())).map((x, i) => `<div class="ecs"><b>${esc(x.nom)}</b><small>${esc(x.date)} · ${esc(x.heure)}${x.djs ? ' · ' + esc(x.djs) : ''}</small><button type="button" class="clc-x" data-club-soiree-suppr="${esc(x.id)}">Retirer</button></div>`).join('')}</div>` : ''}
+        <button type="submit" class="btn-plein">Enregistrer ma fiche</button>
+      </form>
+      <div class="ps-etape">Votre forfait</div><div id="ec-forfaits">${cartesForfaits(c.forfait)}</div>
+      <button type="button" class="alerte" data-club-quitter="1">Ne plus gérer ce club</button>
+      <p class="aide">Démo : la fiche est enregistrée sur ce téléphone. Les Bangers la verront quand la base partagée des clubs sera branchée.</p></div>`;
+  }
+  // Chercher le club sur Google Maps (seulement l'identifiant Google est gardé ; le reste, c'est le club qui le renseigne)
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-club-google]')) {
+      const f = $('#form-club'), q = f && f.querySelector('.cl-q').value.trim(), z = $('#ec-google-res'); if (!z) return;
+      if (!q || q.length < 2) { z.innerHTML = '<p class="aide">Tapez d’abord le nom du club dans la case au-dessus.</p>'; return; }
+      if (!GKEY) { z.innerHTML = '<p class="aide">Recherche Google indisponible.</p>'; return; }
+      z.innerHTML = '<p class="aide">Je cherche sur Google Maps…</p>';
+      const c = state.maPos ? [state.maPos.lat, state.maPos.lng] : centreGeographique();
+      fetch('https://places.googleapis.com/v1/places:searchText', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GKEY, 'X-Goog-FieldMask': 'places.id,places.displayName,places.shortFormattedAddress,places.location' },
+        body: JSON.stringify({ textQuery: q, maxResultCount: 5, languageCode: 'fr', locationBias: { circle: { center: { latitude: c[0], longitude: c[1] }, radius: 50000 } } }) })
+        .then((r) => r.ok ? r.json() : {}).then((j) => { const ps = j.places || []; z.__ps = ps;
+          z.innerHTML = ps.length ? ps.map((p, i) => `<button type="button" class="cl-item" data-club-gp="${i}"><span class="clc-pin" aria-hidden="true"></span><span class="clc-txt"><b>${esc((p.displayName || {}).text || '')}</b><small>${esc(p.shortFormattedAddress || '')} · Google Maps</small></span></button>`).join('') : '<p class="aide">Rien trouvé sur Google Maps.</p>'; })
+        .catch(() => { z.innerHTML = '<p class="aide">Recherche Google indisponible.</p>'; });
+      return;
+    }
+    const g = e.target.closest('[data-club-gp]');
+    if (g) { const z = $('#ec-google-res'), p = (z.__ps || [])[+g.dataset.clubGp]; if (!p) return;
+      const box = document.querySelector('#form-club [data-choix-lieu]'), v = { id: 'g:' + p.id, gid: p.id, nom: (p.displayName || {}).text || '', ville: p.shortFormattedAddress || '', lat: p.location.latitude, lng: p.location.longitude };
+      box.querySelector('input[type=hidden]').value = JSON.stringify(v); const ch = box.querySelector('.cl-choisi'); ch.innerHTML = clChoisiHtml(v); ch.hidden = false; z.innerHTML = ''; return; }
+    const fp = e.target.closest('[data-club-forfait]');
+    if (fp) { if (MON_CLUB) { MON_CLUB.forfait = fp.dataset.clubForfait; store.set('monClub', MON_CLUB); toast('Forfait choisi : ' + FORFAITS_CLUB[MON_CLUB.forfait].nom + ' (démo, sans paiement)'); }
+      else { const f = $('#form-club'); clubBrouillon = { ...(clubBrouillon || {}), forfait: fp.dataset.clubForfait, lieu: f ? lieuDe_json(f.querySelector('[name=clubLieu]').value) : null }; }
+      $('#ec-forfaits').innerHTML = cartesForfaits(MON_CLUB ? MON_CLUB.forfait : clubBrouillon.forfait); return; }
+    const pe = e.target.closest('[data-club-periode]');
+    if (pe) { clubPeriode = pe.dataset.clubPeriode; $('#ec-forfaits').innerHTML = cartesForfaits(MON_CLUB ? MON_CLUB.forfait : (clubBrouillon || {}).forfait); return; }
+    const sp = e.target.closest('[data-club-soiree-suppr]');
+    if (sp && MON_CLUB) { MON_CLUB.soirees = (MON_CLUB.soirees || []).filter((x) => x.id !== sp.dataset.clubSoireeSuppr); store.set('monClub', MON_CLUB); appliquerMonClub(); renderEspaceClub(); return; }
+    if (e.target.closest('[data-club-quitter]')) { if (e.target.dataset.sur !== '1') { e.target.dataset.sur = '1'; e.target.textContent = 'Toucher encore pour confirmer'; return; }
+      MON_CLUB = null; store.set('monClub', null); clubBrouillon = null; toast('Vous ne gérez plus ce club'); setTab('profil'); }
+  });
+  document.addEventListener('change', (e) => {
+    if (!e.target.matches('[data-club-logo]') || !MON_CLUB) return;
+    const fi = e.target.files && e.target.files[0]; if (!fi) return;
+    const r = new FileReader(); r.onload = () => { const img = new Image(); img.onload = () => { const k = Math.min(1, 320 / Math.max(img.width, img.height)), cv = document.createElement('canvas'); cv.width = img.width * k; cv.height = img.height * k;
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); MON_CLUB.logo = cv.toDataURL('image/png'); store.set('monClub', MON_CLUB); renderEspaceClub(); }; img.src = r.result; }; r.readAsDataURL(fi);
+  });
+  document.addEventListener('submit', (e) => {
+    if (e.target.id === 'form-club') {
+      e.preventDefault(); const f = new FormData(e.target), lieu = lieuDe_json(f.get('clubLieu')), err = $('#err-club');
+      const manque = !lieu ? 'Choisissez votre club' : String(f.get('nom') || '').trim().length < 2 ? 'Indiquez votre nom' : !/^\S+@\S+\.\S+$/.test(String(f.get('email') || '')) ? 'Indiquez un e-mail valide' : '';
+      if (manque) { err.textContent = manque; err.hidden = false; err.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+      MON_CLUB = { lieu, forfait: (clubBrouillon && clubBrouillon.forfait) || 'officiel', contact: { nom: String(f.get('nom')).trim(), role: f.get('role'), email: String(f.get('email')).trim(), tel: String(f.get('tel') || '').trim(), preuve: String(f.get('preuve') || '').trim() },
+        statut: 'En vérification', depuis: Date.now(), horaires: {}, soirees: [], logo: '' };
+      store.set('monClub', MON_CLUB); clubBrouillon = null; renderEspaceClub(); $('#screen-club').scrollTop = 0; toast('Demande envoyée : votre fiche club est prête à remplir'); return;
+    }
+    if (e.target.id === 'form-club-fiche' && MON_CLUB) {
+      e.preventDefault(); const f = new FormData(e.target), hor = {};
+      JOURS_CLUB.forEach(([j]) => { if (f.get('ouvert' + j)) hor[j] = { debut: f.get('debut' + j) || '23:30', fin: f.get('fin' + j) || '05:00' }; });
+      MON_CLUB.horaires = hor;
+      const sNom = String(f.get('sNom') || '').trim();
+      if (sNom) (MON_CLUB.soirees = MON_CLUB.soirees || []).push({ id: 'club-' + Date.now(), nom: sNom, date: f.get('sDate') || iso(new Date()), heure: f.get('sHeure') || '23:30', djs: String(f.get('sDjs') || '').trim() });
+      store.set('monClub', MON_CLUB); appliquerMonClub(); renderEspaceClub(); toast('Fiche du club enregistrée'); return;
+    }
+  });
+  // La fiche du club revendiqué s'applique dans l'appli : ses horaires (format OpenStreetMap), ses soirées dans le Check-in, l'agenda et la carte
+  const clubOfficiel = (la, lo) => MON_CLUB && MON_CLUB.lieu && Math.abs(MON_CLUB.lieu.lat - la) < 0.0014 && Math.abs(MON_CLUB.lieu.lng - lo) < 0.0019 ? MON_CLUB : null;
+  function appliquerMonClub() {
+    if (!MON_CLUB || !MON_CLUB.lieu) return;
+    const L = MON_CLUB.lieu, ab = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+    const oh = Object.entries(MON_CLUB.horaires || {}).map(([j, x]) => ab[j] + ' ' + x.debut + '-' + x.fin).join('; ');
+    const d = (window.DISCOTHEQUES || []).find((c) => Math.abs(c[2] - L.lat) < 0.0014 && Math.abs(c[3] - L.lng) < 0.0019);
+    if (d && Object.keys(MON_CLUB.horaires || {}).length) { d[6] = oh; d[1] = L.nom || d[1]; }
+    const idL = 'monclub'; SUD.lieux[idL] = { nom: L.nom, lat: +L.lat, lng: +L.lng, ville: L.ville || '', adresse: L.ville || '', gid: L.gid };
+    SUD.soirees = SUD.soirees.filter((x) => !String(x.id).startsWith('club-')).concat((MON_CLUB.soirees || []).map((x) => ({ id: x.id, nom: x.nom, date: x.date, heure: x.heure, heureFin: ((MON_CLUB.horaires || {})[new Date(x.date + 'T12:00:00').getDay()] || {}).fin || '05:00', djs: x.djs, lieu: idL, type: 'club', src: 'club' })));
+  }
   let CK_OUVERTE = null;
   function ouvrirFicheSoiree(cle) {
     const f = CK_FICHES[cle]; if (!f) return; CK_OUVERTE = cle;
@@ -2573,7 +2710,7 @@
       <div class="sf-bloc"><div class="sf-titre">${f.club ? 'Soirées' : 'Line-up'}</div>
         ${f.djs && f.djs.length ? `<div class="sf-lineup">${f.djs.map((n) => `<button type="button" class="sf-dj" data-dj-pro="${esc(n)}"><span class="sf-av">${avatarDj(n)}</span><b>${esc(n)}</b><span class="sf-fleche" aria-hidden="true">›</span></button>`).join('')}</div>`
           : `<p class="aide">${f.club ? 'Aucune soirée annoncée pour l\'instant.' : 'Line-up non communiqué pour l\'instant.'}</p>`}</div>
-      ${f.url ? `<a class="btn-plein sf-billets" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${f.club ? 'Site du club' : f.billets ? 'Billets' : 'Infos sur la soirée'}</a>` : ''}${f.club ? `<div class="sf-revendiquer"><b>C'est votre club ?</b><p>Revendiquez cette fiche pour annoncer vos soirées et les proposer aux Bangers de votre région.</p><button type="button" class="sf-btn" data-club-revendiquer="1">C'est mon club</button></div>` : ''}${f.source ? `<p class="aide sf-source">Source : ${esc(f.source)}</p>` : ''}`;
+      ${f.url ? `<a class="btn-plein sf-billets" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${f.club ? 'Site du club' : f.billets ? 'Billets' : 'Infos sur la soirée'}</a>` : ''}${f.club && f.officiel ? `<div class="sf-officiel">${f.logo ? `<img src="${f.logo}" alt="">` : ''}<span><b>Club officiel</b><small>Fiche tenue par le club : horaires et soirées à jour.</small></span></div>` : f.club ? `<div class="sf-revendiquer"><b>C'est votre club ?</b><p>Revendiquez cette fiche pour annoncer vos soirées et les proposer aux Bangers de votre région.</p><button type="button" class="sf-btn" data-club-revendiquer="${cle}">C'est mon club</button></div>` : ''}${f.source ? `<p class="aide sf-source">Source : ${esc(f.source)}</p>` : ''}`;
     const routeBtn = scr.querySelector('[data-sf-route-toggle]'), routeOptions = scr.querySelector('.sf-route-options');
     if (routeOptions) { routeOptions.hidden = true; routeOptions.style.display = 'none'; }
     if (routeBtn && routeOptions) routeBtn.addEventListener('click', () => { routeOptions.hidden = !routeOptions.hidden; routeOptions.style.display = routeOptions.hidden ? 'none' : 'flex'; routeBtn.setAttribute('aria-expanded', String(!routeOptions.hidden)); });
@@ -2654,10 +2791,10 @@
       if (st[0] === 'Terminé') return;
       const lineup = djsDe(x.djs);
       CK_FICHES['s:' + x.id] = { date: x.date, dateFin: x.dateFin || '', heureFin: x.heureFin || (x.type === 'club' ? '05:00' : ''), titre: x.nom, sous: [x.genres, x.scheduleNote].filter(Boolean).join(' · '), tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', st, heure: x.heure || '', quand: x.date > auj ? nomJour(x.date) + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'commence dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
-        lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: d, djs: lineup, url: radarUrl(x.ticketUrl || x.url), test: x.test };
-      ligne({ img: radarUrl(x.flyerUrl) || '', gp: { nom: l.nom, adresse: l.ville || '', lat: l.lat, lng: l.lng }, festif: x.type === 'bar' && /^(Karaoké|Blind test|Afterwork|Apéro musical)$/.test(x.genres || '') ? x.genres : '',
+        lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: d, djs: lineup, url: radarUrl(x.ticketUrl || x.url), test: x.test, officiel: x.src === 'club', club: x.src === 'club', logo: x.src === 'club' && MON_CLUB ? MON_CLUB.logo : '' };
+      ligne({ img: radarUrl(x.flyerUrl) || (x.src === 'club' && MON_CLUB && MON_CLUB.logo) || '', gp: { nom: l.nom, adresse: l.ville || '', lat: l.lat, lng: l.lng }, festif: x.type === 'bar' && /^(Karaoké|Blind test|Afterwork|Apéro musical)$/.test(x.genres || '') ? x.genres : '',
         categorie: typeCheckin(x, l), adulte: soireeAdulte(x), fin, lieuId: x.lieu, fiche: 's:' + x.id, djs: lineup, lieuPin: pinLieu({ nom: l.nom, style: x.type }), km: d, t: deb || msDe(x.date, '23:59'), heure: x.heure || (x.type === 'club' ? '23:30' : '--:--'), porte: l.nom, st, k: 'decl', tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert' })[x.type] || 'Soirée', attr: `data-ck-fiche="s:${x.id}"`, nom: x.nom,
-        l1: x.date > auj ? nomJour(x.date).toLowerCase() + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
+        l1: (x.src === 'club' ? '<span class="ck-officiel">Club officiel</span> ' : '') + (x.date > auj ? nomJour(x.date).toLowerCase() + (x.heure ? ' à ' + x.heure : '') : avant != null && avant > 0 ? 'dans ' + dur(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir'),
         l2: [[esc(l.nom) + ' · ' + fK(d)], [x.type === 'club' ? ((x.heure || '23:30') + ' → ' + (x.heureFin || '05:00') + (!x.heureFin || !x.heure ? ' · estimé' : '')) : (x.heureFin ? (x.heure || '?') + ' → ' + x.heureFin : ''), 'fil-att'], [x.djs ? 'line-up annoncé' : 'line-up non communiqué', 'fil-att']], vol: dj }); });
     // Discothèques ouvertes ce soir (toutes, automatiquement) : vrais horaires Google Maps quand on les a, sinon 23 h 30 - 4 h estimés.
     // Une discothèque qui a déjà une soirée annoncée ce soir n'apparaît pas deux fois ; fermée ce soir d'après Google : pas affichée.
@@ -2674,10 +2811,11 @@
       if (!choix) return;
       const avant = (choix.deb - now) / 60000, st = avant > 120 ? ['À l\'heure', 'bleu'] : avant > 15 ? ['Embarquement', 'or'] : avant > 0 ? ['Dernier appel', 'rouge'] : ['Ouvert', 'vert'];
       const plage = choix.hd + ' → ' + choix.hf + (choix.estime ? ' · estimé' : '');
-      CK_FICHES['c:' + id] = { titre: nom, sous: choix.estime ? 'Horaires estimés : 23 h 30 → 4 h' : 'Horaires OpenStreetMap : ' + choix.hd + ' → ' + choix.hf, tag: 'Discothèque', st, date: choix.date, heure: choix.hd, heureFin: choix.hf,
+      const off = clubOfficiel(la, lo);
+      CK_FICHES['c:' + id] = { officiel: !!off, logo: off ? off.logo : '', titre: nom, sous: off && !choix.estime ? 'Horaires du club : ' + choix.hd + ' → ' + choix.hf : choix.estime ? 'Horaires estimés : 23 h 30 → 4 h' : 'Horaires OpenStreetMap : ' + choix.hd + ' → ' + choix.hf, tag: 'Discothèque', st, date: choix.date, heure: choix.hd, heureFin: choix.hf,
         quand: avant > 0 ? 'ouvre dans ' + dur(Math.round(avant)) : 'ouvert jusqu’à ' + choix.hf, lieu: { nom, adresse: ville || '', lat: la, lng: lo, gid }, km: d, djs: [], url: site || '', club: true, source: 'OpenStreetMap (© contributeurs OpenStreetMap)' + '' };
-      ligne({ gp: cle, categorie: 'club', fin: choix.fin, fiche: 'c:' + id, djs: [], km: d, t: Math.max(choix.deb, msDe(auj, '00:00')), heure: choix.hd, porte: nom, st, k: 'decl', tag: 'Discothèque', attr: `data-ck-fiche="c:${id}"`, nom,
-        l1: (avant > 0 ? 'ouvre dans ' + dur(Math.round(avant)) : 'ouvert jusqu’à ' + choix.hf) + ' · ' + plage, l2: [[esc(ville || nom) + ' · ' + fK(d)]] });
+      ligne({ gp: cle, img: off && off.logo ? off.logo : '', categorie: 'club', fin: choix.fin, fiche: 'c:' + id, djs: [], km: d, t: Math.max(choix.deb, msDe(auj, '00:00')), heure: choix.hd, porte: nom, st, k: 'decl', tag: 'Discothèque', attr: `data-ck-fiche="c:${id}"`, nom,
+        l1: (off ? '<span class="ck-officiel">Club officiel</span> ' : '') + (avant > 0 ? 'ouvre dans ' + dur(Math.round(avant)) : 'ouvert jusqu’à ' + choix.hf) + ' · ' + plage, l2: [[esc(ville || nom) + ' · ' + fK(d)]] });
     });
     // D'abord ce qui est en live en ce moment (DJ en cours, dernier appel, spots signalés), puis le reste ; dans chaque groupe, du plus proche au plus loin
     const enLive = (o) => o.k === 'spot' || o.k === 'live' || o.st[1] === 'vert';
@@ -2869,6 +3007,7 @@
   const RADAR = window.AGENDA_RADAR || { departments: {}, coverage: {}, lieux: {}, sources: {}, soirees: [] };
   Object.assign(SUD.lieux, RADAR.lieux); Object.assign(SUD.sources, RADAR.sources);
   SUD.soirees.push(...RADAR.soirees);
+  appliquerMonClub(); // la fiche du club revendiqué (horaires, soirées) passe par-dessus les données publiques
   const radarUrl = (value) => { try { const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch (e) { return ''; } };
   function centreGeographique() {
     if (state.villeChoisie && state.villeRecherche) return state.villeRecherche;
@@ -2892,7 +3031,8 @@
   const DISCOS = (window.DISCOTHEQUES || []).map(([id, nom, lat, lng, ville, site]) => ({ id, nom, lat, lng, ville, site }));
   function ficheDisco(c) {
     const auj = iso(new Date()), soir = SUD.soirees.find((x) => x.date >= auj && SUD.lieux[x.lieu] && distKm([c.lat, c.lng], [SUD.lieux[x.lieu].lat, SUD.lieux[x.lieu].lng]) < 0.08);
-    return CK_FICHES['c:' + c.id] = { titre: c.nom, sous: c.ville || '', tag: 'Discothèque', st: soir ? ['Soirée annoncée', 'vert'] : ['Discothèque', 'bleu'], heure: '',
+    const off = clubOfficiel(c.lat, c.lng);
+    return CK_FICHES['c:' + c.id] = { officiel: !!off, logo: off ? off.logo : '', titre: c.nom, sous: c.ville || '', tag: 'Discothèque', st: soir ? ['Soirée annoncée', 'vert'] : ['Discothèque', 'bleu'], heure: '',
       quand: soir ? 'prochaine soirée : ' + soir.nom : 'aucune soirée annoncée pour l’instant', lieu: { nom: c.nom, adresse: c.ville || '', lat: c.lat, lng: c.lng }, km: kmDeMoi(c.lat, c.lng),
       djs: soir ? djsDe(soir.djs) : [], url: c.site || '', siteClub: !!c.site, club: true, source: 'OpenStreetMap (© contributeurs OpenStreetMap)' };
   }
@@ -5269,7 +5409,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     $('#screen-agenda').hidden = tab !== 'agenda';
     $('#screen-profil').hidden = tab !== 'profil';
     $('#screen-checkin').hidden = tab !== 'checkin';
-    { const sf = $('#screen-soiree'); if (sf) sf.hidden = true; }
+    { const sf = $('#screen-soiree'); if (sf) sf.hidden = true; const sc = $('#screen-club'); if (sc) sc.hidden = true; }
     const pst = document.querySelector('.pastilles'); if (pst) pst.hidden = tab !== 'live'; // boutons Autour de moi / DJ live : seulement sur « En direct »
     if (tab === 'map') { initMap(); setTimeout(() => map && map.invalidateSize(), 0); }
     majPortails();
