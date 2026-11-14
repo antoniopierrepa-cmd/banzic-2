@@ -2863,11 +2863,29 @@
       const m = L.marker([c.lat, c.lng], { icon: ICONE_DISCO, zIndexOffset: 100, title: c.nom }).bindPopup('');
       ficheDisco(c); m.__fiche = 'c:' + c.id; m.addTo(layer); });
   }
+  // Repère de soirée : vinyle animé, compteur BANGERS au centre, badge 18+ si applicable.
+  function soireeAdulte(x) {
+    const l = x.l || SUD.lieux[x.lieu] || {};
+    const cats = Array.isArray(l.categories) ? l.categories.join(' ') : '';
+    return x.ageMin >= 18 || l.ageMin >= 18 || /libertin|adult.only|18\\+/i.test(cats + ' ' + (x.restriction || '') + ' ' + (l.restriction || ''));
+  }
+  function compteurSoiree(x) {
+    const local = store.get('bangSoirees', {});
+    return Math.max(0, Number(local['s:' + x.id] || 0));
+  }
+  function iconeVinyle(x) {
+    const n = compteurSoiree(x), adulte = soireeAdulte(x);
+    return L.divIcon({
+      className: 'bz-vinyle-marker', iconSize: [48, 48], iconAnchor: [24, 24],
+      html: `<span class="bz-vinyle-disque" aria-hidden="true"><span class="bz-vinyle-centre">${n}</span></span>${adulte ? '<span class="bz-vinyle-adulte">18+</span>' : ''}`
+    });
+  }
   function marqueursRadar() {
     soireesCarteJour().forEach((x) => {
-      const marker = L.marker([x.l.lat, x.l.lng], { icon: L.divIcon({ className: 'decl-pin', iconSize: [30, 30], iconAnchor: [15, 15], html: '♪' }), title: x.nom + ' · aujourd’hui' });
+      const marker = L.marker([x.l.lat, x.l.lng], { icon: iconeVinyle(x), title: x.nom + ' · aujourd’hui' });
       const url = radarUrl(x.ticketUrl || x.url);
-      marker.bindPopup(`<div class="pop-venue">${esc(x.nom)}</div><div class="pop-slot">${esc(x.l.nom)} · ${x.heure ? esc(x.heure) : 'Horaire non communiqué'} · Soirée annoncée aujourd’hui</div>${x.djs ? `<div class="pop-dj">${esc(x.djs)}</div>` : ''}${url ? `<a class="pop-btn" data-soiree-jour="${esc(x.id)}" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Infos sur la soirée</a>` : ''}`);
+      const n = compteurSoiree(x), adulte = soireeAdulte(x);
+      marker.bindPopup(`<div class="pop-venue">${esc(x.nom)} ${adulte ? '<span class="bz-pop-18">18+</span>' : ''}</div><div class="pop-slot">${esc(x.l.nom)} · ${x.heure ? esc(x.heure) : 'Horaire non communiqué'} · Soirée annoncée aujourd’hui</div><div class="bz-pop-bangers">● ${n} BANGER${n > 1 ? 'S' : ''} confirmé${n > 1 ? 's' : ''}</div>${x.djs ? `<div class="pop-dj">${esc(x.djs)}</div>` : ''}${url ? `<a class="pop-btn" data-soiree-jour="${esc(x.id)}" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Infos sur la soirée</a>` : ''}`);
       ficheSoireeJour(x); marker.__fiche = 's:' + x.id;
       marker.addTo(layer);
     });
