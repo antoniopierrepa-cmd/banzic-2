@@ -454,6 +454,8 @@
     marqueursDiscotheques();
   }
 
+  // Actualiser les vinyles à chaque changement d'heure de début/fin, sans recharger la page.
+  setInterval(() => { if (map && document.getElementById('map')) { try { renderMap(); } catch (e) { console.warn(e); } } }, 60000);
   // ---------- Fiche lieu
   // Bouton retour explicite : « Retour à la carte » quand on vient de la carte, sinon « Retour »
   const ECRANS_RETOUR = { map: 'Retour à la carte', live: 'Retour', agenda: 'Retour à l\'agenda', fav: 'Retour à mes DJ', profil: 'Retour au profil' };
@@ -2849,7 +2851,7 @@
   }
   function soireesCarteJour() {
     const auj = iso(new Date());
-    return SUD.soirees.filter((x) => x.date === auj && SUD.lieux[x.lieu])
+    return SUD.soirees.filter((x) => SUD.lieux[x.lieu] && (x.date === auj || (x.date < auj && soireeEnCoursCarte(x))))
       .map((x) => ({ ...x, l: SUD.lieux[x.lieu] }))
       .filter((x) => dansZoneCarte(x.l.lat, x.l.lng));
   }
@@ -2891,13 +2893,8 @@
     return Math.max(0, Number(local['s:' + x.id] || 0));
   }
   function soireeEnCoursCarte(x) {
-    // Pas d'animation sans horaires fiables.
-    if (!x.date || !/^\d{1,2}:\d{2}$/.test(x.heure || '') || !/^\d{1,2}:\d{2}$/.test(x.heureFin || '')) return false;
-    const debut = new Date(x.date + 'T' + x.heure);
-    const fin = new Date((x.dateFin || x.date) + 'T' + x.heureFin);
-    if (fin <= debut && !x.dateFin) fin.setDate(fin.getDate() + 1);
-    const maintenant = new Date();
-    return maintenant >= debut && maintenant < fin;
+    const h = horairesCheckin(x);
+    return h.debut != null && Date.now() >= h.debut && Date.now() < h.fin;
   }
   function iconeVinyle(x) {
     const n = compteurSoiree(x), adulte = soireeAdulte(x);
