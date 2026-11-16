@@ -3178,14 +3178,14 @@
   const BARS_SOUS = [['karaoke', 'Karaoké', /karaok/], ['blind', 'Blind test', /blind/], ['afterwork', 'Afterwork', /afterwork/], ['apero', 'Apéro musical', /ap[eé]ro/], ['bardj', 'Bar avec DJ', null]];
   // Sous-menus des pads : on coche ce qu'on cherche (rien de coché = tout le pad)
   const SOUS_MENUS = {
-    club: { titre: 'Discothèques et clubs', lieux: [['disco', 'Discothèque'], ['club', 'Club'], ['libertin', 'Club libertin', true]], styles: true },
+    club: { titre: 'Discothèques et clubs', lieux: [['discotheque', 'Discothèque'], ['club', 'Club'], ['libertin', 'Club libertin', true]], styles: true },
     bar: { titre: 'Bars festifs', lieux: BARS_SOUS.map(([k, n]) => [k, n]), styles: true },
     festival: { titre: 'Festivals', lieux: [], styles: true },
     concert: { titre: 'Concerts', lieux: [], styles: true }
   };
   state.sudSous = state.sudSous || { club: [], bar: [], festival: [], concert: [] };
   function passeLieuSous(x, k, v) {
-    if (k === 'club') return v === 'libertin' ? estLibertin(x) : !estLibertin(x) && (v === 'disco' ? estDiscotheque(x.l) : !estDiscotheque(x.l));
+    if (k === 'club') return v === 'libertin' ? estLibertin(x) : !estLibertin(x) && (v === 'discotheque' ? estDiscotheque(x.l) : !estDiscotheque(x.l));
     if (k === 'bar') { const b = BARS_SOUS.find((y) => y[0] === v); return b[2] ? b[2].test(sansAccent(String(x.genres || '') + ' ' + x.nom).toLowerCase()) : !!(x.djs || x.djSet); }
     return true;
   }
@@ -3236,6 +3236,7 @@
         </div>
         
         <p class="demo-note">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements français avec annonces' + (RADAR.countryCoverage && RADAR.countryCoverage.BE ? ' · Belgique : ' + RADAR.countryCoverage.BE + ' soirées' : '') + (RADAR.countryCoverage && RADAR.countryCoverage.ES ? ' · Espagne : ' + RADAR.countryCoverage.ES + ' soirées' : '') + ' · collecte partielle.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
+        <div id="ag-cal-zone"></div>
         <div class="pads" role="group" aria-label="Filtres">${PADS.map((x) => `<button class="pad${x.moins18 ? ' pad-18' : ''}" style="--pc:${x.c}" data-pad="${x.g}|${x.k}" aria-pressed="false"${x.moins18 ? ' title="Interdit aux moins de 18 ans"' : ''}>${icoPad(x.g === 'type' ? x.k : x.g === 'avecdj' ? 'avecdj' : x.k === 'oui' ? 'mesdj' : x.k)}<span class="pad-nom">${x.nom}${SOUS_MENUS[x.k] ? '<i class="pad-fl" aria-hidden="true">▾</i>' : ''}</span><small class="pad-nb"></small></button>`).join('')}</div>
         <div id="sous-menu-zone"></div>
       </div>
@@ -3254,13 +3255,52 @@
     });
     listeAgendaSud();
   }
+  // ---- Calendrier de l'agenda : on choisit un jour ; les points montrent les jours qui ont des soirées (avec les filtres choisis) ----
+  const MOIS_LONG = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  function calendrierAgenda(soirees) {
+    const auj0 = iso(new Date()), parJour = {};
+    soirees.forEach((x) => { parJour[x.date] = (parJour[x.date] || 0) + 1; });
+    const d = state.agDate ? new Date(state.agDate + 'T12:00:00') : null;
+    const libelle = d ? ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][d.getDay()] + ' ' + d.getDate() + ' ' + MOIS_LONG[d.getMonth()] : 'Toutes les dates';
+    const ico = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+    let h = `<div class="ag-cal-barre"><button type="button" class="ag-cal-btn${state.agCalOuvert ? ' ouvert' : ''}${d ? ' choisi' : ''}" data-agcal="ouvrir" aria-expanded="${!!state.agCalOuvert}">${ico}<span>${libelle}</span><i aria-hidden="true">▾</i></button>${d ? '<button type="button" class="ag-cal-x" data-agcal="toutes">Toutes les dates</button>' : ''}</div>`;
+    if (!state.agCalOuvert) return h;
+    const m0 = state.agCalMois || (state.agDate || auj0).slice(0, 7), [an, mo] = m0.split('-').map(Number), prem = new Date(an, mo - 1, 1), nbJ = new Date(an, mo, 0).getDate();
+    const decal = (prem.getDay() + 6) % 7, moisAuj = auj0.slice(0, 7);
+    let cases = '';
+    for (let i = 0; i < decal; i++) cases += '<span class="agc-vide"></span>';
+    for (let j = 1; j <= nbJ; j++) {
+      const ds = m0 + '-' + String(j).padStart(2, '0'), n = parJour[ds] || 0, passe = ds < auj0;
+      cases += `<button type="button" class="agc-j${passe ? ' passe' : ''}${n ? ' a' : ''}${ds === auj0 ? ' auj' : ''}${ds === state.agDate ? ' on' : ''}" ${passe ? 'disabled' : `data-agcal-j="${ds}"`} aria-label="${j} ${MOIS_LONG[mo - 1]}${n ? ', ' + n + ' soirée' + (n > 1 ? 's' : '') : ''}"><b>${j}</b>${n ? `<small>${n > 99 ? '99+' : n}</small>` : ''}</button>`;
+    }
+    return h + `<div class="ag-cal" role="dialog" aria-label="Choisir une date">
+      <div class="agcal-tete"><button type="button" data-agcal="prec" ${m0 <= moisAuj ? 'disabled' : ''} aria-label="Mois précédent">‹</button><b>${MOIS_LONG[mo - 1]} ${an}</b><button type="button" data-agcal="suiv" aria-label="Mois suivant">›</button></div>
+      <div class="agcal-sem">${['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((x) => `<span>${x}</span>`).join('')}</div>
+      <div class="agcal-grille">${cases}</div>
+      <p class="agcal-aide">Le chiffre = soirées ce jour-là avec tes filtres (styles, type, distance).</p></div>`;
+  }
+  document.addEventListener('click', (e) => {
+    const j = e.target.closest('[data-agcal-j]');
+    if (j) { state.agDate = j.dataset.agcalJ; state.agCalOuvert = false; listeAgendaSud(); $('#agenda-liste')?.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+    const b = e.target.closest('[data-agcal]'); if (!b) return;
+    const a = b.dataset.agcal, m0 = state.agCalMois || (state.agDate || iso(new Date())).slice(0, 7), [an, mo] = m0.split('-').map(Number);
+    if (a === 'ouvrir') state.agCalOuvert = !state.agCalOuvert;
+    else if (a === 'toutes') { state.agDate = null; state.agCalOuvert = false; state.agJours = 7; }
+    else { const n = new Date(an, mo - 1 + (a === 'suiv' ? 1 : -1), 1); state.agCalMois = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0'); }
+    listeAgendaSud();
+  });
   function listeAgendaSud() {
     // Inclure aussi les soirées de ce soir dans l'agenda, pas uniquement celles de demain.
     // Les dates plus lointaines arrivent en descendant : 7 jours de plus à chaque fois qu'on atteint le bas de la liste
     const auj0 = iso(new Date()), j7 = state.radarHyeresWeekend ? finWeekend() : auJour(state.agJours || 7);
-    const r = RAYONS[state.rayonIdx], dansZone = (x) => state.radarDep ? x.l.dep === state.radarDep : dansRayonAg(x, r), toutesLoin = soireesAvecKm().filter((x) => x.date >= auj0 && dansZone(x)), toutes = toutesLoin.filter((x) => x.date <= j7);
+    if (state.agDate && state.agDate < auj0) state.agDate = null;
+    const r = RAYONS[state.rayonIdx], dansZone = (x) => state.radarDep ? x.l.dep === state.radarDep : dansRayonAg(x, r), toutesLoin = soireesAvecKm().filter((x) => x.date >= auj0 && dansZone(x));
+    // Calendrier : une date choisie = seulement les soirées de ce jour-là
+    const toutes = state.agDate ? toutesLoin.filter((x) => x.date === state.agDate) : toutesLoin.filter((x) => x.date <= j7);
     const types = (state.sudTypes || []).filter((k) => PAD_TEST['type|' + k]), quand = state.sudQuand === 'weekend' ? 'weekend' : null, mesdj = !!state.sudMesDj;
-    const liste = toutes.filter((x) => (!types.length || types.some((k) => typeOkSous(x, k, state.sudSous) && passeSous(x, k))) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs));
+    const passeFiltres = (x) => (!types.length || types.some((k) => typeOkSous(x, k, state.sudSous) && passeSous(x, k))) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs);
+    const liste = toutes.filter(passeFiltres);
+    { const z = $('#ag-cal-zone'); if (z) z.innerHTML = calendrierAgenda(toutesLoin.filter(passeFiltres)); }
     document.querySelectorAll('[data-pad]').forEach((b) => {
       const [g, k] = b.dataset.pad.split('|'), on = g === 'type' ? (k === 'tout' ? !types.length : types.includes(k)) : g === 'quand' ? quand === k : g === 'avecdj' ? !!state.sudAvecDj : mesdj;
       b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.classList.toggle('ouvert', state.padOuvert === k && on);
@@ -3270,7 +3310,8 @@
     document.querySelectorAll('.fd-graduations span').forEach((s, i) => s.classList.toggle('on', i === state.rayonIdx));
     const fr = $('#fader-rayon'); if (fr) fr.style.setProperty('--pct', (state.rayonIdx / (RAYONS.length - 1) * 100) + '%');
     let h = '';
-    if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département.' : `Rien d’annoncé dans les 7 prochains jours ${r >= FRANCE_KM ? 'en France' : 'à moins de ' + r + ' km'}. Vérifie aussi les lieux et leurs annonces officielles.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
+    if (!toutes.length && state.agDate) h += `<div class="empty">Aucune soirée annoncée ce jour-là dans cette zone.<br><small>Choisis un jour avec un point dans le calendrier.</small></div>`;
+    else if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département.' : `Rien d’annoncé dans les 7 prochains jours ${r >= FRANCE_KM ? 'en France' : 'à moins de ' + r + ' km'}. Vérifie aussi les lieux et leurs annonces officielles.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
     else {
       if (!liste.length) h += `<div class="empty">Rien pour ces pads dans ce rayon.${mesdj && !state.favs.length ? ' Ajoute des DJ en favori (♥) pour utiliser « Mes DJ ».' : ''}</div>`;
       // Un titre par jour (« SAM. 14 NOV. »), puis les soirées du jour en grandes cartes avec l'affiche
@@ -3281,7 +3322,7 @@
         h += carteAgenda(x);
       });
     }
-    const reste = soireesAvecKm().filter((x) => x.date > j7 && dansZone(x)).length;
+    const reste = state.agDate ? 0 : soireesAvecKm().filter((x) => x.date > j7 && dansZone(x)).length;
     if (reste) h += `<div class="ag-plus" id="ag-plus"><span class="ag-plus-rond"></span>Les dates suivantes arrivent…</div>`;
     h += `<p class="demo-note">Sources : déclarations des DJ et des Bangers, et le radar Banzic (agendas et billetteries autorisés). Vérifie toujours sur la page de la soirée avant de sortir.</p>`;
     $('#agenda-liste').innerHTML = h;

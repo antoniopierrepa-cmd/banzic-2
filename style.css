@@ -3231,3 +3231,29 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 #screen-checkin .ck-ville { font-size: 11.5px; letter-spacing: .02em; margin: 1px 0 3px; }
 #screen-checkin .ck-ville svg { width: 11px; height: 11px; margin-right: 3px; vertical-align: -1px; }
 #screen-agenda .agc-h .agc-logo img { object-fit: contain; background: #0B0F1C; }
+
+/* Agenda : calendrier pour choisir un jour */
+.ag-cal-barre { display: flex; align-items: center; gap: 8px; margin: 12px 0 4px; }
+.ag-cal-btn { flex: 1; display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; text-align: left; }
+.ag-cal-btn svg { width: 20px; height: 20px; color: #E0A47A; flex: none; }
+.ag-cal-btn span { flex: 1; }
+.ag-cal-btn i { font-style: normal; font-size: 11px; opacity: .7; transition: transform .2s; }
+.ag-cal-btn.ouvert i { transform: rotate(180deg); }
+.ag-cal-btn.choisi { border-color: #E0A47A; background: rgba(224,164,122,.12); }
+.ag-cal-x { border: 0; background: none; color: #9AA3B8; font-size: 12.5px; text-decoration: underline; cursor: pointer; white-space: nowrap; }
+.ag-cal { margin: 6px 0 8px; padding: 12px; border-radius: 16px; background: #0F1320; border: 1.5px solid rgba(224,164,122,.4); animation: smOuvre .18s ease-out; }
+.agcal-tete { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.agcal-tete b { font-size: 16px; text-transform: capitalize; }
+.agcal-tete button { width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(255,255,255,.07); color: #fff; font-size: 22px; line-height: 1; cursor: pointer; }
+.agcal-tete button:disabled { opacity: .25; cursor: default; }
+.agcal-sem, .agcal-grille { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.agcal-sem span { text-align: center; font-size: 11px; font-weight: 800; color: #7E8599; padding-bottom: 2px; }
+.agc-j { position: relative; aspect-ratio: 1; border: 0; border-radius: 10px; background: transparent; color: #C9CEDB; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; cursor: pointer; padding: 0; }
+.agc-j b { font-size: 14.5px; font-weight: 700; }
+.agc-j small { font-size: 9.5px; font-weight: 800; color: #E0A47A; line-height: 1; }
+.agc-j.a { background: rgba(224,164,122,.1); color: #fff; }
+.agc-j.auj { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.35); }
+.agc-j.on { background: #E0A47A; color: #12081A; }
+.agc-j.on small { color: #12081A; }
+.agc-j.passe { opacity: .25; cursor: default; }
+.agcal-aide { margin: 8px 0 0; font-size: 11.5px; color: #7E8599; text-align: center; }
