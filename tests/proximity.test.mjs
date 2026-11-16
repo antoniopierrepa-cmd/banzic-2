@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
+test('présence sur place : Bangers et DJ limités à 30 m, bateau à 500 m', () => {
+  assert.match(app, /const RAYON_M = 30;/);
+  assert.match(app, /const RAYON_BATEAU_M = 500;/);
+  assert.match(app, /rapproche-toi à 30 mètres maximum/);
+});
+
 function context(state, soirees = [], lieux = {}) {
   const bounds = { south: 42, north: 43, west: 2, east: 3, getCenter() { return { lng: (this.west + this.east) / 2 }; }, contains([lat, lng]) { return lat >= this.south && lat <= this.north && lng >= this.west && lng <= this.east; } };
   const c = vm.createContext({ state, bounds, map: { getBounds: () => bounds }, DEST: { local: { centre: [43.1242, 5.928] } }, SUD: { soirees, lieux }, iso: () => '2026-11-12' });
