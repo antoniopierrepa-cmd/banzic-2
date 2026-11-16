@@ -4,6 +4,8 @@ La banque de données garde les annonces de chaque pays indépendamment de la po
 
 Le GPS réel est le centre par défaut. Une ville choisie pour préparer un voyage devient prioritaire pour l’agenda, la carte et le Check-in. Le GPS conservé reste celui de la personne, pour la confirmation de présence sur place. Le bouton GPS revient à la position réelle. Une réponse GPS asynchrone ne doit pas effacer une ville choisie entre-temps. Sans GPS, la zone de repli est signalée comme approximative.
 
+Le seuil de présence est fixé à **30 m** pour les Bangers qui confirment ou banguent sur place et pour les DJ qui déclarent « Je mixe ici ». Les bateaux conservent une marge spécifique de **500 m** en raison de leur déplacement.
+
 Le filtre facultatif de département s’applique à l’intérieur du rayon ; les suggestions de festivals lointains ont été retirées de l’agenda local. La carte et le Check-in restent limités aux soirées du jour et aux signalements actifs, avec ou sans DJ.
 
 La recherche conserve le catalogue local de villes et propose un bouton explicite de recherche mondiale. Photon/Komoot fournit les coordonnées depuis OpenStreetMap, sans clé payante et sans transmission du GPS. Les résultats précisent pays et région pour distinguer les homonymes. Ils sont mis en cache pendant la session ; aucune requête par frappe. Le serveur public est prévu pour un usage modéré et ne garantit pas la disponibilité : https://github.com/komoot/photon . Pour une audience importante, prévoir un service Photon dédié ou équivalent. Données © OpenStreetMap contributors, ODbL : https://www.openstreetmap.org/copyright .
