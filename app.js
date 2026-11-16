@@ -575,7 +575,7 @@
   }
 
   // ---------- Règle des Bangers : on ne confirme que là où le téléphone se trouve vraiment
-  const RAYON_M = 50;                 // distance maximale pour confirmer dans un lieu
+  const RAYON_M = 30;                 // distance maximale pour les Bangers et DJ dans un lieu
   const RAYON_BATEAU_M = 500;          // un bateau bouge : marge plus large
   let posDemo = null;                  // prototype seulement : position simulée pour tester sans être à Ibiza
   const fmtDist = (m) => m < 1000 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(m < 10000 ? 1 : 0).replace('.', ',') + ' km';
@@ -3826,7 +3826,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const f = new FormData(e.target), dj = String(f.get('dj') || '').trim(), note = f.get('note') ? +f.get('note') : null;
     const { lat, lng, src, connu } = posSpot || {};
     if (src !== 'gps' || !connu || !Number.isFinite(Number(connu.lat)) || !Number.isFinite(Number(connu.lng)) || distKm([lat, lng], [Number(connu.lat), Number(connu.lng)]) > 0.05) {
-      toast('Active le GPS et rapproche-toi à 50 mètres maximum du lieu pour confirmer.'); return;
+      toast('Active le GPS et rapproche-toi à 30 mètres maximum du lieu pour confirmer.'); return;
     }
     if (!connu) { toast('Choisis d\'abord le lieu public où tu es : on ne bangue pas chez un particulier'); const l = $('#ps-lieux'); if (l) l.hidden = false; return; }
     $('#panel-spot').hidden = true;
