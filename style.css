@@ -3504,3 +3504,6 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 
 /* Aucun indicateur du nombre de flyers sous le carrousel. */
 .dc-points { display: none !important; }
+
+/* Discovery heading follows the personal banner typography. */
+.dc-tete h2 { font-family: 'DM Sans', sans-serif; font-weight: 700; line-height: 1.2; letter-spacing: 0; }
