@@ -3476,3 +3476,15 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .home-flip .home-flip-face.la-direct { background: linear-gradient(110deg,#783a46 0%,#572b48 52%,#76442e 100%); }
 .home-flip .home-flip-face.la-ck { background: linear-gradient(110deg,#68334e 0%,#50304b 52%,#824b35 100%); }
 .home-flip-swap { color: #ffd2b5; }
+
+/* Flyers verticaux et horizontaux entiers dans un seul carrousel. */
+.dc-rail { align-items: stretch; }
+.dc-slide { aspect-ratio: auto; max-height: none; display: flex; flex-direction: column; min-width: 0; background: #10131d; }
+.dc-media { display: flex; align-items: center; justify-content: center; width: 100%; height: min(110vw,420px); background: radial-gradient(ellipse at center,#1d1830,#090c16 80%); }
+.dc-slide .dc-media img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.dc-footer { display: flex; align-items: center; gap: 10px; padding: 12px; min-height: 82px; box-sizing: border-box; }
+.dc-slide .dc-bas { position: static; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding: 0; background: none; }
+.dc-slide .dc-bas b { font-size: 15px; line-height: 1.25; white-space: normal; }
+.dc-slide .dc-bas > span { font-size: 11.5px; white-space: normal; }
+.dc-slide .dc-bang { position: static; flex: none; padding: 8px 10px; font-size: 12px; }
+.dc-cadre > .dc-pub { position: static; display: block; width: fit-content; margin: 0 0 7px auto; }
