@@ -3501,3 +3501,6 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .dc-media { height: min(110vw,420px); aspect-ratio: auto; }
 .dc-footer { flex: 1; }
 @media(prefers-reduced-motion:reduce) { .dc-rail .dc-slide { transition: none; } }
+
+/* Aucun indicateur du nombre de flyers sous le carrousel. */
+.dc-points { display: none !important; }

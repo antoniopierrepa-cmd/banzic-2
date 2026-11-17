@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200">
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#54134f"/><stop offset="1" stop-color="#080b18"/></linearGradient><linearGradient id="sun" x2="0" y2="1"><stop stop-color="#ff8248"/><stop offset="1" stop-color="#54134f"/></linearGradient></defs>
+<rect width="800" height="1200" fill="url(#bg)"/>
+<circle cx="584" cy="348" r="231.99999999999997" fill="url(#sun)"/>
+<path d="M272 192H800" stroke="#080b18" stroke-width="3" opacity=".65"/><path d="M272 234H800" stroke="#080b18" stroke-width="5" opacity=".65"/><path d="M272 276H800" stroke="#080b18" stroke-width="7" opacity=".65"/><path d="M272 318H800" stroke="#080b18" stroke-width="9" opacity=".65"/><path d="M272 360.00000000000006H800" stroke="#080b18" stroke-width="11" opacity=".65"/><path d="M272 402H800" stroke="#080b18" stroke-width="13" opacity=".65"/><path d="M272 444H800" stroke="#080b18" stroke-width="15" opacity=".65"/><path d="M272 486.00000000000006H800" stroke="#080b18" stroke-width="17" opacity=".65"/>
+<circle cx="624" cy="960" r="208" fill="#090b16"/>
+<circle cx="624" cy="960" r="64" fill="none" stroke="#ff8248" stroke-width="2" opacity=".4"/><circle cx="624" cy="960" r="112.00000000000001" fill="none" stroke="#ff8248" stroke-width="2" opacity=".4"/><circle cx="624" cy="960" r="160" fill="none" stroke="#ff8248" stroke-width="2" opacity=".4"/><circle cx="624" cy="960" r="192" fill="none" stroke="#ff8248" stroke-width="2" opacity=".4"/>
+<circle cx="624" cy="960" r="28.000000000000004" fill="#ff8248"/>
+<rect x="44" y="54" width="336" height="60" rx="8" fill="#ff8248"/>
+<text x="60" y="94.8" font-family="Arial,sans-serif" font-weight="700" font-size="23.200000000000003" fill="#0b0e18">BANZIC · FLYER TEST</text>
+<text x="48" y="552" font-family="Arial,sans-serif" font-weight="900" font-size="104" fill="#fff">SUNSET</text>
+<text x="48" y="660" font-family="Arial,sans-serif" font-weight="900" font-size="104" fill="#ff8248">HOUSE</text>
+<path d="M48 840H384" stroke="#ff8248" stroke-width="4"/>
+<text x="48" y="924" font-family="Arial,sans-serif" font-size="24.8" fill="#e6dfef">EXEMPLE DE MISE EN PAGE</text>
+<text x="48" y="1092" font-family="Arial,sans-serif" font-weight="700" font-size="22.400000000000002" fill="#fff">800 × 1200 · FORMAT VERTICAL</text>
+<text x="48" y="1140" font-family="Arial,sans-serif" font-size="18.4" fill="#b8b8c9">VISUEL FICTIF — AUCUNE SOIRÉE ANNONCÉE</text>
+</svg>

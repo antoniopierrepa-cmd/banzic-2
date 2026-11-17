@@ -1,0 +1,6 @@
+/* Explicitly opt-in format samples; never added to the real event catalogue. */
+(() => {
+  if (new URLSearchParams(location.search).get('flyers-test') !== '1') return;
+  const samples = [{"slug":"portrait-sunset","w":800,"h":1200,"title":"SUNSET HOUSE","format":"Vertical"},{"slug":"portrait-night","w":800,"h":1000,"title":"NIGHT GROOVE","format":"Vertical"},{"slug":"landscape-pool","w":1200,"h":675,"title":"POOL SESSION","format":"Horizontal"},{"slug":"landscape-after","w":1200,"h":800,"title":"AFTER HOURS","format":"Horizontal"},{"slug":"square-rooftop","w":1000,"h":1000,"title":"ROOFTOP VIBES","format":"Carré"},{"slug":"square-disco","w":1000,"h":1000,"title":"DEEP & DISCO","format":"Carré"}];
+  window.BANZIC_FLYER_DEMO = () => samples.map(s => '<article class="dc-slide"><span class="dc-media"><img src="img/demo-flyers/' + s.slug + '.svg" width="' + s.w + '" height="' + s.h + '" alt="Flyer de démonstration ' + s.title + '" loading="eager" decoding="async"></span><div class="dc-footer"><span class="dc-bas"><small>TEST · ' + s.format + '</small><b>' + s.title + '</b><span>Visuel fictif · aucune soirée réelle</span></span></div></article>').join('');
+})();

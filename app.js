@@ -5292,7 +5292,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       .filter((x) => !selonStyles || prefStyles.some((g) => sansAccent(String(x.genres || '') + ' ' + x.nom).toLowerCase().includes(g)))
       .filter((x) => { const k = x.date + '|' + x.lieu; if (dejaPub.has(k)) return false; dejaPub.add(k); return true; })
       .filter(x => radarUrl(x.flyerUrl)).sort((a, b) => Number(!!b.featuredOfficialFlyer) - Number(!!a.featuredOfficialFlyer) || a.date.localeCompare(b.date) || a.km - b.km).slice(0, 10);
-    const slides = pubs.map((x) => { ficheSoireeJour(x); const dt = new Date(x.date + 'T12:00:00'), img = radarUrl(x.flyerUrl) || afficheSoiree(x);
+    const demoFlyers = window.BANZIC_FLYER_DEMO ? window.BANZIC_FLYER_DEMO() : '';
+    const slides = demoFlyers || pubs.map((x) => { ficheSoireeJour(x); const dt = new Date(x.date + 'T12:00:00'), img = radarUrl(x.flyerUrl) || afficheSoiree(x);
       const garde = mesSoirees().includes(x.id);
       return `<div class="dc-slide" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
         <span class="dc-media"><img src="${esc(img)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.removeAttribute('src');this.alt='Affiche officielle momentanément indisponible'" alt="" loading="${x.featuredOfficialFlyer ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer"></span><div class="dc-footer">
@@ -5301,7 +5302,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     // « Mes soirées » juste sous « Mes DJ » : les soirées gardées avec le bouton Banger
     // Les soirées gardées sont réunies avec Mes DJ dans le bandeau commun.
     h += `<section class="acc-rub dc-rub"><div class="dc-tete"><div><h2>À découvrir près de toi</h2><small>${selonStyles ? 'Tes styles' : 'Tous les styles'} · autour de ${esc(state.zoneGeo.nom)}</small></div>${interStyles}</div>
-      ${slides ? `<div class="dc-cadre"><span class="dc-pub">Affiches des organisateurs</span><div class="dc-rail" id="dc-rail">${slides}</div><div class="dc-points">${pubs.map((_, n) => `<i${n ? '' : ' class="on"'}></i>`).join('')}</div></div>` : '<p class="aide">Rien à découvrir pour l’instant avec tes styles. Désactive « Selon mes styles ».</p>'}</section>`;
+      ${slides ? `<div class="dc-cadre"><span class="dc-pub">${demoFlyers ? 'MODE TEST · VISUELS FICTIFS' : 'Affiches des organisateurs'}</span><div class="dc-rail" id="dc-rail">${slides}</div></div>` : '<p class="aide">Rien à découvrir pour l’instant avec tes styles. Désactive « Selon mes styles ».</p>'}</section>`;
     // ---- « Direct autour de moi » et « Départs du jour » : une ligne chacun (la carte et le Check-in détaillent) ----
     const rCk = state.ckRayon || 100; // même distance que celle réglée dans le Check-in
     const auj100 = soireesAvecKm().filter((x) => x.date === auj && x.km <= rCk && !estLibertin(x)).length;
