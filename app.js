@@ -318,9 +318,51 @@
     return sets[0];
   }
 
+  // Page commune : deux collections distinctes, alimentées par les actions existantes.
+  function soireesGardees() {
+    const ids = new Set(mesSoirees());
+    return soireesAvecKm().filter(x => ids.has(x.id));
+  }
   function renderFavs() {
+    const soirees = state.favPanel === 'soirees', gs = soireesGardees();
+    const tabs = $('#fav-hub-tabs');
+    tabs.innerHTML = [['dj', '♥', 'Mes DJ', state.favs.length], ['soirees', '◎', 'Mes soirées', gs.length]].map(([id, ico, nom, n]) => {
+      const on = (soirees ? 'soirees' : 'dj') === id;
+      return `<button type="button" role="tab" id="fav-tab-${id}" class="fav-hub-tab ${id}${on ? ' on' : ''}" data-fav-panel="${id}" aria-selected="${on}" aria-controls="fav-list" tabindex="${on ? 0 : -1}"><span aria-hidden="true">${ico}</span> ${nom} <small>${n}</small></button>`;
+    }).join('');
+    $('#fav-list').setAttribute('role', 'tabpanel');
+    $('#fav-list').setAttribute('aria-labelledby', soirees ? 'fav-tab-soirees' : 'fav-tab-dj');
+    if (!soirees) renderFavDjs();
+    else {
+      document.querySelectorAll('#screen-fav > :not(#fav-list):not(#fav-hub-tabs)').forEach(el => { el.hidden = true; });
+      $('#fav-list').innerHTML = `<p class="fav-hub-note">Les soirées que tu as gardées avec « Banger » · rappel le jour J</p>` + (gs.length ? `<div class="ms-liste">${gs.map(x => {
+        ficheSoireeJour(x); const dt = new Date(x.date + 'T12:00:00');
+        return `<div class="ms-item"><button type="button" class="ms-open" data-ag-fiche="s:${esc(x.id)}" aria-label="Voir la soirée ${esc(x.nom)}"><img src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="" referrerpolicy="no-referrer"><span class="ms-txt"><small>${['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'][dt.getDay()]} ${dt.getDate()} ${MOIS_CRT[dt.getMonth()]}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}</small><b>${esc(x.nom)}</b><span>${esc(x.l.nom)} · ${esc(x.l.ville || '')}</span></span></button><button type="button" class="ag-bang on" data-garder="${esc(x.id)}" aria-pressed="true" aria-label="Retirer ${esc(x.nom)} de mes soirées">${ICO_BANG}<span>Gardée</span></button></div>`;
+      }).join('')}</div>` : `<div class="empty">Aucune soirée gardée pour l’instant.<br>Touche « Banger » sur un flyer de l’accueil pour la retrouver ici.</div>`);
+    }
+    tabs.hidden = false;
+  }
+  function ouvrirFavoris(panel) {
+    state.favPanel = panel === 'soirees' ? 'soirees' : 'dj';
+    setTab('fav');
+  }
+  document.addEventListener('click', e => {
+    const open = e.target.closest('[data-fav-open]');
+    if (open) { ouvrirFavoris(open.dataset.favOpen); return; }
+    const tab = e.target.closest('[data-fav-panel]');
+    if (tab) { const id = tab.dataset.favPanel; state.favPanel = id; renderFavs(); $('#fav-tab-' + id).focus(); }
+  });
+  document.addEventListener('keydown', e => {
+    const tab = e.target.closest('[data-fav-panel]');
+    if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault();
+    const id = e.key === 'Home' ? 'dj' : e.key === 'End' ? 'soirees' : tab.dataset.favPanel === 'dj' ? 'soirees' : 'dj';
+    state.favPanel = id; renderFavs(); $('#fav-tab-' + id).focus();
+  });
+
+  function renderFavDjs() {
     const ibiza = state.dest === 'ibiza';
-    document.querySelectorAll('#screen-fav > :not(#fav-list)').forEach((el) => { el.hidden = !ibiza; });
+    document.querySelectorAll('#screen-fav > :not(#fav-list):not(#fav-hub-tabs)').forEach((el) => { el.hidden = !ibiza; });
     if (!ibiza && !state.favs.length) { $('#fav-list').innerHTML = `<div class="empty">${esc(T('lineups_bientot', { d: DEST[state.dest].nom }))}</div>`; return; }
     const t = state.t;
     if (!state.favs.length) {
@@ -344,10 +386,6 @@
       });
       $('#fav-list').innerHTML = `<div class="section-title">Mes DJ <small>${state.favs.length} suivi${state.favs.length > 1 ? 's' : ''} · touche le cœur pour arrêter</small></div>` + rangCartes(favCartes);
     }
-    // Mes soirées gardées avec Banger, en tête de « Mes DJ »
-    { const gs = soireesAvecKm().filter((x) => mesSoirees().includes(x.id));
-      if (gs.length) $('#fav-list').insertAdjacentHTML('afterbegin', `<div class="section-title">Mes soirées <small>${gs.length} gardée${gs.length > 1 ? 's' : ''} · rappel le jour J</small></div><div class="ms-liste">${gs.map((x) => { ficheSoireeJour(x); const dt = new Date(x.date + 'T12:00:00');
-        return `<div class="ms-item" role="button" tabindex="0" data-ag-fiche="s:${esc(x.id)}"><img src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="" referrerpolicy="no-referrer"><span class="ms-txt"><small>${['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'][dt.getDay()]} ${dt.getDate()} ${MOIS_CRT[dt.getMonth()]}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}</small><b>${esc(x.nom)}</b><span>${esc(x.l.nom)} · ${esc(x.l.ville || '')}</span></span><button type="button" class="ag-bang on" data-garder="${esc(x.id)}" aria-pressed="true" aria-label="Retirer de mes soirées">${ICO_BANG}<span>Gardée</span></button></div>`; }).join('')}</div>`); }
     // Annuaire : une fiche pour chaque DJ passé à Ibiza (line-up de ce soir + toute la saison 2025)
     const q = sansAccent(($('#fav-search').value || '').trim());
     const nb = nbDatesDj();
@@ -5167,12 +5205,12 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     toast(garde ? 'Soirée gardée dans « Mes soirées » : rappel le jour J' : 'Soirée retirée de « Mes soirées »');
     if (garde && 'Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission().then(() => rappelsSoirees()); } catch (er) { /* navigateur sans notifications */ } }
     dcPause = Date.now() + 8000;
-    const ms = document.querySelector('.ms-rub'); if (ms) ms.outerHTML = htmlMesSoirees();
+    const hub = document.querySelector('.md-hub'); if (hub) { hub.outerHTML = bandeauMesDj(); if (window.BANZIC_AGENDA_VIDEO) window.BANZIC_AGENDA_VIDEO.sync($('#accueil')); }
+    if (state.tab === 'fav') renderFavs();
   }, true);
   document.addEventListener('click', (e) => {
     if (!e.target.closest('[data-mes-soirees]')) return;
-    if (state.mode !== 'geo') choisirMode('geo');
-    state.agGardees = true; state.agDate = null; state.sudTypes = []; state.sudQuand = null; state.sudMesDj = false; setTab('agenda');
+    ouvrirFavoris('soirees');
   });
   function htmlMesSoirees() {
     const gs = soireesAvecKm().filter((x) => mesSoirees().includes(x.id)), n = gs.length;
@@ -5262,7 +5300,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <span class="dc-bas"><small>${['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'][dt.getDay()]} ${dt.getDate()} ${MOIS_CRT[dt.getMonth()]}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}</small><b>${esc(x.nom)}</b><span>${esc(x.l.nom)} · ${esc(x.l.ville || '')} · ${Math.round(x.km)} km</span></span></div>`; }).join('');
     const interStyles = `<button type="button" class="dc-inter${selonStyles ? ' on' : ''}" data-pub-styles="1" role="switch" aria-checked="${selonStyles}"${prefStyles.length ? '' : ' disabled title="Choisis tes styles dans ton profil"'}><i aria-hidden="true"></i>Selon mes styles</button>`;
     // « Mes soirées » juste sous « Mes DJ » : les soirées gardées avec le bouton Banger
-    h += htmlMesSoirees();
+    // Les soirées gardées sont réunies avec Mes DJ dans le bandeau commun.
     h += `<section class="acc-rub dc-rub"><div class="dc-tete"><div><h2>À découvrir près de toi</h2><small>${selonStyles ? 'Tes styles' : 'Tous les styles'} · autour de ${esc(state.zoneGeo.nom)}</small></div>${interStyles}</div>
       ${slides ? `<div class="dc-cadre"><span class="dc-pub">Aperçu · emplacement pub</span><div class="dc-rail" id="dc-rail">${slides}</div><div class="dc-points">${pubs.map((_, n) => `<i${n ? '' : ' class="on"'}></i>`).join('')}</div></div>` : '<p class="aide">Rien à découvrir pour l’instant avec tes styles. Désactive « Selon mes styles ».</p>'}</section>`;
     // ---- « Direct autour de moi » et « Départs du jour » : une ligne chacun (la carte et le Check-in détaillent) ----
@@ -5416,15 +5454,14 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       return `<span class="md-av${live ? ' md-live' : ''}" style="--g:${g || accGrad(n)};z-index:${9 - i}" title="${esc(n)}${live ? ' · en live' : ''}">${g ? '' : esc(accInit(n))}</span>`; }).join('');
     const sous = !fav.length ? 'Touche le ♥ sur la fiche d\'un DJ pour le suivre ici'
       : `${fav.length} DJ suivi${fav.length > 1 ? 's' : ''}${fav.filter(enLiveMd).length ? ` · ${fav.filter(enLiveMd).length} en live` : ''}${ce.length ? ` · ${ce.length} joue${ce.length > 1 ? 'nt' : ''} ce soir` : ''}`;
-    const fond = 'mesdj-banniere-poster.jpg'; // image de secours du bandeau animé Mes DJ
+    const gs = soireesGardees(), n = gs.length;
     const coeur = `<span class="md-coeur" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg></span>`;
     const fleche = `<svg class="md-fl" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
-    // Avec l'illustration : la photo en bannière, le bouton « Mes DJ » incrusté à droite, là où regarde le DJ
-    if (fond) return `<button class="acc-mesdj md-illus md-fin md-video" data-tab="fav" style="--md-img:url('${fond}')">
+    const flyers = gs.slice(0, 3).map(x => `<img src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="" referrerpolicy="no-referrer">`).join('');
+    return `<section class="acc-mesdj md-illus md-fin md-video md-hub" aria-label="Mes DJ et mes soirées" style="--md-img:url('mesdj-banniere-poster.jpg')">
       <video data-home-banner-video autoplay muted loop playsinline preload="metadata" poster="mesdj-banniere-poster.jpg?v=1" aria-hidden="true" tabindex="-1"><source src="mesdj-banniere.mp4?v=1" type="video/mp4"></video>
-      <span class="md-ligne">${coeur}<span class="md-txt"><b>Mes DJ</b><small>${sous}</small></span>${avs ? `<span class="md-avs">${avs}</span>` : ''}${fleche}</span></button>`;
-    return `<button class="acc-mesdj" data-tab="fav">${ACC_ANNEAUX}${coeur}
-      <span class="md-txt"><b>Mes DJ</b><small>${sous}</small></span>${avs ? `<span class="md-avs">${avs}</span>` : ''}${fleche}</button>`;
+      <div class="md-hub-links"><button type="button" class="md-hub-row md-ligne" data-fav-open="dj">${coeur}<span class="md-txt"><b>Mes DJ</b><small>${sous}</small></span>${avs ? `<span class="md-avs">${avs}</span>` : ''}${fleche}</button>
+      <button type="button" class="md-hub-row md-ligne md-hub-soirees" data-fav-open="soirees"><span class="md-coeur" aria-hidden="true">${ICO_BANG}</span><span class="md-txt"><b>Mes soirées</b><small>${n} soirée${n > 1 ? 's' : ''} gardée${n > 1 ? 's' : ''}</small></span>${flyers ? `<span class="ms-vignettes">${flyers}</span>` : ''}${fleche}</button></div></section>`;
   }
   // Première carte de « En direct autour de moi » : une mini-carte dessinée (ma position, les DJ déclarés, les clubs du coin).
   // Dessinée en SVG pour s'afficher partout, même sans fond de carte ; un toucher ouvre la vraie carte.
