@@ -3470,3 +3470,9 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .home-flip .home-flip-face.la-direct { background: linear-gradient(110deg,#3a1c2a,#26182d 55%,#181c30); }
 .home-flip .home-flip-face.la-ck { background: linear-gradient(110deg,#30203e,#251b36 55%,#172438); }
 .home-flip-swap { color: #efb7a0; }
+
+/* Rappel du coucher de soleil du bandeau Mes DJ, sur les deux palettes. */
+.home-flip { border-color: rgba(255,153,100,.38); background: linear-gradient(110deg,#602b42,#3d243f 60%,#562e36); }
+.home-flip .home-flip-face.la-direct { background: linear-gradient(110deg,#783a46 0%,#572b48 52%,#76442e 100%); }
+.home-flip .home-flip-face.la-ck { background: linear-gradient(110deg,#68334e 0%,#50304b 52%,#824b35 100%); }
+.home-flip-swap { color: #ffd2b5; }
