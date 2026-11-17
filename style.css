@@ -3310,3 +3310,42 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .la-mes .la-ico svg { width: 22px; height: 22px; }
 .ag-cal-btn svg { width: 20px; height: 20px; color: #E0A47A; flex: none; }
 #screen-agenda .agc-h .agc-txt { padding-top: 22px; }
+
+/* Une seule touche « Filtres » : le reste s'ouvre dans un panneau (Agenda et Check-in) */
+.ag-cal-barre { flex-wrap: nowrap; }
+.ag-cal-barre .ag-cal-btn { min-width: 0; }
+.ag-cal-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ag-cal-x { width: 34px; height: 34px; flex: none; border-radius: 50%; background: rgba(255,255,255,.08); color: #fff; text-decoration: none; font-size: 14px; }
+.filtre-btn { flex: 0 1 46%; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 11px 12px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; text-align: left; }
+.filtre-btn svg { width: 20px; height: 20px; flex: none; color: #3DC8FF; }
+.filtre-btn span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.filtre-btn em { font-style: normal; flex: none; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #3DC8FF; color: #06121F; font-size: 12px; font-weight: 800; display: grid; place-items: center; }
+.filtre-btn i { font-style: normal; font-size: 11px; opacity: .7; transition: transform .2s; }
+.filtre-btn.ouvert i { transform: rotate(180deg); }
+.filtre-btn.actif { border-color: #3DC8FF; background: rgba(61,200,255,.1); }
+.ck-outils { display: flex; margin: 12px 0 6px; }
+.ck-outils .filtre-btn { flex: 1; }
+.filtres-panneau { margin: 8px 0 6px; padding: 12px; border-radius: 18px; background: #0D111C; border: 1.5px solid rgba(61,200,255,.3); animation: smOuvre .18s ease-out; }
+.filtres-panneau[hidden] { display: none; }
+.filtres-panneau .pads { margin: 0 !important; }
+.fp-ok { display: block; width: 100%; margin-top: 12px; padding: 12px; border: 0; border-radius: 14px; background: #3DC8FF; color: #06121F; font-weight: 800; font-size: 15px; cursor: pointer; }
+/* Accueil : « Mes soirées » sous « Mes DJ » */
+.ms-rub { margin-top: -4px; }
+.ms-vignettes { display: flex; flex: none; }
+.ms-vignettes img { width: 30px; height: 38px; object-fit: cover; border-radius: 6px; border: 2px solid #0A0D16; margin-left: -10px; }
+.ms-vignettes img:first-child { margin-left: 0; }
+.la-mes .la-btn:empty { display: none; }
+/* Écran Mes DJ : mes soirées gardées */
+.ms-liste { display: grid; gap: 8px; margin: 0 0 18px; }
+.ms-item { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); cursor: pointer; }
+.ms-item img { width: 56px; height: 70px; object-fit: cover; border-radius: 10px; flex: none; }
+.ms-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ms-txt small { color: #E0A47A; font-weight: 800; font-size: 11.5px; text-transform: uppercase; }
+.ms-txt b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ms-txt span { color: #A9AFC0; font-size: 12.5px; }
+.ms-item .ag-bang { position: static; flex: none; }
+/* Check-in : dernière demi-heure, « En cours de fermeture » */
+.ck-ligne.ck-ferme .ck-barre { background: linear-gradient(90deg, rgba(255,138,61,.18), rgba(255,138,61,.42)) !important; }
+.ck-ligne.ck-ferme .ck-pct { background: #FF8A3D !important; color: #1A0A00 !important; animation: fermeClignote 1.6s ease-in-out infinite; }
+@keyframes fermeClignote { 50% { opacity: .45; } }
+.sous-menu, .filtres-panneau { animation: none; }
