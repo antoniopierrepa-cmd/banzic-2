@@ -3437,3 +3437,21 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .acc-mesdj.md-hub .ms-vignettes img { width: 16px; height: 24px; }
 .acc-mesdj.md-hub .md-fl { width: 12px; height: 12px; opacity: 1; }
 @media(max-width:360px) { .md-hub .md-hub-links { width: 63%; } .acc-mesdj.md-hub .md-txt b { font-size: 15px; } .acc-mesdj.md-hub .md-hub-row { gap: 5px; padding: 5px; } }
+
+/* Un seul panneau fin sous Mes DJ : bascule 3D façon palette d’aéroport. */
+.home-flip { position: relative; height: 46px; margin: 8px 0 16px; perspective: 700px; border: 1px solid rgba(255,255,255,.12); border-radius: 10px; background: #10131e; }
+.home-flip::after { content: ''; position: absolute; left: 0; right: 30px; top: 50%; height: 1px; background: rgba(0,0,0,.24); pointer-events: none; }
+.home-flip-rotor { position: relative; width: calc(100% - 30px); height: 100%; transform-style: preserve-3d; transition: transform .58s cubic-bezier(.45,.05,.25,1); }
+.home-flip.is-back .home-flip-rotor { transform: rotateX(-180deg); }
+.home-flip .home-flip-face { position: absolute; inset: 0; height: 100%; min-height: 0; margin: 0; padding: 3px 8px; gap: 8px; border: 0; border-radius: 9px; background: #10131e; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: rotateX(0deg); }
+.home-flip .home-flip-face + .home-flip-face { transform: rotateX(180deg); }
+.home-flip .la-ico { width: 24px; height: 24px; border-radius: 7px; }
+.home-flip .ico-diffusion { transform: scale(.55); }
+.home-flip .la-ck .la-ico svg { width: 16px; height: 16px; }
+.home-flip .la-txt { gap: 1px; }
+.home-flip .la-txt b { font-size: 12.5px; line-height: 1.2; }
+.home-flip .la-txt small { font-size: 10px; }
+.home-flip .la-btn { font-size: 10px; }
+.home-flip-swap { position: absolute; top: 0; right: 0; width: 30px; height: 44px; border: 0; border-left: 1px solid rgba(255,255,255,.08); border-radius: 0 9px 9px 0; background: transparent; color: #a5aec2; font-size: 15px; cursor: pointer; }
+.home-flip button:focus-visible { outline: 2px solid #ffb477; outline-offset: 2px; }
+@media(prefers-reduced-motion:reduce) { .home-flip-rotor { transition: none; } }

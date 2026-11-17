@@ -5308,10 +5308,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const auj100 = soireesAvecKm().filter((x) => x.date === auj && x.km <= rCk && !estLibertin(x)).length;
     const cAcc = centreGeographique(), clubs100 = (window.DISCOTHEQUES || []).filter((c) => distKm(cAcc, [c[2], c[3]]) <= rCk).length;
     let nbDeparts = 0; try { nbDeparts = (renderCheckin(true) || []).length; } catch (e) { nbDeparts = 0; }
-    h += `<section class="acc-rub lignes-acc">
-      <button class="ligne-acc la-direct" data-tab="map"><span class="la-ico" aria-hidden="true"><span class="ico-diffusion"><i></i><b></b><b></b></span></span><span class="la-txt"><b>Direct autour de moi</b><small><em>${auj100}</em> soirée${auj100 > 1 ? 's' : ''} ce soir · <em>${clubs100}</em> clubs à ${rCk} km</small></span><span class="la-btn">Carte →</span></button>
-      <button class="ligne-acc la-ck" data-tab="checkin"><span class="la-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16l20-5-2-3-6 1.5L8 4 6 5l3 6-5 1.3L2.5 10 1 11l1 5z"/><path d="M3 21h18"/></svg></span><span class="la-txt"><b>Départs du jour</b><small><em>${nbDeparts}</em> départ${nbDeparts > 1 ? 's' : ''} aujourd’hui autour de toi</small></span><span class="la-btn">Check-in →</span></button>
-</section>`;
+    const accesPivotants = `<section class="home-flip" aria-label="Direct et départs autour de moi"><div class="home-flip-rotor">
+      <button class="ligne-acc la-direct home-flip-face" data-tab="map"><span class="la-ico" aria-hidden="true"><span class="ico-diffusion"><i></i><b></b><b></b></span></span><span class="la-txt"><b>Direct autour de moi</b><small><em>${auj100}</em> soirée${auj100 > 1 ? 's' : ''} ce soir · <em>${clubs100}</em> clubs à ${rCk} km</small></span><span class="la-btn">Carte →</span></button>
+      <button class="ligne-acc la-ck home-flip-face" inert aria-hidden="true" data-tab="checkin"><span class="la-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16l20-5-2-3-6 1.5L8 4 6 5l3 6-5 1.3L2.5 10 1 11l1 5z"/><path d="M3 21h18"/></svg></span><span class="la-txt"><b>Départs du jour</b><small><em>${nbDeparts}</em> départ${nbDeparts > 1 ? 's' : ''} aujourd’hui autour de toi</small></span><span class="la-btn">Check-in →</span></button>
+</div><button type="button" class="home-flip-swap" aria-label="Afficher Départs du jour" title="Changer de face">↕</button></section>`;
     // 1 bis. Agenda autour de moi : de petites cartes par type de sortie, avec le nombre de dates dans le rayon de l'Agenda
     const rayonAg = RAYONS[state.rayonIdx], dansRayon = soireesAvecKm().filter((x) => dansRayonAg(x, rayonAg));
     const nbType = (k) => k === 'tout' ? dansRayon.length : dansRayon.filter((x) => (x.type || 'club') === k).length;
@@ -5365,7 +5365,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <span class="ag-txt"><small class="ag-kick">Top 100 · 2026</small><b class="ag-titre">Les DJ<br>qui montent</b><span class="ag-sous">Découvre la nouvelle vague</span></span></button></section>`;
     // « Les DJ qui montent » prend la place du Top 100, qui descend en dernier
     h = h.includes('@@TOP100@@') ? h.replace('@@TOP100@@', secMonte) + secTop : h + secMonte;
-    $('#accueil').innerHTML = bandeauMesDj() + h;
+    $('#accueil').innerHTML = bandeauMesDj() + accesPivotants + h;
+    if (window.BANZIC_HOME_FLIP) window.BANZIC_HOME_FLIP.sync($('#accueil'));
     if (window.BANZIC_AGENDA_VIDEO) window.BANZIC_AGENDA_VIDEO.sync($('#accueil'));
     // Photos des DJ du Top 100 : chargées au fur et à mesure qu'on fait défiler la rangée
     const vus = new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) { vus.unobserve(en.target); remplirAvatars(en.target); } }), { rootMargin: '0px 300px' });
