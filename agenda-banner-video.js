@@ -11,6 +11,7 @@
     }
     video.style.visibility = '';
     video.muted = true;
+    video.preload = 'auto';
     video.play().catch(() => {}); // Poster remains visible if autoplay is blocked.
   };
   const observer = new IntersectionObserver(entries => {
@@ -28,6 +29,9 @@
         if (videos.has(video)) continue;
         videos.set(video, false);
         video.defaultMuted = true; video.muted = true;
+        video.style.opacity = '0';
+        video.style.transition = 'opacity .15s linear';
+        video.addEventListener('playing', () => { video.style.opacity = '1'; });
         video.addEventListener('error', () => { video.style.display = 'none'; }, { once: true });
         observer.observe(video);
       }

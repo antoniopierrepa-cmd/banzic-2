@@ -5318,7 +5318,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     // Agenda autour de moi : la bannière « L'agenda » (visuel fourni par Antonio, textes dans la police de l'appli).
     // Un appui ouvre l'Agenda, où l'on choisit Club, Festival, Concert…
     h += `<section class="acc-rub ag-rub"><button class="ag-banniere ag-photo ag-video" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
-        <img src="agenda-banniere-poster.jpg?v=1" alt="" width="1472" height="624" loading="lazy"><video data-home-banner-video autoplay muted loop playsinline preload="metadata" poster="agenda-banniere-poster.jpg?v=1" aria-hidden="true" tabindex="-1"><source src="agenda-banniere.mp4?v=1" type="video/mp4"></video></button></section>`;
+        <img src="agenda-banniere-poster.jpg?v=2" alt="" width="1472" height="624" loading="lazy"><video data-home-banner-video muted loop playsinline preload="none" poster="agenda-banniere-poster.jpg?v=2" aria-hidden="true" tabindex="-1"><source src="agenda-banniere.mp4?v=2" type="video/mp4"></video></button></section>`;
     // 2. Les saisons
     // En saison d'abord, puis les autres dans l'ordre du compte à rebours (la plus proche en premier)
     const rangOpening = (id) => { const e = etatOpening(id); return !e ? 9e15 : e.avant ? e.ms : -1; };
@@ -5333,7 +5333,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const puces = `<div class="genre-puces">${['', ...genres].map((g) => `<button class="genre-puce${(state.genreLive || '') === g ? ' on' : ''}" data-genre-live="${esc(g)}" style="--gc:${g ? coulGenre(g) : '#C9CFDD'}">${g ? esc(g) : 'Tous'}</button>`).join('')}</div>`;
     // Bannière « Les DJ en live » (visuel fourni par Antonio, textes dans la police de l'appli) : un appui ouvre tous les lives disponibles
     h += `<section class="acc-rub ag-rub"><button class="ag-banniere live-banniere lv-photo ag-video ag-live-video" data-live-tous="1" aria-label="Les DJ en live : écouter un live">
-        <img src="live-banniere-poster.jpg?v=1" alt="" width="1278" height="440" loading="lazy"><video data-home-banner-video autoplay muted loop playsinline preload="metadata" poster="live-banniere-poster.jpg?v=1" aria-hidden="true" tabindex="-1"><source src="live-banniere.mp4?v=1" type="video/mp4"></video></button></section>`;
+        <img src="live-banniere-poster.jpg?v=2" alt="" width="1278" height="440" loading="lazy"><video data-home-banner-video muted loop playsinline preload="none" poster="live-banniere-poster.jpg?v=2" aria-hidden="true" tabindex="-1"><source src="live-banniere.mp4?v=2" type="video/mp4"></video></button></section>`;
     // La rubrique « DJ live dans le monde » (titre, styles, lecteurs) est retirée de l'accueil : la bannière ci-dessus ouvre tous les lives
     // 4. Classement DJ Mag Top 100 2026, du 1er au 100e (à la place des clubs d'Ibiza)
     const TOP = window.DJMAG2026; let secTop = '';
@@ -5458,8 +5458,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const coeur = `<span class="md-coeur" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg></span>`;
     const flyers = gs.slice(0, 3).map(x => `<img src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="" referrerpolicy="no-referrer">`).join('');
     const fleche = '<svg class="md-fl" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
-    return `<section class="acc-mesdj md-illus md-fin md-video md-hub" aria-label="Mes DJ et mes soirées" style="--md-img:url('mesdj-banniere-poster.jpg')">
-      <video data-home-banner-video autoplay muted loop playsinline preload="metadata" poster="mesdj-banniere-poster.jpg?v=1" aria-hidden="true" tabindex="-1"><source src="mesdj-banniere.mp4?v=1" type="video/mp4"></video>
+    return `<section class="acc-mesdj md-illus md-fin md-video md-hub" aria-label="Mes DJ et mes soirées" style="--md-img:url('mesdj-banniere-poster.jpg?v=2')">
+      <video data-home-banner-video muted loop playsinline preload="none" poster="mesdj-banniere-poster.jpg?v=2" aria-hidden="true" tabindex="-1"><source src="mesdj-banniere.mp4?v=2" type="video/mp4"></video>
       <div class="md-hub-links"><button type="button" class="md-hub-row md-ligne" data-fav-open="dj">${coeur}<span class="md-txt"><b>Mes DJ</b><small>${sous}</small></span>${avs ? `<span class="md-avs">${avs}</span>` : ''}${fleche}</button>
       <button type="button" class="md-hub-row md-ligne md-hub-soirees" data-fav-open="soirees"><span class="md-coeur" aria-hidden="true">${ICO_BANG}</span><span class="md-txt"><b>Mes soirées</b><small>${n} soirée${n > 1 ? 's' : ''} gardée${n > 1 ? 's' : ''}</small></span>${flyers ? `<span class="ms-vignettes">${flyers}</span>` : ''}${fleche}</button></div></section>`;
   }
