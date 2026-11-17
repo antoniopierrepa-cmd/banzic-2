@@ -3455,3 +3455,8 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .home-flip-swap { position: absolute; top: 0; right: 0; width: 30px; height: 44px; border: 0; border-left: 1px solid rgba(255,255,255,.08); border-radius: 0 9px 9px 0; background: transparent; color: #a5aec2; font-size: 15px; cursor: pointer; }
 .home-flip button:focus-visible { outline: 2px solid #ffb477; outline-offset: 2px; }
 @media(prefers-reduced-motion:reduce) { .home-flip-rotor { transition: none; } }
+
+/* Titres personnels légèrement agrandis et rapprochés du bord droit. */
+.md-hub .md-hub-links { width: 55%; }
+.acc-mesdj.md-hub .md-txt b { font-size: 17px; }
+@media(max-width:360px) { .md-hub .md-hub-links { width: 60%; } .acc-mesdj.md-hub .md-txt b { font-size: 16px; } }
