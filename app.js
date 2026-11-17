@@ -2813,6 +2813,7 @@
       let choix = null;
       for (const date of [iso(new Date(now - 864e5)), auj]) {
         const h = horaireOSM(oh, date); if (h === false) continue; // horaires OpenStreetMap (gratuits) ; fermé ce soir : pas affiché
+        if (!h && !nuitDeSortie(date)) continue; // jours d'ouverture inconnus : seulement vendredi, samedi et veille de jour férié
         const hd = h ? h.debut : '23:30', hf = h ? h.fin : '04:00', deb = msDe(date, hd) + (h && h.lendemain ? 864e5 : 0); let fin = msDe(date, hf) + (h && h.lendemain ? 864e5 : 0); if (fin <= deb) fin += 864e5;
         if (fin > now) { choix = { date, hd, hf, deb, fin, estime: !h }; break; }
       }
@@ -2832,6 +2833,7 @@
       let choix = null;
       for (const date of [iso(new Date(now - 864e5)), auj]) {
         const h = horaireOSM(oh, date); if (h === false) continue;
+        if (!h && !nuitDeSortie(date)) continue;
         const hd = h ? h.debut : '22:00', hf = h ? h.fin : '04:00', deb = msDe(date, hd) + (h && h.lendemain ? 864e5 : 0); let fin = msDe(date, hf) + (h && h.lendemain ? 864e5 : 0); if (fin <= deb) fin += 864e5;
         if (fin > now) { choix = { date, hd, hf, deb, fin, estime: !h }; break; }
       }
@@ -2866,9 +2868,9 @@
     if (lignesSeules) return L.map(rangee);
     // Mêmes bulles que l'Agenda (Discothèques, Festivals, Concerts, Bars festifs avec leurs sous-menus, Avec DJ, Mes DJ)
     const evs = L.map((o) => o.ev).filter(Boolean), tps = state.ckTypes || [];
-    const ckPasse = (x) => (!tps.length || tps.some((k) => typeOkSous(x, k, state.ckSous) && passeSous(x, k, state.ckSous))) && (!state.ckAvecDj || x.djSet || !!x.djs) && (!state.ckMesDj || PAD_TEST['mesdj|oui'](x));
+    const ckPasse = (x) => (!estLibertin(x) || (state.ckSous.club || []).includes('libertin')) && (!tps.length || tps.some((k) => typeOkSous(x, k, state.ckSous) && passeSous(x, k, state.ckSous))) && (!state.ckAvecDj || x.djSet || !!x.djs) && (!state.ckMesDj || PAD_TEST['mesdj|oui'](x));
     const visibles = L.filter((o) => o.ev ? ckPasse(o.ev) : !tps.length && !state.ckAvecDj && !state.ckMesDj);
-    const nbPad = (p) => p.g === 'avecdj' ? evs.filter((x) => x.djSet || !!x.djs).length : p.g === 'mesdj' ? evs.filter(PAD_TEST['mesdj|oui']).length : p.k === 'tout' ? evs.length : evs.filter((x) => typeOkSous(x, p.k, state.ckSous) && passeSous(x, p.k, state.ckSous)).length;
+    const nbPad = (p) => p.g === 'avecdj' ? evs.filter((x) => x.djSet || !!x.djs).length : p.g === 'mesdj' ? evs.filter(PAD_TEST['mesdj|oui']).length : p.k === 'tout' ? evs.filter((x) => !estLibertin(x)).length : evs.filter((x) => typeOkSous(x, p.k, state.ckSous) && passeSous(x, p.k, state.ckSous)).length;
     const onPad = (p) => p.g === 'avecdj' ? !!state.ckAvecDj : p.g === 'mesdj' ? !!state.ckMesDj : p.k === 'tout' ? !tps.length : tps.includes(p.k);
     const barreFiltres = `<div class="pads ck-pads" role="group" aria-label="Filtrer les départs">${PADS.filter((p) => p.g !== 'quand').map((p) => `<button class="pad${onPad(p) ? ' on' : ''}${state.ckOuvert === p.k && onPad(p) ? ' ouvert' : ''}" style="--pc:${p.c}" data-ckpad="${p.g}|${p.k}" aria-pressed="${onPad(p)}">${icoPad(p.g === 'type' ? p.k : p.g === 'avecdj' ? 'avecdj' : 'mesdj')}<span class="pad-nom">${p.nom}${SOUS_MENUS[p.k] ? '<i class="pad-fl" aria-hidden="true">▾</i>' : ''}</span><small class="pad-nb">${nbPad(p)}</small></button>`).join('')}</div>
       ${state.ckOuvert && tps.includes(state.ckOuvert) ? panneauSous(state.ckOuvert, evs, 'ck') : ''}`;
@@ -3298,13 +3300,14 @@
     // Calendrier : une date choisie = seulement les soirées de ce jour-là
     const toutes = state.agDate ? toutesLoin.filter((x) => x.date === state.agDate) : toutesLoin.filter((x) => x.date <= j7);
     const types = (state.sudTypes || []).filter((k) => PAD_TEST['type|' + k]), quand = state.sudQuand === 'weekend' ? 'weekend' : null, mesdj = !!state.sudMesDj;
-    const passeFiltres = (x) => (!types.length || types.some((k) => typeOkSous(x, k, state.sudSous) && passeSous(x, k))) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs);
+    const passeFiltres = (x) => (!estLibertin(x) || (state.sudSous.club || []).includes('libertin')) && (!types.length || types.some((k) => typeOkSous(x, k, state.sudSous) && passeSous(x, k))) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs);
     const liste = toutes.filter(passeFiltres);
     { const z = $('#ag-cal-zone'); if (z) z.innerHTML = calendrierAgenda(toutesLoin.filter(passeFiltres)); }
     document.querySelectorAll('[data-pad]').forEach((b) => {
       const [g, k] = b.dataset.pad.split('|'), on = g === 'type' ? (k === 'tout' ? !types.length : types.includes(k)) : g === 'quand' ? quand === k : g === 'avecdj' ? !!state.sudAvecDj : mesdj;
       b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.classList.toggle('ouvert', state.padOuvert === k && on);
-      b.querySelector('.pad-nb').textContent = g === 'avecdj' ? toutes.filter((x) => x.djSet || !!x.djs).length : toutes.filter((x) => PAD_TEST[b.dataset.pad](x) && (g !== 'type' || passeSous(x, k))).length;
+      const vis = toutes.filter((x) => !estLibertin(x) || (state.sudSous.club || []).includes('libertin'));
+      b.querySelector('.pad-nb').textContent = g === 'avecdj' ? vis.filter((x) => x.djSet || !!x.djs).length : vis.filter((x) => PAD_TEST[b.dataset.pad](x) && (g !== 'type' || passeSous(x, k))).length;
     });
     { const z = $('#sous-menu-zone'); if (z) z.innerHTML = state.padOuvert && types.includes(state.padOuvert) ? panneauSous(state.padOuvert, toutes) : ''; }
     document.querySelectorAll('.fd-graduations span').forEach((s, i) => s.classList.toggle('on', i === state.rayonIdx));
@@ -3437,6 +3440,18 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       if (pl.length) res = pl;
     }
     return { plages: res, avecJours };
+  }
+  // Jours fériés en France (fixes + Pâques, Ascension, Pentecôte) ; une « nuit de sortie » = vendredi, samedi ou veille de jour férié
+  const _feries = {};
+  function joursFeries(an) {
+    if (_feries[an]) return _feries[an];
+    const a = an % 19, b = Math.floor(an / 100), c = an % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), hh = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - hh - k) % 7, m = Math.floor((a + 11 * hh + 22 * l) / 451);
+    const paques = new Date(an, Math.floor((hh + l - 7 * m + 114) / 31) - 1, ((hh + l - 7 * m + 114) % 31) + 1, 12), plus = (n) => iso(new Date(paques.getTime() + n * 864e5));
+    return (_feries[an] = new Set(['01-01', '05-01', '05-08', '07-14', '08-15', '11-01', '11-11', '12-25'].map((x) => an + '-' + x).concat([plus(1), plus(39), plus(50)])));
+  }
+  function nuitDeSortie(date) {
+    const d = new Date(date + 'T12:00:00'), lendemain = iso(new Date(d.getTime() + 864e5));
+    return d.getDay() === 5 || d.getDay() === 6 || joursFeries(+lendemain.slice(0, 4)).has(lendemain);
   }
   function horaireOSM(oh, date) {
     const t = String(oh || '').trim(); if (!t) return null;
@@ -3644,7 +3659,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     D.lieux.forEach((l) => l.lat != null && xs.push({ id: l.id, nom: l.nom, lat: l.lat, lng: l.lng, type: l.type, zone: l.zone, src: 'ibiza', dest: 'ibiza' }));
     Object.values(LIEUX_DEST).forEach((l) => l.lat != null && xs.push({ id: l.id, nom: l.nom, lat: l.lat, lng: l.lng, type: l.type, zone: l.zone || '', style: l.style, src: 'dest', dest: l.dest }));
     Object.entries(SUD.lieux || {}).forEach(([id, l]) => l.lat != null && xs.push({ id, nom: l.nom, lat: l.lat, lng: l.lng, type: 'club', zone: l.ville || '', src: 'sud', dest: 'local' }));
-    const vus = new Set(); return xs.filter((l) => { const k = sansAccent(l.nom).toLowerCase() + Math.round(l.lat * 1000); if (vus.has(k)) return false; vus.add(k); return true; });
+    const vus = new Set(); return xs.filter((l) => { const k = sansAccent(l.nom).toLowerCase() + Math.round(l.lat * 1000); if (dejaPub.has(k)) return false; dejaPub.add(k); return true; });
   }
   // Rayon : 100 m autour de la vraie position GPS ; 1,5 km en démo (sans GPS, position = centre de la carte)
   const rayonSpot = () => 1.5; // test : 1,5 km pour pouvoir choisir le bar (à remettre à 100 m plus tard)
@@ -5109,6 +5124,19 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     rail.scrollTo({ left: rail.scrollLeft + pas >= fin - 8 ? 0 : rail.scrollLeft + pas, behavior: 'smooth' });
   }, 5500);
 
+  // Carrousel « À découvrir près de toi » : un flyer à la fois, change tout seul toutes les 5 secondes ; on peut aussi le faire glisser
+  state.pubStyles = store.get('pubStyles', false);
+  let dcPause = 0;
+  document.addEventListener('pointerdown', (e) => { if (e.target.closest && e.target.closest('#dc-rail')) dcPause = Date.now() + 12000; });
+  document.addEventListener('click', (e) => { if (!e.target.closest('[data-pub-styles]')) return; state.pubStyles = !state.pubStyles; store.set('pubStyles', state.pubStyles); renderAccueil(); });
+  document.addEventListener('scroll', (e) => { const r = e.target; if (!r || r.id !== 'dc-rail') return; const n = Math.round(r.scrollLeft / Math.max(1, r.clientWidth));
+    r.parentNode.querySelectorAll('.dc-points i').forEach((p, i) => p.classList.toggle('on', i === n)); }, true);
+  setInterval(() => {
+    const r = document.getElementById('dc-rail');
+    if (!r || !r.offsetParent || Date.now() < dcPause || document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const fin = r.scrollWidth - r.clientWidth;
+    r.scrollTo({ left: r.scrollLeft >= fin - 8 ? 0 : r.scrollLeft + r.clientWidth, behavior: 'smooth' });
+  }, 5000);
   function renderAccueil() {
     if (state.pageMontent) { renderPageMontent(); return; }
     if (state.pageTendance) { renderPageTendance(); return; }
@@ -5153,31 +5181,28 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     coin.slice(0, 14).forEach(({ l, d }) => filItems.push(filClub(l, fmtKm(d))));
     const filInfos = filItems.length ? `<div class="fil-infos" aria-label="Fil d'actualité autour de moi"><div class="fil-fenetre"><div class="fil-piste">${filItems.join('<span class="fil-sep" aria-hidden="true"></span>')}<span class="fil-sep" aria-hidden="true"></span><span class="fil-copie" aria-hidden="true">${filItems.join('<span class="fil-sep"></span>')}<span class="fil-sep"></span></span></div></div></div>` : '';
     const essaiB = document.documentElement.classList.contains('essai-bannieres');
-    h += `<section class="acc-rub">${essaiB ? '' : `<div class="acc-tete"><div><h2 class="h-direct"><span class="ico-diffusion" aria-hidden="true"><i></i><b></b><b></b></span>Direct autour de moi</h2><small>${esc(state.zoneGeo.nom)}${state.zoneGeo.approx ? ' · position de démo' : ''} · passe le doigt sur un point</small></div></div>`}
-      ${essaiB ? bannieresDirect() : `<div class="aut-carte">${carteMiniMap(centre0, decls, spotsP, coin, infos)}</div>${legende}${filInfos}`}</section>`;
-    // Test du carrousel de soirées locales : aucune publicité vendue ni annonce fictive.
-    // Le contenu provient uniquement des événements datés du radar.
-    const pubCentre = centreGeographique();
-    const prefMusique = ((state.profil && state.profil.styles) || []).map((g) => sansAccent(String(g).toLowerCase()));
-    const pubCandidates = SUD.soirees.filter((ev) => {
-      const l = SUD.lieux[ev.lieu];
-      if (!l || !Number.isFinite(Number(l.lat)) || !Number.isFinite(Number(l.lng))) return false;
-      if (!ev.date || ev.date < auj || ev.date > iso(new Date(Date.now() + 7 * 86400000))) return false;
-      return distKm(pubCentre, [Number(l.lat), Number(l.lng)]) <= 50;
-    }).map((ev) => {
-      const l = SUD.lieux[ev.lieu], distance = distKm(pubCentre, [Number(l.lat), Number(l.lng)]);
-      const genres = sansAccent(String(ev.genres || ev.nom || '').toLowerCase());
-      const affinite = prefMusique.some((g) => g && genres.includes(g)) ? 1 : 0;
-      return { ev, l, distance, affinite };
-    }).sort((a, b) => b.affinite - a.affinite || a.distance - b.distance || a.ev.date.localeCompare(b.ev.date));
-    const pubUniques = [], pubIds = new Set();
-    pubCandidates.forEach((item) => { const key = item.ev.date + '|' + item.ev.lieu + '|' + sansAccent(item.ev.nom); if (!pubIds.has(key)) { pubIds.add(key); pubUniques.push(item); } });
-    const pubCards = pubUniques.slice(0, 8).map(({ ev, l, distance }, n) => {
-      const url = radarUrl(ev.ticketUrl || ev.url);
-      const contenu = `<span class="bz-vitrine-genre">${esc(ev.genres || ev.type || 'Soirée')}</span><strong>${esc(ev.nom)}</strong><span class="bz-vitrine-lieu">${esc(l.nom)} · ${esc(l.ville || '')}</span><span class="bz-vitrine-bas">${esc(ev.date.split('-').reverse().join('/'))} · ${Math.round(distance)} km${ev.heure ? ' · ' + esc(ev.heure) : ''}</span>`;
-      return url ? `<a class="bz-vitrine-card" href="${url}" target="_blank" rel="noopener noreferrer" style="--bz-hue:${n * 42 + 18}" aria-label="Voir la soirée ${esc(ev.nom)}">${contenu}</a>` : `<div class="bz-vitrine-card" style="--bz-hue:${n * 42 + 18}">${contenu}</div>`;
-    }).join('');
-    if (pubCards) h += `<section class="acc-rub bz-vitrine"><div class="bz-vitrine-tete"><div><h2>À découvrir près de toi</h2><small>Soirées à moins de 50 km · selon tes goûts musicaux</small></div><span class="bz-vitrine-test">Aperçu</span></div><div class="bz-vitrine-rail" id="bz-vitrine-rail" aria-label="Soirées à découvrir">${pubCards}</div></section>`;
+    // ---- « À découvrir près de toi » : grand carrousel de flyers (futurs encarts publicitaires vendus aux clubs) ----
+    // En attendant les pubs vendues : les soirées à venir autour de chez lui, flyers d'abord ; tous styles mélangés,
+    // sauf si le Banger active « Selon mes styles ». Les clubs libertins n'y sont jamais.
+    const prefStyles = ((state.profil && state.profil.styles) || []).map((g) => sansAccent(String(g).toLowerCase())).filter(Boolean);
+    const dans14 = iso(new Date(Date.now() + 14 * 864e5)), selonStyles = !!state.pubStyles && prefStyles.length > 0;
+    const dejaPub = new Set(), pubs = soireesAvecKm().filter((x) => x.date <= dans14 && x.km <= 50 && !estLibertin(x))
+      .filter((x) => !selonStyles || prefStyles.some((g) => sansAccent(String(x.genres || '') + ' ' + x.nom).toLowerCase().includes(g)))
+      .filter((x) => { const k = x.date + '|' + x.lieu; if (dejaPub.has(k)) return false; dejaPub.add(k); return true; })
+      .sort((a, b) => (radarUrl(b.flyerUrl) ? 1 : 0) - (radarUrl(a.flyerUrl) ? 1 : 0) || a.date.localeCompare(b.date) || a.km - b.km).slice(0, 10);
+    const slides = pubs.map((x) => { ficheSoireeJour(x); const dt = new Date(x.date + 'T12:00:00'), img = radarUrl(x.flyerUrl) || afficheSoiree(x);
+      return `<button type="button" class="dc-slide" data-ag-fiche="s:${esc(x.id)}" aria-label="Voir la soirée ${esc(x.nom)}"><img src="${esc(img)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="" loading="lazy" referrerpolicy="no-referrer">
+        <span class="dc-bas"><small>${['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'][dt.getDay()]} ${dt.getDate()} ${MOIS_CRT[dt.getMonth()]}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}</small><b>${esc(x.nom)}</b><span>${esc(x.l.nom)} · ${esc(x.l.ville || '')} · ${Math.round(x.km)} km</span></span></button>`; }).join('');
+    const interStyles = `<button type="button" class="dc-inter${selonStyles ? ' on' : ''}" data-pub-styles="1" role="switch" aria-checked="${selonStyles}"${prefStyles.length ? '' : ' disabled title="Choisis tes styles dans ton profil"'}><i aria-hidden="true"></i>Selon mes styles</button>`;
+    h += `<section class="acc-rub dc-rub"><div class="dc-tete"><div><h2>À découvrir près de toi</h2><small>${selonStyles ? 'Tes styles' : 'Tous les styles'} · autour de ${esc(state.zoneGeo.nom)}</small></div>${interStyles}</div>
+      ${slides ? `<div class="dc-cadre"><span class="dc-pub">Aperçu · emplacement pub</span><div class="dc-rail" id="dc-rail">${slides}</div><div class="dc-points">${pubs.map((_, n) => `<i${n ? '' : ' class="on"'}></i>`).join('')}</div></div>` : '<p class="aide">Rien à découvrir pour l’instant avec tes styles. Désactive « Selon mes styles ».</p>'}</section>`;
+    // ---- « Direct autour de moi » et « Départs du jour » : une ligne chacun (la carte et le Check-in détaillent) ----
+    const auj100 = soireesAvecKm().filter((x) => x.date === auj && x.km <= 100 && !estLibertin(x)).length;
+    const cAcc = centreGeographique(), clubs100 = (window.DISCOTHEQUES || []).filter((c) => distKm(cAcc, [c[2], c[3]]) <= 100).length;
+    let nbDeparts = 0; try { nbDeparts = (renderCheckin(true) || []).length; } catch (e) { nbDeparts = 0; }
+    h += `<section class="acc-rub lignes-acc">
+      <button class="ligne-acc la-direct" data-tab="map"><span class="la-ico" aria-hidden="true"><span class="ico-diffusion"><i></i><b></b><b></b></span></span><span class="la-txt"><b>Direct autour de moi</b><small><em>${auj100}</em> soirée${auj100 > 1 ? 's' : ''} ce soir · <em>${clubs100}</em> clubs à 100 km</small></span><span class="la-btn">Carte →</span></button>
+      <button class="ligne-acc la-ck" data-tab="checkin"><span class="la-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16l20-5-2-3-6 1.5L8 4 6 5l3 6-5 1.3L2.5 10 1 11l1 5z"/><path d="M3 21h18"/></svg></span><span class="la-txt"><b>Départs du jour</b><small><em>${nbDeparts}</em> départ${nbDeparts > 1 ? 's' : ''} aujourd’hui autour de toi</small></span><span class="la-btn">Check-in →</span></button></section>`;
     // 1 bis. Agenda autour de moi : de petites cartes par type de sortie, avec le nombre de dates dans le rayon de l'Agenda
     const rayonAg = RAYONS[state.rayonIdx], dansRayon = soireesAvecKm().filter((x) => dansRayonAg(x, rayonAg));
     const nbType = (k) => k === 'tout' ? dansRayon.length : dansRayon.filter((x) => (x.type || 'club') === k).length;

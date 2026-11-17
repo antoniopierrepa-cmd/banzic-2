@@ -3257,3 +3257,40 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .agc-j.on small { color: #12081A; }
 .agc-j.passe { opacity: .25; cursor: default; }
 .agcal-aide { margin: 8px 0 0; font-size: 11.5px; color: #7E8599; text-align: center; }
+
+/* Accueil : carrousel « À découvrir près de toi » (grands flyers, un à la fois) */
+.dc-tete { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.dc-tete h2 { margin: 0; font-size: 19px; }
+.dc-tete small { color: #8E95A8; font-size: 12.5px; }
+.dc-inter { display: inline-flex; align-items: center; gap: 7px; flex: none; padding: 7px 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.05); color: #C9CEDB; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.dc-inter i { position: relative; width: 28px; height: 16px; border-radius: 999px; background: rgba(255,255,255,.2); transition: background .2s; }
+.dc-inter i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.dc-inter.on { color: #fff; border-color: #FF8A3D; }
+.dc-inter.on i { background: #FF8A3D; }
+.dc-inter.on i::after { transform: translateX(12px); }
+.dc-inter:disabled { opacity: .45; }
+.dc-cadre { position: relative; }
+.dc-pub { position: absolute; z-index: 2; top: 10px; right: 10px; padding: 3px 9px; border-radius: 999px; background: rgba(10,13,22,.72); color: #E0A47A; font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; pointer-events: none; }
+.dc-rail { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; border-radius: 20px; scrollbar-width: none; }
+.dc-rail::-webkit-scrollbar { display: none; }
+.dc-slide { position: relative; flex: 0 0 100%; scroll-snap-align: start; aspect-ratio: 4 / 5; max-height: 420px; border: 0; padding: 0; background: #10131D; cursor: pointer; overflow: hidden; text-align: left; }
+.dc-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dc-bas { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 3px; padding: 44px 14px 14px; background: linear-gradient(transparent, rgba(6,8,14,.92) 45%); color: #fff; }
+.dc-bas small { color: #E0A47A; font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+.dc-bas b { font-size: 19px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.dc-bas span { color: #C9CEDB; font-size: 13px; }
+.dc-points { display: flex; justify-content: center; gap: 6px; margin-top: 9px; }
+.dc-points i { width: 6px; height: 6px; border-radius: 999px; background: rgba(255,255,255,.25); transition: width .25s, background .25s; }
+.dc-points i.on { width: 18px; background: #FF8A3D; }
+/* Accueil : « Direct autour de moi » et « Départs du jour » sur une seule ligne chacun */
+.lignes-acc { display: grid; gap: 8px; }
+.ligne-acc { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border-radius: 16px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.045); color: #fff; text-align: left; cursor: pointer; }
+.la-ico { flex: none; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; }
+.la-direct .la-ico { background: rgba(255,59,92,.16); color: #FF3B5C; }
+.la-ck .la-ico { background: rgba(61,200,255,.14); color: #3DC8FF; }
+.la-ck .la-ico svg { width: 20px; height: 20px; }
+.la-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.la-txt b { font-size: 15px; }
+.la-txt small { color: #A9AFC0; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.la-txt em { font-style: normal; font-weight: 800; color: #fff; }
+.la-btn { flex: none; font-size: 12.5px; font-weight: 800; color: #E0A47A; }
