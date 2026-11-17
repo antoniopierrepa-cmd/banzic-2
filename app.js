@@ -5280,8 +5280,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const TYPES_AG = [['tout', 'Agenda', '✦', '#C9CFDD'], ['club', 'Club', '🪩', '#3D8BFF'], ['festival', 'Festival', '🎪', '#FF8A3D'], ['concert', 'Concert', '🎤', '#F2C53A'], ['bar', 'Bar', '🍸', '#A77BFF'], ['resto', 'Restaurant', '🍽️', '#3DF28A']];
     // Agenda autour de moi : la bannière « L'agenda » (visuel fourni par Antonio, textes dans la police de l'appli).
     // Un appui ouvre l'Agenda, où l'on choisit Club, Festival, Concert…
-    h += `<section class="acc-rub ag-rub"><button class="ag-banniere ag-photo" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
-        <img src="agenda-banniere.jpg?v=3" alt="" loading="lazy"></button></section>`;
+    h += `<section class="acc-rub ag-rub"><button class="ag-banniere ag-photo ag-video" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
+        <img src="agenda-banniere-poster.jpg?v=1" alt="" width="1472" height="624" loading="lazy"><video data-agenda-banner-video autoplay muted loop playsinline preload="metadata" poster="agenda-banniere-poster.jpg?v=1" aria-hidden="true" tabindex="-1"><source src="agenda-banniere.mp4?v=1" type="video/mp4"></video></button></section>`;
     // 2. Les saisons
     // En saison d'abord, puis les autres dans l'ordre du compte à rebours (la plus proche en premier)
     const rangOpening = (id) => { const e = etatOpening(id); return !e ? 9e15 : e.avant ? e.ms : -1; };
@@ -5328,6 +5328,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     // « Les DJ qui montent » prend la place du Top 100, qui descend en dernier
     h = h.includes('@@TOP100@@') ? h.replace('@@TOP100@@', secMonte) + secTop : h + secMonte;
     $('#accueil').innerHTML = bandeauMesDj() + h;
+    if (window.BANZIC_AGENDA_VIDEO) window.BANZIC_AGENDA_VIDEO.sync($('#accueil'));
     // Photos des DJ du Top 100 : chargées au fur et à mesure qu'on fait défiler la rangée
     const vus = new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) { vus.unobserve(en.target); remplirAvatars(en.target); } }), { rootMargin: '0px 300px' });
     document.querySelectorAll('#accueil .top-tete').forEach((el) => vus.observe(el));
