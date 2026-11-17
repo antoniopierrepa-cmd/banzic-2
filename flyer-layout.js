@@ -7,7 +7,7 @@
     if (!rail || !rail.isConnected || !rail.clientWidth) return;
     const i = Math.max(0, Math.min(rail.children.length - 1, Math.round(rail.scrollLeft / rail.clientWidth)));
     const slide = rail.children[i]; if (!slide) return;
-    const height = Math.ceil(slide.getBoundingClientRect().height);
+    const height = slide.offsetHeight;
     if (height && Math.abs(parseFloat(rail.style.height || '0') - height) > 1) rail.style.height = height + 'px';
   }
   const queue = () => { if (!frame) frame = requestAnimationFrame(measure); };
