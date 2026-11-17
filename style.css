@@ -3421,3 +3421,19 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .acc-mesdj.md-hub .md-dj-thumb { width: 24px; height: 24px; }
 .acc-mesdj.md-hub .ms-vignettes img { width: 18px; height: 27px; }
 @media(max-width: 360px) { .md-hub .md-hub-links { width: 70%; gap: 6px; } .acc-mesdj.md-hub .md-txt b { font-size: 14px; } }
+
+/* Configuration de référence : seule la surface des lignes est transparente. */
+.acc-mesdj.md-fin.md-hub { height: 120px !important; }
+.md-hub .md-hub-links { width: 58%; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin-left: auto; align-self: center; }
+.acc-mesdj.md-hub .md-hub-row { flex-direction: row; justify-content: flex-start; align-items: center; gap: 7px; min-height: 44px; padding: 5px 7px; border-radius: 12px; background: rgba(20,10,24,.18); opacity: 1; }
+.acc-mesdj.md-hub .md-hub-row > .md-coeur { display: grid; width: 26px; height: 26px; background: linear-gradient(135deg,#ff487b,#ff8761); color: #fff; }
+.acc-mesdj.md-hub .md-hub-row .md-coeur svg { width: 16px; height: 16px; }
+.acc-mesdj.md-hub .md-hub-soirees > .md-coeur { background: #27d881; color: #073321; }
+.acc-mesdj.md-hub .md-hub-row .md-txt { order: 0; flex: 1; min-width: 0; width: auto; align-items: flex-start; text-align: left; gap: 2px; }
+.acc-mesdj.md-hub .md-txt b { font: 700 16px/1.2 'DM Sans', sans-serif; opacity: 1; }
+.acc-mesdj.md-hub .md-txt small { display: block; font-size: 10.5px; font-weight: 400; opacity: 1; color: #e4dfe4; }
+.acc-mesdj.md-hub .md-avs, .acc-mesdj.md-hub .ms-vignettes { order: 0; min-height: 0; opacity: 1; }
+.acc-mesdj.md-hub .md-dj-thumb { width: 22px; height: 22px; }
+.acc-mesdj.md-hub .ms-vignettes img { width: 16px; height: 24px; }
+.acc-mesdj.md-hub .md-fl { width: 12px; height: 12px; opacity: 1; }
+@media(max-width:360px) { .md-hub .md-hub-links { width: 63%; } .acc-mesdj.md-hub .md-txt b { font-size: 15px; } .acc-mesdj.md-hub .md-hub-row { gap: 5px; padding: 5px; } }
