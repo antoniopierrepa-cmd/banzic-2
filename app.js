@@ -3281,6 +3281,7 @@
       <div class="agcal-grille">${cases}</div>
       <p class="agcal-aide">Le chiffre = soirées ce jour-là avec tes filtres (styles, type, distance).</p></div>`;
   }
+  document.addEventListener('click', (e) => { if (!e.target.closest('[data-ag-toutes]')) return; state.agGardees = false; state.agJours = 7; listeAgendaSud(); });
   document.addEventListener('click', (e) => {
     const j = e.target.closest('[data-agcal-j]');
     if (j) { state.agDate = j.dataset.agcalJ; state.agCalOuvert = false; listeAgendaSud(); $('#agenda-liste')?.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
@@ -3298,11 +3299,12 @@
     if (state.agDate && state.agDate < auj0) state.agDate = null;
     const r = RAYONS[state.rayonIdx], dansZone = (x) => state.radarDep ? x.l.dep === state.radarDep : dansRayonAg(x, r), toutesLoin = soireesAvecKm().filter((x) => x.date >= auj0 && dansZone(x));
     // Calendrier : une date choisie = seulement les soirées de ce jour-là
-    const toutes = state.agDate ? toutesLoin.filter((x) => x.date === state.agDate) : toutesLoin.filter((x) => x.date <= j7);
+    const garde = mesSoirees(), toutesG = soireesAvecKm().filter((x) => garde.includes(x.id));
+    const toutes = state.agGardees ? toutesG : state.agDate ? toutesLoin.filter((x) => x.date === state.agDate) : toutesLoin.filter((x) => x.date <= j7);
     const types = (state.sudTypes || []).filter((k) => PAD_TEST['type|' + k]), quand = state.sudQuand === 'weekend' ? 'weekend' : null, mesdj = !!state.sudMesDj;
     const passeFiltres = (x) => (!estLibertin(x) || (state.sudSous.club || []).includes('libertin')) && (!types.length || types.some((k) => typeOkSous(x, k, state.sudSous) && passeSous(x, k))) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs);
     const liste = toutes.filter(passeFiltres);
-    { const z = $('#ag-cal-zone'); if (z) z.innerHTML = calendrierAgenda(toutesLoin.filter(passeFiltres)); }
+    { const z = $('#ag-cal-zone'); if (z) z.innerHTML = state.agGardees ? `<div class="ag-cal-barre"><span class="ag-cal-btn choisi">${ICO_BANG}<span>Mes soirées gardées (${toutesG.length})</span></span><button type="button" class="ag-cal-x" data-ag-toutes="1">Tout l’agenda</button></div>` : calendrierAgenda(toutesLoin.filter(passeFiltres)); }
     document.querySelectorAll('[data-pad]').forEach((b) => {
       const [g, k] = b.dataset.pad.split('|'), on = g === 'type' ? (k === 'tout' ? !types.length : types.includes(k)) : g === 'quand' ? quand === k : g === 'avecdj' ? !!state.sudAvecDj : mesdj;
       b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.classList.toggle('ouvert', state.padOuvert === k && on);
@@ -3325,7 +3327,7 @@
         h += carteAgenda(x);
       });
     }
-    const reste = state.agDate ? 0 : soireesAvecKm().filter((x) => x.date > j7 && dansZone(x)).length;
+    const reste = state.agDate || state.agGardees ? 0 : soireesAvecKm().filter((x) => x.date > j7 && dansZone(x)).length;
     if (reste) h += `<div class="ag-plus" id="ag-plus"><span class="ag-plus-rond"></span>Les dates suivantes arrivent…</div>`;
     h += `<p class="demo-note">Sources : déclarations des DJ et des Bangers, et le radar Banzic (agendas et billetteries autorisés). Vérifie toujours sur la page de la soirée avant de sortir.</p>`;
     $('#agenda-liste').innerHTML = h;
@@ -3486,6 +3488,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     return `<div class="ag-carte agc-h" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
       <div class="agc-visuel${x.flyerUrl ? '' : ' agc-gp'}${/^img\/clubs\//.test(aff) ? ' agc-logo' : ''}" data-gp="${esc(JSON.stringify({ nom: x.l.nom, adresse: x.l.ville || '', lat: x.l.lat, lng: x.l.lng }))}" style="--aff:url('${esc(aff).replace(/'/g, '%27')}')"><img src="${esc(aff)}" data-fallback="${x.l.visuel || afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback;this.parentNode.style.setProperty('--aff','none');this.parentNode.classList.add('agc-gp');window.__photosAgenda&&window.__photosAgenda()" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC'}" loading="lazy" referrerpolicy="no-referrer">
         ${estLibertin(x) ? '<span class="moins18 agc-18" title="Interdit aux moins de 18 ans">-18</span>' : ''}</div>
+      ${(() => { const g = mesSoirees().includes(x.id); return `<button type="button" class="ag-bang${g ? ' on' : ''}" data-garder="${esc(x.id)}" aria-pressed="${g}" aria-label="Garder cette soirée">${ICO_BANG}<span>${g ? 'Gardée' : 'Banger'}</span></button>`; })()}
       <div class="agc-txt"><span class="agc-date">${esc(jour)}</span><b class="agc-nom">${esc(x.nom)}</b>
         <span class="agc-ville"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>${esc(x.l.ville || x.l.nom)}${pays ? ' · ' + pays : ''}</span>
         <span class="agc-meta">${type}${horaire ? ' • ' + horaire : ''}</span>
@@ -5124,9 +5127,27 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     rail.scrollTo({ left: rail.scrollLeft + pas >= fin - 8 ? 0 : rail.scrollLeft + pas, behavior: 'smooth' });
   }, 5500);
 
+  // « Banger » sur un flyer : on garde la soirée de côté (liste « Mes soirées » sur l'accueil et dans l'Agenda)
+  let dcPause = 0;
+  const ICO_BANG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>';
+  const mesSoirees = () => store.get('mesSoirees', []);
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-garder]'); if (!b) return;
+    e.stopPropagation(); e.preventDefault();
+    const id = b.dataset.garder, l = mesSoirees(), garde = !l.includes(id);
+    store.set('mesSoirees', garde ? l.concat(id) : l.filter((y) => y !== id));
+    document.querySelectorAll(`[data-garder="${CSS.escape(id)}"]`).forEach((x) => { x.classList.toggle('on', garde); x.setAttribute('aria-pressed', garde); const t = x.querySelector('span'); if (t) t.textContent = garde ? 'Gardée' : 'Banger'; });
+    if (b.classList.contains('dc-bang')) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+    toast(garde ? 'Soirée gardée dans « Mes soirées »' : 'Soirée retirée de « Mes soirées »');
+    dcPause = Date.now() + 8000;
+  }, true);
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('[data-mes-soirees]')) return;
+    if (state.mode !== 'geo') choisirMode('geo');
+    state.agGardees = true; state.agDate = null; state.sudTypes = []; state.sudQuand = null; state.sudMesDj = false; setTab('agenda');
+  });
   // Carrousel « À découvrir près de toi » : un flyer à la fois, change tout seul toutes les 5 secondes ; on peut aussi le faire glisser
   state.pubStyles = store.get('pubStyles', false);
-  let dcPause = 0;
   document.addEventListener('pointerdown', (e) => { if (e.target.closest && e.target.closest('#dc-rail')) dcPause = Date.now() + 12000; });
   document.addEventListener('click', (e) => { if (!e.target.closest('[data-pub-styles]')) return; state.pubStyles = !state.pubStyles; store.set('pubStyles', state.pubStyles); renderAccueil(); });
   document.addEventListener('scroll', (e) => { const r = e.target; if (!r || r.id !== 'dc-rail') return; const n = Math.round(r.scrollLeft / Math.max(1, r.clientWidth));
@@ -5191,18 +5212,22 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       .filter((x) => { const k = x.date + '|' + x.lieu; if (dejaPub.has(k)) return false; dejaPub.add(k); return true; })
       .sort((a, b) => (radarUrl(b.flyerUrl) ? 1 : 0) - (radarUrl(a.flyerUrl) ? 1 : 0) || a.date.localeCompare(b.date) || a.km - b.km).slice(0, 10);
     const slides = pubs.map((x) => { ficheSoireeJour(x); const dt = new Date(x.date + 'T12:00:00'), img = radarUrl(x.flyerUrl) || afficheSoiree(x);
-      return `<button type="button" class="dc-slide" data-ag-fiche="s:${esc(x.id)}" aria-label="Voir la soirée ${esc(x.nom)}"><img src="${esc(img)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="" loading="lazy" referrerpolicy="no-referrer">
-        <span class="dc-bas"><small>${['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'][dt.getDay()]} ${dt.getDate()} ${MOIS_CRT[dt.getMonth()]}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}</small><b>${esc(x.nom)}</b><span>${esc(x.l.nom)} · ${esc(x.l.ville || '')} · ${Math.round(x.km)} km</span></span></button>`; }).join('');
+      const garde = mesSoirees().includes(x.id);
+      return `<div class="dc-slide" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
+        <button type="button" class="dc-bang${garde ? ' on' : ''}" data-garder="${esc(x.id)}" aria-pressed="${garde}" aria-label="${garde ? 'Retirer de mes soirées' : 'Garder cette soirée'}">${ICO_BANG}<span>${garde ? 'Gardée' : 'Banger'}</span></button><img src="${esc(img)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="" loading="lazy" referrerpolicy="no-referrer">
+        <span class="dc-bas"><small>${['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'][dt.getDay()]} ${dt.getDate()} ${MOIS_CRT[dt.getMonth()]}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}</small><b>${esc(x.nom)}</b><span>${esc(x.l.nom)} · ${esc(x.l.ville || '')} · ${Math.round(x.km)} km</span></span></div>`; }).join('');
     const interStyles = `<button type="button" class="dc-inter${selonStyles ? ' on' : ''}" data-pub-styles="1" role="switch" aria-checked="${selonStyles}"${prefStyles.length ? '' : ' disabled title="Choisis tes styles dans ton profil"'}><i aria-hidden="true"></i>Selon mes styles</button>`;
     h += `<section class="acc-rub dc-rub"><div class="dc-tete"><div><h2>À découvrir près de toi</h2><small>${selonStyles ? 'Tes styles' : 'Tous les styles'} · autour de ${esc(state.zoneGeo.nom)}</small></div>${interStyles}</div>
       ${slides ? `<div class="dc-cadre"><span class="dc-pub">Aperçu · emplacement pub</span><div class="dc-rail" id="dc-rail">${slides}</div><div class="dc-points">${pubs.map((_, n) => `<i${n ? '' : ' class="on"'}></i>`).join('')}</div></div>` : '<p class="aide">Rien à découvrir pour l’instant avec tes styles. Désactive « Selon mes styles ».</p>'}</section>`;
     // ---- « Direct autour de moi » et « Départs du jour » : une ligne chacun (la carte et le Check-in détaillent) ----
     const auj100 = soireesAvecKm().filter((x) => x.date === auj && x.km <= 100 && !estLibertin(x)).length;
     const cAcc = centreGeographique(), clubs100 = (window.DISCOTHEQUES || []).filter((c) => distKm(cAcc, [c[2], c[3]]) <= 100).length;
+    const nbGardees = soireesAvecKm().filter((x) => mesSoirees().includes(x.id)).length;
     let nbDeparts = 0; try { nbDeparts = (renderCheckin(true) || []).length; } catch (e) { nbDeparts = 0; }
     h += `<section class="acc-rub lignes-acc">
       <button class="ligne-acc la-direct" data-tab="map"><span class="la-ico" aria-hidden="true"><span class="ico-diffusion"><i></i><b></b><b></b></span></span><span class="la-txt"><b>Direct autour de moi</b><small><em>${auj100}</em> soirée${auj100 > 1 ? 's' : ''} ce soir · <em>${clubs100}</em> clubs à 100 km</small></span><span class="la-btn">Carte →</span></button>
-      <button class="ligne-acc la-ck" data-tab="checkin"><span class="la-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16l20-5-2-3-6 1.5L8 4 6 5l3 6-5 1.3L2.5 10 1 11l1 5z"/><path d="M3 21h18"/></svg></span><span class="la-txt"><b>Départs du jour</b><small><em>${nbDeparts}</em> départ${nbDeparts > 1 ? 's' : ''} aujourd’hui autour de toi</small></span><span class="la-btn">Check-in →</span></button></section>`;
+      <button class="ligne-acc la-ck" data-tab="checkin"><span class="la-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16l20-5-2-3-6 1.5L8 4 6 5l3 6-5 1.3L2.5 10 1 11l1 5z"/><path d="M3 21h18"/></svg></span><span class="la-txt"><b>Départs du jour</b><small><em>${nbDeparts}</em> départ${nbDeparts > 1 ? 's' : ''} aujourd’hui autour de toi</small></span><span class="la-btn">Check-in →</span></button>
+      ${nbGardees ? `<button class="ligne-acc la-mes" data-mes-soirees="1"><span class="la-ico" aria-hidden="true">${ICO_BANG}</span><span class="la-txt"><b>Mes soirées</b><small><em>${nbGardees}</em> soirée${nbGardees > 1 ? 's' : ''} gardée${nbGardees > 1 ? 's' : ''} avec Banger</small></span><span class="la-btn">Voir →</span></button>` : ''}</section>`;
     // 1 bis. Agenda autour de moi : de petites cartes par type de sortie, avec le nombre de dates dans le rayon de l'Agenda
     const rayonAg = RAYONS[state.rayonIdx], dansRayon = soireesAvecKm().filter((x) => dansRayonAg(x, rayonAg));
     const nbType = (k) => k === 'tout' ? dansRayon.length : dansRayon.filter((x) => (x.type || 'club') === k).length;
@@ -5390,7 +5415,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const t = e.target.closest('[data-ag-type]'); if (!t) return;
     const k = t.dataset.agType;
     if (state.mode !== 'geo') choisirMode('geo');
-    state.sudTypes = k === 'tout' ? [] : ['bar', 'resto'].includes(k) ? ['bar'] : [k]; state.sudQuand = null; state.sudMesDj = false;
+    state.sudTypes = k === 'tout' ? [] : ['bar', 'resto'].includes(k) ? ['bar'] : [k]; state.sudQuand = null; state.sudMesDj = false; state.agGardees = false;
     setTab('agenda');
   });
   document.addEventListener('click', (e) => { if (!e.target.closest('[data-acc-autour]')) return; state.vueAcc = 'liste'; if (state.mode !== 'geo') choisirMode('geo'); setTab('live'); });
