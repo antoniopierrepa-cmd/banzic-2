@@ -3385,3 +3385,21 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 
 .acc-mesdj.md-hub::before { background: linear-gradient(90deg, transparent 20%, rgba(8,6,24,.08) 50%, rgba(8,6,24,.24)); }
 .md-hub-row .md-txt { text-shadow: 0 1px 4px rgba(0,0,0,.85); }
+
+/* Bandeau personnel : typographie légère à droite, vidéo dégagée à gauche. */
+.acc-mesdj.md-fin.md-hub { height: 112px !important; }
+.md-hub .md-hub-links { width: 60%; gap: 2px; }
+.acc-mesdj.md-hub .md-hub-row { gap: 6px; padding: 4px 2px; border: 0; background: transparent; border-radius: 6px; }
+.acc-mesdj.md-hub .md-txt b { font: 500 14px/1.2 'DM Sans', sans-serif; letter-spacing: 0; }
+.acc-mesdj.md-hub .md-txt small { font-size: 10px; font-weight: 400; opacity: .82; }
+.acc-mesdj.md-hub .md-coeur { width: 18px; height: 18px; background: transparent; color: #ff96ba; }
+.acc-mesdj.md-hub .md-coeur svg { width: 14px; height: 14px; }
+.acc-mesdj.md-hub .md-hub-soirees .md-coeur { background: transparent; color: #50eba0; }
+.acc-mesdj.md-hub .md-hub-soirees .md-coeur svg { fill: none; }
+.acc-mesdj.md-hub .md-avs { display: flex !important; flex: none; max-width: none; align-items: center; }
+.md-hub .md-dj-thumb { display: inline-flex; width: 20px; height: 20px; margin-left: -6px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(255,255,255,.8); background: #151220; }
+.md-hub .md-dj-thumb:first-child { margin-left: 0; }
+.acc-mesdj.md-hub .md-dj-thumb .md-av { width: 100% !important; height: 100% !important; min-width: 0; margin: 0; border: 0; border-radius: 50%; object-fit: cover; font-size: 8px; }
+.md-hub .ms-vignettes { flex: none; max-width: none; overflow: visible; }
+.md-hub .ms-vignettes img { width: 16px; height: 23px; margin-left: -5px; border-width: 1px; border-radius: 3px; }
+@media(max-width: 360px) { .md-hub .md-hub-links { width: 64%; } .acc-mesdj.md-hub .md-txt b { font-size: 13px; } }
