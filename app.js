@@ -5301,7 +5301,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const interStyles = `<button type="button" class="dc-inter${selonStyles ? ' on' : ''}" data-pub-styles="1" role="switch" aria-checked="${selonStyles}"${prefStyles.length ? '' : ' disabled title="Choisis tes styles dans ton profil"'}><i aria-hidden="true"></i>Selon mes styles</button>`;
     // « Mes soirées » juste sous « Mes DJ » : les soirées gardées avec le bouton Banger
     // Les soirées gardées sont réunies avec Mes DJ dans le bandeau commun.
-    h += `<section class="acc-rub dc-rub"><div class="dc-tete"><div><h2>À découvrir près de toi</h2><small>${selonStyles ? 'Tes styles' : 'Tous les styles'} · autour de ${esc(state.zoneGeo.nom)}</small></div>${interStyles}</div>
+    h += `<section class="acc-rub dc-rub"><div class="dc-tete"><div><h2>Les <span class="dc-title-accent">soirées</span><br>près de toi</h2><small>${selonStyles ? 'Tes styles' : 'Tous les styles'} · autour de ${esc(state.zoneGeo.nom)}</small></div>${interStyles}</div>
       ${slides ? `<div class="dc-cadre"><span class="dc-pub">${demoFlyers ? 'MODE TEST · VISUELS FICTIFS' : 'Affiches des organisateurs'}</span><div class="dc-rail" id="dc-rail">${slides}</div></div>` : '<p class="aide">Rien à découvrir pour l’instant avec tes styles. Désactive « Selon mes styles ».</p>'}</section>`;
     // ---- « Direct autour de moi » et « Départs du jour » : une ligne chacun (la carte et le Check-in détaillent) ----
     const rCk = state.ckRayon || 100; // même distance que celle réglée dans le Check-in
