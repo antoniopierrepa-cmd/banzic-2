@@ -3493,3 +3493,11 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .dc-rail { align-items: flex-start; transition: height .25s ease; }
 .dc-media { height: auto; aspect-ratio: var(--flyer-ratio,4 / 5); max-height: 420px; }
 @media(prefers-reduced-motion:reduce) { .dc-rail { transition: none; } }
+
+/* Cadre stable : aucun glissement latéral, défilement vertical libre. */
+.dc-rail { display: grid; overflow: hidden; height: auto !important; scroll-snap-type: none; touch-action: pan-y pinch-zoom; transition: none; }
+.dc-rail .dc-slide { grid-area: 1 / 1; width: 100%; min-width: 0; height: 100%; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .3s ease; transform: none; }
+.dc-rail .dc-slide.is-current { opacity: 1; visibility: visible; pointer-events: auto; }
+.dc-media { height: min(110vw,420px); aspect-ratio: auto; }
+.dc-footer { flex: 1; }
+@media(prefers-reduced-motion:reduce) { .dc-rail .dc-slide { transition: none; } }

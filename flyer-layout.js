@@ -1,37 +1,27 @@
-/* Full flyers in their own orientation; height follows the active slide. */
+/* Fixed flyer frame: no horizontal dragging; only the active card is interactive. */
 (() => {
   'use strict';
-  let rail = null, frame = 0;
-  function measure() {
-    frame = 0;
-    if (!rail || !rail.isConnected || !rail.clientWidth) return;
-    const i = Math.max(0, Math.min(rail.children.length - 1, Math.round(rail.scrollLeft / rail.clientWidth)));
-    const slide = rail.children[i]; if (!slide) return;
-    const height = slide.offsetHeight;
-    if (height && Math.abs(parseFloat(rail.style.height || '0') - height) > 1) rail.style.height = height + 'px';
+  let rail = null, index = 0, slides = [];
+  function show(i) {
+    if (!rail || !slides.length) return;
+    index = (i + slides.length) % slides.length;
+    slides.forEach((slide, n) => {
+      const active = n === index;
+      slide.classList.toggle('is-current', active);
+      slide.inert = !active;
+      slide.setAttribute('aria-hidden', String(!active));
+    });
+    rail.parentElement.querySelectorAll('.dc-points i').forEach((dot,n) => dot.classList.toggle('on', n === index));
   }
-  const queue = () => { if (!frame) frame = requestAnimationFrame(measure); };
-  const resize = new ResizeObserver(queue);
   window.BANZIC_FLYER_LAYOUT = {
     sync(root) {
-      resize.disconnect();
-      if (frame) cancelAnimationFrame(frame); frame = 0;
-      if (rail) rail.removeEventListener('scroll', queue);
-      rail = root.querySelector('#dc-rail'); if (!rail) return;
-      rail.addEventListener('scroll', queue, { passive: true });
-      for (const slide of rail.children) {
-        resize.observe(slide);
-        const img = slide.querySelector('.dc-media img'); if (!img) continue;
-        const size = () => {
-          if (img.naturalWidth && img.naturalHeight) {
-            img.parentElement.style.setProperty('--flyer-ratio', img.naturalWidth + ' / ' + img.naturalHeight);
-            queue();
-          }
-        };
-        img.addEventListener('load', size);
-        if (img.complete) size();
-      }
-      queue();
+      rail = root.querySelector('#dc-rail');
+      slides = rail ? Array.from(rail.children) : [];
+      show(0);
+    },
+    next() {
+      if (!rail || !rail.isConnected || rail.contains(document.activeElement) || rail.matches(':hover')) return;
+      show(index + 1);
     }
   };
 })();
