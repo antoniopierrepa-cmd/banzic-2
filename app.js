@@ -5367,6 +5367,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     h = h.includes('@@TOP100@@') ? h.replace('@@TOP100@@', secMonte) + secTop : h + secMonte;
     $('#accueil').innerHTML = bandeauMesDj() + accesPivotants + h;
     if (window.BANZIC_HOME_FLIP) window.BANZIC_HOME_FLIP.sync($('#accueil'));
+    if (window.BANZIC_FLYER_LAYOUT) window.BANZIC_FLYER_LAYOUT.sync($('#accueil'));
     if (window.BANZIC_AGENDA_VIDEO) window.BANZIC_AGENDA_VIDEO.sync($('#accueil'));
     // Photos des DJ du Top 100 : chargées au fur et à mesure qu'on fait défiler la rangée
     const vus = new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) { vus.unobserve(en.target); remplirAvatars(en.target); } }), { rootMargin: '0px 300px' });
