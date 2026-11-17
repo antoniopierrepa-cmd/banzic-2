@@ -5333,8 +5333,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (state.genreLive && !genres.includes(state.genreLive)) state.genreLive = null;
     const puces = `<div class="genre-puces">${['', ...genres].map((g) => `<button class="genre-puce${(state.genreLive || '') === g ? ' on' : ''}" data-genre-live="${esc(g)}" style="--gc:${g ? coulGenre(g) : '#C9CFDD'}">${g ? esc(g) : 'Tous'}</button>`).join('')}</div>`;
     // Bannière « Les DJ en live » (visuel fourni par Antonio, textes dans la police de l'appli) : un appui ouvre tous les lives disponibles
-    h += `<section class="acc-rub ag-rub"><button class="ag-banniere live-banniere lv-photo" data-live-tous="1" aria-label="Les DJ en live : écouter un live">
-        <img src="live-banniere.jpg?v=4" alt="" loading="lazy"></button></section>`;
+    h += `<section class="acc-rub ag-rub"><button class="ag-banniere live-banniere lv-photo ag-video ag-live-video" data-live-tous="1" aria-label="Les DJ en live : écouter un live">
+        <img src="live-banniere-poster.jpg?v=1" alt="" width="1278" height="440" loading="lazy"><video data-home-banner-video autoplay muted loop playsinline preload="metadata" poster="live-banniere-poster.jpg?v=1" aria-hidden="true" tabindex="-1"><source src="live-banniere.mp4?v=1" type="video/mp4"></video></button></section>`;
     // La rubrique « DJ live dans le monde » (titre, styles, lecteurs) est retirée de l'accueil : la bannière ci-dessus ouvre tous les lives
     // 4. Classement DJ Mag Top 100 2026, du 1er au 100e (à la place des clubs d'Ibiza)
     const TOP = window.DJMAG2026; let secTop = '';
