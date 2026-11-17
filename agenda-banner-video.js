@@ -1,4 +1,4 @@
-/* Silent looping banner; the source file itself has no audio track. */
+/* Silent looping home banners; the source file itself has no audio track. */
 (() => {
   'use strict';
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -24,7 +24,7 @@
       for (const [video] of videos) if (!video.isConnected) {
         observer.unobserve(video); video.pause(); videos.delete(video);
       }
-      for (const video of root.querySelectorAll('[data-agenda-banner-video]')) {
+      for (const video of root.querySelectorAll('[data-home-banner-video]')) {
         if (videos.has(video)) continue;
         videos.set(video, false);
         video.defaultMuted = true; video.muted = true;

@@ -5281,7 +5281,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     // Agenda autour de moi : la bannière « L'agenda » (visuel fourni par Antonio, textes dans la police de l'appli).
     // Un appui ouvre l'Agenda, où l'on choisit Club, Festival, Concert…
     h += `<section class="acc-rub ag-rub"><button class="ag-banniere ag-photo ag-video" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
-        <img src="agenda-banniere-poster.jpg?v=1" alt="" width="1472" height="624" loading="lazy"><video data-agenda-banner-video autoplay muted loop playsinline preload="metadata" poster="agenda-banniere-poster.jpg?v=1" aria-hidden="true" tabindex="-1"><source src="agenda-banniere.mp4?v=1" type="video/mp4"></video></button></section>`;
+        <img src="agenda-banniere-poster.jpg?v=1" alt="" width="1472" height="624" loading="lazy"><video data-home-banner-video autoplay muted loop playsinline preload="metadata" poster="agenda-banniere-poster.jpg?v=1" aria-hidden="true" tabindex="-1"><source src="agenda-banniere.mp4?v=1" type="video/mp4"></video></button></section>`;
     // 2. Les saisons
     // En saison d'abord, puis les autres dans l'ordre du compte à rebours (la plus proche en premier)
     const rangOpening = (id) => { const e = etatOpening(id); return !e ? 9e15 : e.avant ? e.ms : -1; };
@@ -5416,11 +5416,12 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       return `<span class="md-av${live ? ' md-live' : ''}" style="--g:${g || accGrad(n)};z-index:${9 - i}" title="${esc(n)}${live ? ' · en live' : ''}">${g ? '' : esc(accInit(n))}</span>`; }).join('');
     const sous = !fav.length ? 'Touche le ♥ sur la fiche d\'un DJ pour le suivre ici'
       : `${fav.length} DJ suivi${fav.length > 1 ? 's' : ''}${fav.filter(enLiveMd).length ? ` · ${fav.filter(enLiveMd).length} en live` : ''}${ce.length ? ` · ${ce.length} joue${ce.length > 1 ? 'nt' : ''} ce soir` : ''}`;
-    const fond = 'mesdj-banniere.jpg'; // bannière photo commune (DJ au coucher de soleil)
+    const fond = 'mesdj-banniere-poster.jpg'; // image de secours du bandeau animé Mes DJ
     const coeur = `<span class="md-coeur" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg></span>`;
     const fleche = `<svg class="md-fl" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
     // Avec l'illustration : la photo en bannière, le bouton « Mes DJ » incrusté à droite, là où regarde le DJ
-    if (fond) return `<button class="acc-mesdj md-illus md-fin" data-tab="fav" style="--md-img:url('${fond}')">
+    if (fond) return `<button class="acc-mesdj md-illus md-fin md-video" data-tab="fav" style="--md-img:url('${fond}')">
+      <video data-home-banner-video autoplay muted loop playsinline preload="metadata" poster="mesdj-banniere-poster.jpg?v=1" aria-hidden="true" tabindex="-1"><source src="mesdj-banniere.mp4?v=1" type="video/mp4"></video>
       <span class="md-ligne">${coeur}<span class="md-txt"><b>Mes DJ</b><small>${sous}</small></span>${avs ? `<span class="md-avs">${avs}</span>` : ''}${fleche}</span></button>`;
     return `<button class="acc-mesdj" data-tab="fav">${ACC_ANNEAUX}${coeur}
       <span class="md-txt"><b>Mes DJ</b><small>${sous}</small></span>${avs ? `<span class="md-avs">${avs}</span>` : ''}${fleche}</button>`;
