@@ -3544,3 +3544,11 @@ nav.tabs .tab[data-tab="checkin"] svg > rect, nav.tabs .tab[data-tab="checkin"] 
 #nav-checkin-count { font-size: 13px; fill: #fff; stroke: none; }
 nav.tabs .tab[data-tab="map"] svg { width: 38px; height: 38px; color: #25e486; }
 #nav-map-count { font-size: 9px; fill: #086a3a; stroke: none; }
+
+/* Equal navigation icon boxes and label baselines. */
+nav.tabs .tab:not(.tab-plus) { height: 62px; justify-content: flex-start; padding-top: 3px; gap: 3px; line-height: 14px; }
+nav.tabs .tab:not(.tab-plus) > svg { width: 36px; height: 36px; flex: 0 0 36px; box-sizing: border-box; }
+nav.tabs .tab[data-tab="checkin"] svg { padding: 0; background: transparent; border-radius: 0; }
+nav.tabs .tab[data-tab="checkin"] svg > rect { display: block; x: 1; y: 2; width: 22px; height: 21px; rx: 3px; fill: #e72e49; stroke: none; }
+nav.tabs .tab[data-tab="checkin"] svg > path { display: block; stroke: #fff; stroke-width: 1.4px; }
+#nav-checkin-count { font-size: 10px; }
