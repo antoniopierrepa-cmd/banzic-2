@@ -2723,10 +2723,43 @@
     SUD.soirees = SUD.soirees.filter((x) => !String(x.id).startsWith('club-')).concat((MON_CLUB.soirees || []).map((x) => ({ id: x.id, nom: x.nom, date: x.date, heure: x.heure, heureFin: ((MON_CLUB.horaires || {})[new Date(x.date + 'T12:00:00').getDay()] || {}).fin || '05:00', djs: x.djs, lieu: idL, type: 'club', src: 'club' })));
   }
   let CK_OUVERTE = null;
+
+  // Flyer reviews reuse the same evening/venue/line-up sheet as Check-in.
+  window.BANZIC_OPEN_FLYER_REVIEW = (record) => {
+    const clean = v => sansAccent(String(v || '')).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const matched = Object.values(SUD.lieux).find(l => clean(l.nom) === clean(record.venue) && clean(record.venue).length > 3);
+    const venue = { ...(matched || {}), nom: record.venue || 'Lieu à confirmer', adresse: record.address || (matched && matched.adresse) || '', ville: record.city || (matched && matched.ville) || '' };
+    const key = 'flyer-review:' + record.slug, venueKey = 'flyer-review-lieu:' + record.slug;
+    const lineups = {
+      'raw-unit':['FLVØ','Aku','Kali','AL Zon','CRD'],
+      'pier-teaki':['Keytone','Alexander R.'],
+      fastlane:['Durdenhauer','Westfall','LEBØ','Danjou','Lady Raver'],
+      claptone:['Claptone'], jamiroquai:['Jamiroquai'],
+      'naho-banger':['ØZEN','DewinLeax'], paul:['Paul Kalkbrenner'],
+      'naho-favela':['ØZEN','DEZZE'], maro:['Markus Music']
+    };
+    CK_FICHES[venueKey] = { titre: venue.nom, sous: venue.ville, tag: 'Lieu', club: true, review: true, test: true, st: ['Lieu de la soirée','bleu'], lieu: venue, djs: [], source: record.source || 'Capture fournie ; lieu à confirmer' };
+    CK_FICHES[key] = {
+      titre: record.title, sous: [record.styles,record.price].filter(Boolean).join(' · '),
+      tag: 'Soirée', st: ['Fiche d’essai','bleu'], quand: record.date, heure: '',
+      affiche: 'img/review-flyers/flyer-' + record.n + '.jpg',
+      lieu: venue, lieuCle: venueKey, djs: lineups[record.slug] || [], review: true, test: true,
+      url: record.source || '', source: record.status,
+      reviewDetails: record, km: matched && Number.isFinite(matched.lat) ? kmDeMoi(matched.lat,matched.lng) : null
+    };
+    ouvrirFicheSoiree(key);
+  };
+
   function ouvrirFicheSoiree(cle) {
     const f = CK_FICHES[cle]; if (!f) return; CK_OUVERTE = cle;
     const scr = $('#screen-soiree'); if (!scr) return;
-    const l = f.lieu || {}, gm = l.gid ? gMapsUrl(l.gid) : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([l.nom, l.adresse].filter(Boolean).join(' ') || (l.lat + ',' + l.lng));
+    const l = f.lieu || {};
+    if (!f.club && l.nom && !f.lieuCle) {
+      const venueKey = 'linked-venue:' + sansAccent([l.nom,l.adresse].join('|')).toLowerCase();
+      CK_FICHES[venueKey] = { titre:l.nom, sous:l.ville || l.adresse || '', tag:'Lieu', club:true, review:!!f.review, test:!!f.test, st:['Lieu de la soirée','bleu'], lieu:l, djs:[], source:f.source || '' };
+      f.lieuCle = venueKey;
+    }
+    const gm = l.gid ? gMapsUrl(l.gid) : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([l.nom, l.adresse].filter(Boolean).join(' ') || (l.lat + ',' + l.lng));
     const destination = l.lat != null && l.lng != null ? l.lat + ',' + l.lng : [l.nom, l.adresse].filter(Boolean).join(' ');
     const waze = 'https://waze.com/ul?q=' + encodeURIComponent(destination) + '&navigate=yes';
     const apple = 'https://maps.apple.com/?daddr=' + encodeURIComponent(destination);
@@ -2749,12 +2782,22 @@
         ${f.com ? `<p class="sf-com fil-com">« ${esc(f.com)} »</p>` : ''}</div>
       ${chronoHtml}\n      <div class="sf-bloc"><div class="sf-titre">Le lieu</div>
         <div class="sf-lieu"><div class="sf-photo" data-sf-photo="1"></div>
-          <b>${esc(l.nom || 'Lieu')}</b>${l.adresse ? `<small>${esc(l.adresse)}</small>` : ''}${f.km != null ? `<small>À ${fK(f.km)} de toi</small>` : ''}
+          ${f.lieuCle ? `<button type="button" class="sf-btn plein" data-linked-venue="${esc(f.lieuCle)}">${esc(l.nom || 'Lieu')} ›</button>` : `<b>${esc(l.nom || 'Lieu')}</b>`}${l.adresse ? `<small>${esc(l.adresse)}</small>` : ''}${f.km != null ? `<small>À ${fK(f.km)} de toi</small>` : ''}
           <div class="sf-actions"><button type="button" class="sf-btn plein" data-soiree-carte="${cle}">Voir sur la carte</button><button type="button" class="sf-btn" data-sf-route-toggle="1" aria-expanded="false">Itinéraire ▾</button></div><div class="sf-route-options" hidden style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"><a class="sf-btn" data-sf-gm="1" href="${gm}" target="_blank" rel="noopener">Google Maps</a><a class="sf-btn" href="${waze}" target="_blank" rel="noopener">Waze</a><a class="sf-btn" href="${apple}" target="_blank" rel="noopener">Plans Apple</a></div></div></div>
       <div class="sf-bloc"><div class="sf-titre">${f.club ? 'Soirées' : 'Line-up'}</div>
-        ${f.djs && f.djs.length ? `<div class="sf-lineup">${f.djs.map((n) => `<button type="button" class="sf-dj" data-dj-pro="${esc(n)}"><span class="sf-av">${avatarDj(n)}</span><b>${esc(n)}</b><span class="sf-fleche" aria-hidden="true">›</span></button>`).join('')}</div>`
+        ${f.djs && f.djs.length ? `<div class="sf-lineup">${f.djs.map((n) => { const linked = !!djProParNom(n); return `<button type="button" class="sf-dj"${linked ? ` data-dj-pro="${esc(n)}"` : ' disabled'}><span class="sf-av">${avatarDj(n)}</span><b>${esc(n)}</b><span class="sf-fleche">${linked ? '›' : 'Profil non relié'}</span></button>`; }).join('')}</div>`
           : `<p class="aide">${f.club ? 'Aucune soirée annoncée pour l\'instant.' : 'Line-up non communiqué pour l\'instant.'}</p>`}</div>
       ${f.url ? `<a class="btn-plein sf-billets" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${f.club ? 'Site du club' : f.billets ? 'Billets' : 'Infos sur la soirée'}</a>` : ''}${f.club && f.officiel ? `<div class="sf-officiel">${f.logo ? `<img src="${f.logo}" alt="">` : ''}<span><b>Club officiel</b><small>Fiche tenue par le club : horaires et soirées à jour.</small></span></div>` : f.club ? `<div class="sf-revendiquer"><b>C'est votre club ?</b><p>Revendiquez cette fiche pour annoncer vos soirées et les proposer aux Bangers de votre région.</p><button type="button" class="sf-btn" data-club-revendiquer="${cle}">C'est mon club</button></div>` : ''}${f.source ? `<p class="aide sf-source">Source : ${esc(f.source)}</p>` : ''}`;
+    if (f.reviewDetails) {
+      const r = f.reviewDetails, details = document.createElement('div'); details.className = 'sf-bloc';
+      details.innerHTML = '<div class="sf-titre">Informations de l’annonce</div>' + [['Date',r.date],['Horaires',r.time],['Organisation',r.organizer],['Contact / réservation',r.contact],['Prix',r.price]].map(([name,value]) => '<p><b>' + esc(name) + '</b> : ' + esc(value || 'Non communiqué') + '</p>').join('') + (r.note ? '<p class="aide">' + esc(r.note) + '</p>' : '');
+      scr.querySelector('.sf-tete').after(details);
+    }
+    if (f.review) {
+      if (!Number.isFinite(l.lat) || !Number.isFinite(l.lng)) { const mapButton = scr.querySelector('[data-soiree-carte]'); if(mapButton) mapButton.remove(); }
+      if (!l.adresse) scr.querySelector('.sf-actions')?.remove();
+      scr.querySelector('.sf-revendiquer')?.remove();
+    }
     const routeBtn = scr.querySelector('[data-sf-route-toggle]'), routeOptions = scr.querySelector('.sf-route-options');
     if (routeOptions) { routeOptions.hidden = true; routeOptions.style.display = 'none'; }
     if (routeBtn && routeOptions) routeBtn.addEventListener('click', () => { routeOptions.hidden = !routeOptions.hidden; routeOptions.style.display = routeOptions.hidden ? 'none' : 'flex'; routeBtn.setAttribute('aria-expanded', String(!routeOptions.hidden)); });
@@ -2768,6 +2811,7 @@
   }
   document.addEventListener('click', (e) => {
     if (e.target.closest('[data-soiree-fermer]')) { setTab(state.tab); return; }
+    const linkedVenue = e.target.closest('[data-linked-venue]'); if (linkedVenue) { ouvrirFicheSoiree(linkedVenue.dataset.linkedVenue); return; }
     const vc = e.target.closest('[data-soiree-carte]');
     if (vc) { const f = CK_FICHES[vc.dataset.soireeCarte]; if (!f || f.lieu.lat == null) return; setTab('map'); setTimeout(() => map && map.setView([f.lieu.lat, f.lieu.lng], 16), 120); return; }
     const z = e.target.closest('[data-ck-fiche]'); if (!z || !z.closest('#screen-checkin')) return;
@@ -2912,10 +2956,11 @@
     const i = CK_RAYONS.indexOf(r);
     if (!zoneCarte) {
       state.ckTodayCount = L.filter(o => iso(new Date(o.t || now)) <= auj).length;
+      state.ckTotalCount = L.length;
       const counter = document.getElementById('nav-checkin-count');
       const mapCounter = document.getElementById('nav-map-count');
       if (mapCounter) { mapCounter.textContent = state.ckTodayCount; mapCounter.closest('button').setAttribute('aria-label', 'Carte : ' + state.ckTodayCount + ' soirées en cours ou à venir aujourd’hui à ' + r + ' km'); }
-      if (counter) { counter.textContent = state.ckTodayCount; counter.closest('button').setAttribute('aria-label', 'Check-in : ' + state.ckTodayCount + ' départs aujourd’hui à ' + r + ' km'); }
+      if (counter) { counter.textContent = state.ckTotalCount; counter.closest('button').setAttribute('aria-label', 'Check-in : ' + state.ckTotalCount + ' départs aujourd’hui, demain et après-demain à ' + r + ' km'); }
     }
     if (lignesSeules) return L.map(rangee);
     // Mêmes bulles que l'Agenda (Discothèques, Festivals, Concerts, Bars festifs avec leurs sous-menus, Avec DJ, Mes DJ)
@@ -2925,10 +2970,11 @@
     if (!zoneCarte) {
       const todayRows = visibles.filter(o => iso(new Date(o.t || now)) <= auj);
       state.ckTodayCount = todayRows.length;
+      state.ckTotalCount = visibles.length;
       state.ckTodayRows = todayRows;
       state.ckTodayPoints = todayRows.map(o => (CK_FICHES[o.fiche] || {}).lieu || o.gp).filter(p => p && Number.isFinite(p.lat) && Number.isFinite(p.lng)).map(p => [p.lat, p.lng]);
       const counter = document.getElementById('nav-checkin-count');
-      if (counter) counter.textContent = state.ckTodayCount;
+      if (counter) { counter.textContent = state.ckTotalCount; counter.closest('button').setAttribute('aria-label', 'Check-in : ' + state.ckTotalCount + ' départs aujourd’hui, demain et après-demain à ' + r + ' km'); }
       const mapCounter = document.getElementById('nav-map-count');
       if (mapCounter) { mapCounter.textContent = state.ckTodayCount; mapCounter.closest('button').setAttribute('aria-label', 'Carte : ' + state.ckTodayCount + ' soirées en cours ou à venir aujourd’hui à ' + r + ' km'); }
     }
@@ -5338,13 +5384,13 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const rCk = state.ckRayon || 100; // même distance que celle réglée dans le Check-in
     const auj100 = soireesAvecKm().filter((x) => x.date === auj && x.km <= rCk && !estLibertin(x)).length;
     const cAcc = centreGeographique(), clubs100 = (window.DISCOTHEQUES || []).filter((c) => distKm(cAcc, [c[2], c[3]]) <= rCk).length;
-    let nbDeparts = 0; try { renderCheckin(true); nbDeparts = state.ckTodayCount || 0; } catch (e) { nbDeparts = 0; }
+    let nbDeparts = 0; try { renderCheckin(); nbDeparts = state.ckTotalCount || 0; } catch (e) { nbDeparts = 0; }
     // Reuse the same nearby counts in the bottom navigation icons.
     const liveNearby = soireesAvecKm().some(x => { if (x.km > rCk || estLibertin(x) || !x.heure || !x.heureFin) return false; const t = horairesCheckin(x); return Date.now() >= t.debut && Date.now() < t.fin; });
     const mapCount = document.getElementById('nav-map-count');
     const checkinCount = document.getElementById('nav-checkin-count');
-    if (mapCount) { mapCount.closest('button').classList.toggle('nav-has-live', liveNearby); mapCount.textContent = nbDeparts; mapCount.setAttribute('font-size', auj100 > 99 ? '6' : '8'); mapCount.closest('button').setAttribute('aria-label', 'Carte : ' + nbDeparts + ' soirées en cours ou à venir aujourd’hui autour de toi'); }
-    if (checkinCount) { checkinCount.textContent = nbDeparts; checkinCount.setAttribute('font-size', nbDeparts > 99 ? '6' : '8'); checkinCount.closest('button').setAttribute('aria-label', 'Check-in : ' + nbDeparts + ' départs du jour autour de toi'); }
+    if (mapCount) { mapCount.closest('button').classList.toggle('nav-has-live', liveNearby); mapCount.textContent = state.ckTodayCount || 0; mapCount.setAttribute('font-size', auj100 > 99 ? '6' : '8'); mapCount.closest('button').setAttribute('aria-label', 'Carte : ' + (state.ckTodayCount || 0) + ' soirées en cours ou à venir aujourd’hui autour de toi'); }
+    if (checkinCount) { checkinCount.textContent = nbDeparts; checkinCount.setAttribute('font-size', nbDeparts > 99 ? '6' : '8'); checkinCount.closest('button').setAttribute('aria-label', 'Check-in : ' + nbDeparts + ' départs aujourd’hui, demain et après-demain autour de toi'); }
     const accesPivotants = `<section class="home-flip" aria-label="Direct et départs autour de moi"><div class="home-flip-rotor">
       <button class="ligne-acc la-direct home-flip-face" data-tab="map"><span class="la-ico" aria-hidden="true"><span class="ico-diffusion"><i></i><b></b><b></b></span></span><span class="la-txt"><b>Direct autour de moi</b><small><em>${auj100}</em> soirée${auj100 > 1 ? 's' : ''} ce soir · <em>${clubs100}</em> clubs à ${rCk} km</small></span><span class="la-btn">Carte →</span></button>
       <button class="ligne-acc la-ck home-flip-face" inert aria-hidden="true" data-tab="checkin"><span class="la-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16l20-5-2-3-6 1.5L8 4 6 5l3 6-5 1.3L2.5 10 1 11l1 5z"/><path d="M3 21h18"/></svg></span><span class="la-txt"><b>Départs du jour</b><small><em>${nbDeparts}</em> départ${nbDeparts > 1 ? 's' : ''} aujourd’hui autour de toi</small></span><span class="la-btn">Check-in →</span></button>

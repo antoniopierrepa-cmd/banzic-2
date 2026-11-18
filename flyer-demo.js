@@ -9,6 +9,7 @@
  }).join('');
  function open(card) {
   const s=records.find(r=>r.slug===card.dataset.reviewFlyer); if(!s) return;
+  if (window.BANZIC_OPEN_FLYER_REVIEW) { window.BANZIC_OPEN_FLYER_REVIEW(s); return; }
   let d=document.querySelector('.flyer-review-dialog');
   if(!d){ d=document.createElement('dialog');d.className='flyer-review-dialog';document.body.appendChild(d); }
   d.innerHTML='<button type="button" class="review-close" aria-label="Fermer la fiche">Fermer ×</button><small>FICHE D’ESSAI · CAPTURE FOURNIE</small><h2>'+esc(s.title)+'</h2><img class="review-poster" src="img/review-flyers/flyer-'+s.n+'.jpg" alt="'+esc(s.title)+'"><p class="review-status">'+esc(s.status)+'</p><dl>'+[
