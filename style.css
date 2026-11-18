@@ -3562,3 +3562,8 @@ nav.tabs .tab[data-tab="map"] svg { color: #e72e49; }
 #nav-map-count { fill: #bf1832; }
 nav.tabs .tab.nav-has-live svg { color: #e72e49; }
 @keyframes nav-live-pulse { 0%,100% { opacity: 1; filter: drop-shadow(0 0 7px #e72e49); } 50% { opacity: .65; filter: drop-shadow(0 0 1px #e72e49); } }
+
+/* Filled red location marker with a white count, matching Check-in. */
+nav.tabs .tab[data-tab="map"] svg > path { fill: #e72e49; stroke: #e72e49; }
+nav.tabs .tab[data-tab="map"] svg > circle { display: none; }
+#nav-map-count { fill: #fff; font-size: 10px; stroke: none; font-weight: 900; }
