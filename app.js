@@ -2924,7 +2924,7 @@
     if (!zoneCarte) {
       const todayRows = visibles.filter(o => iso(new Date(o.t || now)) <= auj);
       state.ckTodayCount = todayRows.length;
-      state.ckTodayPoints = todayRows.map(o => o.gp).filter(p => p && Number.isFinite(p.lat) && Number.isFinite(p.lng)).map(p => [p.lat, p.lng]);
+      state.ckTodayPoints = todayRows.map(o => (CK_FICHES[o.fiche] || {}).lieu || o.gp).filter(p => p && Number.isFinite(p.lat) && Number.isFinite(p.lng)).map(p => [p.lat, p.lng]);
       const counter = document.getElementById('nav-checkin-count');
       if (counter) counter.textContent = state.ckTodayCount;
       const mapCounter = document.getElementById('nav-map-count');
