@@ -3428,6 +3428,7 @@
   // Affiche inventée pour une soirée (style jeu vidéo néon, aucun flyer repris) : ciel, soleil rayé, silhouette, titre en gros
   const _affCache = {};
   function afficheSoiree(x) {
+    if (x.demo) return x.flyerUrl;
     const cle = x.date + x.nom; if (_affCache[cle]) return _affCache[cle];
     let g = 11; for (const ch of cle) g = (g * 31 + ch.charCodeAt(0)) >>> 0;
     const r = () => { g = (g * 1103515245 + 12345) >>> 0; return g / 4294967296; };
