@@ -3519,3 +3519,6 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 /* Compact live banner, with no cropping. */
 .ag-banniere.live-banniere.lv-photo.ag-live-video { aspect-ratio: 800 / 288 !important; }
 .ag-banniere.ag-live-video > img, .ag-banniere.ag-live-video > video { object-fit: fill; }
+
+/* Shared coral-to-fuchsia wording inspired by the live banner. */
+.ag-titre .banner-live-accent { color: #e00072; background: linear-gradient(90deg,#f45b38 0%,#e00072 65%,#d00094 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }

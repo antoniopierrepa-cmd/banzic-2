@@ -5355,14 +5355,14 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     // Bannière « La tendance du moment » (visuel fourni par Antonio, textes dans la police de l'appli) : ouvre la page des tendances
     h += `<section class="acc-rub ag-rub"><button class="ag-banniere td-banniere" data-page-tendance="1" aria-label="La tendance du moment : explorer les tendances">
         <img src="tendance-banniere.jpg?v=1" alt="" loading="lazy">
-        <span class="ag-txt"><small class="ag-kick">${tend.length} en ce moment</small><b class="ag-titre">La tendance<br>du moment</b><span class="ag-sous">Les coups de cœur des Bangers</span></span></button></section>`;
+        <span class="ag-txt"><small class="ag-kick">${tend.length} en ce moment</small><b class="ag-titre">La tendance<br><span class="banner-live-accent">du moment</span></b><span class="ag-sous">Les coups de cœur des Bangers</span></span></button></section>`;
     // 6. Les DJ qui montent : plus fortes progressions du Top 100 2026, puis les nouvelles entrées
     const MONTEES = [['John Summit', 22], ['Mau P', 22], ['CHRIS STASSY', 22], ['GORDO', 18], ['Fred again..', 17], ['The Martinez Brothers', 15], ['Korolova', 14], ['Solomun', 14], ['Miss Monique', 14], ['B Jones', 14], ['Michael Bibi', 11], ['Indira Paganotto', 10], ['Mochakk', 10], ['Anyma', 7]];
     window.__MONTEES = MONTEES;
     // Bannière « Les DJ qui montent » (visuel fourni par Antonio, textes dans la police de l'appli) : un appui ouvre la page de tous les DJ qui montent
     const secMonte = `<section class="acc-rub ag-rub"><button class="ag-banniere mt-banniere" data-page-montent="1" aria-label="Les DJ qui montent : découvre la nouvelle vague">
         <img src="montent-banniere.jpg?v=1" alt="" loading="lazy">
-        <span class="ag-txt"><small class="ag-kick">Top 100 · 2026</small><b class="ag-titre">Les DJ<br>qui montent</b><span class="ag-sous">Découvre la nouvelle vague</span></span></button></section>`;
+        <span class="ag-txt"><small class="ag-kick">Top 100 · 2026</small><b class="ag-titre">Les DJ<br><span class="banner-live-accent">qui montent</span></b><span class="ag-sous">Découvre la nouvelle vague</span></span></button></section>`;
     // « Les DJ qui montent » prend la place du Top 100, qui descend en dernier
     h = h.includes('@@TOP100@@') ? h.replace('@@TOP100@@', secMonte) + secTop : h + secMonte;
     $('#accueil').innerHTML = bandeauMesDj() + accesPivotants + h;
@@ -5404,7 +5404,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
           <span class="mt-badge note"><img src="banger-casque.png" alt="">${fmtLikes(nbLikes(n))}</span></button>`; }).join('');
     }
     $('#accueil').innerHTML = `<div class="mt-page"><button class="mt-retour" data-page-retour="1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Accueil</button>
-      <div class="ag-banniere td-banniere mt-tete"><img src="tendance-banniere.jpg?v=1" alt=""><span class="ag-txt"><small class="ag-kick">Ce soir</small><b class="ag-titre">La tendance<br>du moment</b><span class="ag-sous">Les coups de cœur des Bangers</span></span></div>
+      <div class="ag-banniere td-banniere mt-tete"><img src="tendance-banniere.jpg?v=1" alt=""><span class="ag-txt"><small class="ag-kick">Ce soir</small><b class="ag-titre">La tendance<br><span class="banner-live-accent">du moment</span></b><span class="ag-sous">Les coups de cœur des Bangers</span></span></div>
       <div class="segs mt-segs">${[['sets', `Sets du moment`], ['lives', `Lives en ligne`], ['bangues', 'Les plus bangués']].map(([k, tt]) => `<button class="seg${k === ong ? ' on' : ''}" data-td-onglet="${k}">${tt}</button>`).join('')}</div>
       <p class="mt-aide">${aide}</p>
       <div class="mt-liste">${liste || '<div class="empty">Rien pour l\'instant, reviens ce soir.</div>'}</div></div>`;
@@ -5434,7 +5434,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <span class="mt-txt"><b>${esc(o.n)}</b><small>${r ? r + (r === 1 ? 'er' : 'e') + ' au Top 100' : ''}${pays ? ' · ' + esc(pays) : ''}${mv[0] && ong !== 'montent' ? ' · ' + mv[0] : ''}</small></span>
         <span class="mt-badge ${o.cls}">${o.cls === 'note' ? `<img src="banger-casque.png" alt="">` : ''}${esc(o.badge)}</span></button>`; };
     $('#accueil').innerHTML = `<div class="mt-page"><button class="mt-retour" data-montent-retour="1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Accueil</button>
-      <div class="ag-banniere mt-banniere mt-tete"><img src="montent-banniere.jpg?v=1" alt=""><span class="ag-txt"><small class="ag-kick">Top 100 · 2026</small><b class="ag-titre">Les DJ<br>qui montent</b><span class="ag-sous">Découvre la nouvelle vague</span></span></div>
+      <div class="ag-banniere mt-banniere mt-tete"><img src="montent-banniere.jpg?v=1" alt=""><span class="ag-txt"><small class="ag-kick">Top 100 · 2026</small><b class="ag-titre">Les DJ<br><span class="banner-live-accent">qui montent</span></b><span class="ag-sous">Découvre la nouvelle vague</span></span></div>
       <div class="segs mt-segs">${[['montent', 'Ceux qui montent'], ['nouveaux', 'Les nouveaux'], ['notes', 'Les mieux notés']].map(([k, t]) => `<button class="seg${k === ong ? ' on' : ''}" data-mt-onglet="${k}">${t}</button>`).join('')}</div>
       <p class="mt-aide">${ong === 'montent' ? 'Les plus fortes progressions du classement DJ Mag 2026.' : ong === 'nouveaux' ? 'Les nouvelles entrées et les retours dans le Top 100 2026.' : 'Les DJ du Top 100 les plus bangués par les Bangers sur leur fiche.'}</p>
       <div class="mt-liste">${L.map(ligne).join('')}</div></div>`;
