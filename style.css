@@ -3583,3 +3583,10 @@ nav.tabs .tab[data-tab="map"] svg > circle { display: none; }
 .flyer-test-dialog { max-width: 340px; width: calc(100% - 48px); border: 1px solid #51415d; border-radius: 18px; padding: 20px; background: #111421; color: #fff; }
 .flyer-test-dialog::backdrop { background: rgba(0,0,0,.7); }
 .flyer-test-dialog button { padding: 10px 18px; border-radius: 12px; border: 0; }
+
+/* Discovery fills the first screen; other sections remain in the page below. */
+.dc-rail { height: var(--discovery-height, 300px) !important; }
+.dc-rail .dc-slide { height: var(--discovery-height, 300px); min-height: var(--discovery-height, 300px); max-height: var(--discovery-height, 300px); }
+.dc-rail .dc-portrait .dc-media { height: var(--discovery-height, 300px); }
+.dc-rail .dc-slide:not(.dc-portrait) .dc-media { flex-basis: calc(var(--discovery-height, 300px) * .62); height: calc(var(--discovery-height, 300px) * .62); }
+.dc-explore { display: block; width: 100%; height: 28px; border: 0; background: rgba(15,17,27,.9); color: #e5b08c; font: 600 11px 'DM Sans',sans-serif; cursor: pointer; }

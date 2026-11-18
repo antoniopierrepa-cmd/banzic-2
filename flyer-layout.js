@@ -5,6 +5,23 @@
   sync(root) {
    const rail = root.querySelector('#dc-rail'); if (!rail) return;
    activeRail = rail;
+   let cue = rail.parentElement.querySelector('.dc-explore');
+   if (!cue) {
+     cue = document.createElement('button'); cue.className = 'dc-explore'; cue.type = 'button'; cue.textContent = 'Explorer la suite ↓';
+     cue.addEventListener('click', () => { const next = rail.closest('.dc-rub').nextElementSibling; if(next) next.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'}); });
+     rail.parentElement.appendChild(cue);
+   }
+   const fit = () => {
+     if(!rail.isConnected) return;
+     const screen = rail.closest('.screen'), nav = document.querySelector('nav.tabs');
+     if(!screen || !nav || !screen.clientHeight) return;
+     const top = rail.getBoundingClientRect().top + screen.scrollTop;
+     const space = Math.max(180, nav.getBoundingClientRect().top - top - 28);
+     rail.style.setProperty('--discovery-height', space + 'px');
+   };
+   requestAnimationFrame(fit);
+   const resize = new ResizeObserver(fit); resize.observe(document.querySelector('.app'));
+
    ['touchstart','wheel','pointerdown'].forEach(type => rail.addEventListener(type, () => { pauseUntil = Date.now() + 4000; }, {passive:true}));
    rail.setAttribute('aria-label','Soirées près de toi : faire défiler vers le haut');
    rail.querySelectorAll('.dc-slide').forEach(slide => {
@@ -23,5 +40,5 @@
   const n = rail.children.length; if(n<2) return;
   const i = Math.round(rail.scrollTop / rail.clientHeight);
   rail.scrollTo({top: ((i+1)%n)*rail.clientHeight, behavior: i+1>=n ? 'instant' : 'smooth'});
- }, 2000);
+ }, 4000);
 })();
