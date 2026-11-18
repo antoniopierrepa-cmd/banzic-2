@@ -15,8 +15,9 @@
      if(!rail.isConnected) return;
      const screen = rail.closest('.screen'), nav = document.querySelector('nav.tabs');
      if(!screen || !nav || !screen.clientHeight) return;
-     const top = rail.getBoundingClientRect().top + screen.scrollTop;
-     const space = Math.max(180, nav.getBoundingClientRect().top - top - 28);
+     const scale = screen.getBoundingClientRect().height / screen.offsetHeight || 1;
+     const top = rail.getBoundingClientRect().top + screen.scrollTop * scale;
+     const space = Math.max(180, (nav.getBoundingClientRect().top - top) / scale - 28);
      rail.style.setProperty('--discovery-height', space + 'px');
    };
    requestAnimationFrame(fit);
