@@ -2912,6 +2912,8 @@
     if (!zoneCarte) {
       state.ckTodayCount = L.filter(o => iso(new Date(o.t || now)) <= auj).length;
       const counter = document.getElementById('nav-checkin-count');
+      const mapCounter = document.getElementById('nav-map-count');
+      if (mapCounter) { mapCounter.textContent = state.ckTodayCount; mapCounter.closest('button').setAttribute('aria-label', 'Carte : ' + state.ckTodayCount + ' soirées en cours ou à venir aujourd’hui à ' + r + ' km'); }
       if (counter) { counter.textContent = state.ckTodayCount; counter.closest('button').setAttribute('aria-label', 'Check-in : ' + state.ckTodayCount + ' départs aujourd’hui à ' + r + ' km'); }
     }
     if (lignesSeules) return L.map(rangee);
@@ -2923,6 +2925,8 @@
       state.ckTodayCount = visibles.filter(o => iso(new Date(o.t || now)) <= auj).length;
       const counter = document.getElementById('nav-checkin-count');
       if (counter) counter.textContent = state.ckTodayCount;
+      const mapCounter = document.getElementById('nav-map-count');
+      if (mapCounter) { mapCounter.textContent = state.ckTodayCount; mapCounter.closest('button').setAttribute('aria-label', 'Carte : ' + state.ckTodayCount + ' soirées en cours ou à venir aujourd’hui à ' + r + ' km'); }
     }
     const nbPad = (p) => p.g === 'avecdj' ? evs.filter((x) => x.djSet || !!x.djs).length : p.g === 'mesdj' ? evs.filter(PAD_TEST['mesdj|oui']).length : p.k === 'tout' ? evs.filter((x) => !estLibertin(x)).length : evs.filter((x) => typeOkSous(x, p.k, state.ckSous) && passeSous(x, p.k, state.ckSous)).length;
     const onPad = (p) => p.g === 'avecdj' ? !!state.ckAvecDj : p.g === 'mesdj' ? !!state.ckMesDj : p.k === 'tout' ? !tps.length : tps.includes(p.k);
@@ -5324,7 +5328,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const liveNearby = soireesAvecKm().some(x => { if (x.km > rCk || estLibertin(x) || !x.heure || !x.heureFin) return false; const t = horairesCheckin(x); return Date.now() >= t.debut && Date.now() < t.fin; });
     const mapCount = document.getElementById('nav-map-count');
     const checkinCount = document.getElementById('nav-checkin-count');
-    if (mapCount) { mapCount.closest('button').classList.toggle('nav-has-live', liveNearby); mapCount.textContent = auj100; mapCount.setAttribute('font-size', auj100 > 99 ? '6' : '8'); mapCount.closest('button').setAttribute('aria-label', 'Carte : ' + auj100 + ' soirées ce soir autour de toi'); }
+    if (mapCount) { mapCount.closest('button').classList.toggle('nav-has-live', liveNearby); mapCount.textContent = nbDeparts; mapCount.setAttribute('font-size', auj100 > 99 ? '6' : '8'); mapCount.closest('button').setAttribute('aria-label', 'Carte : ' + nbDeparts + ' soirées en cours ou à venir aujourd’hui autour de toi'); }
     if (checkinCount) { checkinCount.textContent = nbDeparts; checkinCount.setAttribute('font-size', nbDeparts > 99 ? '6' : '8'); checkinCount.closest('button').setAttribute('aria-label', 'Check-in : ' + nbDeparts + ' départs du jour autour de toi'); }
     const accesPivotants = `<section class="home-flip" aria-label="Direct et départs autour de moi"><div class="home-flip-rotor">
       <button class="ligne-acc la-direct home-flip-face" data-tab="map"><span class="la-ico" aria-hidden="true"><span class="ico-diffusion"><i></i><b></b><b></b></span></span><span class="la-txt"><b>Direct autour de moi</b><small><em>${auj100}</em> soirée${auj100 > 1 ? 's' : ''} ce soir · <em>${clubs100}</em> clubs à ${rCk} km</small></span><span class="la-btn">Carte →</span></button>
