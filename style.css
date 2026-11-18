@@ -3644,3 +3644,13 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 #nav-checkin-count { fill: #073c22; }
 .sf-dj:disabled { opacity: .85; cursor: default; }
 .sf-dj:disabled .sf-fleche { font-size: 10px; max-width: 85px; color: #a9b1c3; }
+
+/* More poster space on phones; compact details retain clear hierarchy. */
+.dc-rail .dc-slide .dc-footer, .dc-rail .dc-slide.dc-portrait .dc-footer { flex-basis: 112px; min-height: 112px; padding: 7px 12px 36px; }
+.dc-rail .dc-slide .dc-media, .dc-rail .dc-slide.dc-portrait .dc-media, .dc-rail .dc-slide:not(.dc-portrait) .dc-media { padding: 0; }
+.dc-rail .dc-slide .dc-bas { gap: 2px; }
+.dc-rail .dc-slide .dc-bas small { font-size: 14px; -webkit-line-clamp: 1; }
+.dc-rail .dc-slide .dc-bas b { font-size: 17px; }
+.dc-rail .dc-slide .dc-bas > span { font-size: 14px; }
+.dc-rail .dc-slide .dc-bas > span:last-child { display: none; }
+.dc-rail .dc-slide .dc-bang { bottom: 5px; padding: 6px 10px; font-size: 11px; }
