@@ -1783,7 +1783,7 @@
       villesMonde.rows = (data.features || []).flatMap((f) => {
         const p = f.properties || {}, c = f.geometry && f.geometry.coordinates;
         return p.name && Array.isArray(c) && Number.isFinite(c[0]) && Number.isFinite(c[1]) && Math.abs(c[0]) <= 180 && Math.abs(c[1]) <= 90
-          ? [[p.name, p.country || p.countrycode || '', c[1], c[0], p.state || p.county || '']] : [];
+          ? [[p.name, p.country || p.countrycode || '', c[1], c[0], p.state || p.county || '', (p.countrycode || '').toUpperCase()]] : [];
       });
       villesMonde.cache.set(q, villesMonde.rows);
       if (!villesMonde.rows.length) villesMonde.error = 'Ville introuvable. Ajoute le pays à ta recherche.';
@@ -1812,6 +1812,9 @@
     if (map) map.closePopup();
     state.villeChoisie = true;
     state.villeRecherche = [v[2], v[3]];
+    const paysVille = v[5] || codesPaysAgenda.find(code => sansAccent(paysAgenda.of(code)) === sansAccent(v[1] || ''));
+    if (paysVille && codesPaysAgenda.includes(paysVille)) state.paysAgenda = paysVille;
+    state.rayonIdx = RAYONS.indexOf(100);
     state.radarDep = '';
     state.zoneGeo = { ...zoneDe([v[2], v[3]], false, v[0]), nom: v[0] };
     state.mode = 'geo'; store.set('mode', 'geo');
@@ -3261,8 +3264,11 @@
   // Agenda autour de moi : un fader façon table de mixage règle le rayon (10 → 100 km) autour de ma position
   // Dernier cran : toute la France (soirées des lieux français uniquement, sans limite de distance)
   const FRANCE_KM = 1e4, RAYONS = [10, 20, 30, 50, 100, FRANCE_KM];
-  const kmTxt = (r) => r >= FRANCE_KM ? 'Toute la France' : r + ' km';
-  const dansRayonAg = (x, r) => r >= FRANCE_KM ? !/^(BE|ES|PT)$/.test(String((x.l || {}).dep || '')) : x.km <= r;
+  const paysAgenda = new Intl.DisplayNames(['fr'], {type: 'region'});
+  const codesPaysAgenda = 'AW AF AO AI AX AL AD AE AR AM AS AQ TF AG AU AT AZ BI BE BJ BQ BF BD BG BH BS BA BL BY BZ BM BO BR BB BN BT BV BW CF CA CC CH CL CN CI CM CD CG CK CO KM CV CR CU CW CX KY CY CZ DE DJ DM DK DO DZ EC EG ER EH ES EE ET FI FJ FK FR FO FM GA GB GE GG GH GI GN GP GM GW GQ GR GD GL GT GF GU GY HK HM HN HR HT HU ID IM IN IO IE IR IQ IS IL IT JM JE JO JP KZ KE KG KH KI KN KR KW LA LB LR LY LC LI LK LS LT LU LV MO MF MA MC MD MG MV MX MH MK ML MT MM ME MN MP MZ MR MS MQ MU MW MY YT NA NC NE NF NG NI NU NL NO NP NR NZ OM PK PA PN PE PH PW PG PL PR KP PT PY PS PF QA RE RO RU RW SA SD SN SG GS SH SJ SB SL SV SM SO PM RS SS ST SR SK SI SE SZ SX SC SY TC TD TG TH TJ TK TM TL TO TT TN TR TV TW TZ UG UA UM UY US UZ VA VC VE VG VI VN VU WF WS YE ZA ZM ZW'.split(' ').sort((a,b) => paysAgenda.of(a).localeCompare(paysAgenda.of(b), 'fr'));
+  state.paysAgenda = 'FR';
+  const kmTxt = (r) => r >= FRANCE_KM ? paysAgenda.of(state.paysAgenda) : r + ' km';
+  const dansRayonAg = (x, r) => r >= FRANCE_KM ? (x.l?.country || (/^[A-Z]{2}$/.test(x.l?.dep) ? x.l.dep : 'FR')) === state.paysAgenda : x.km <= r;
   // 8 pads façon platine : 1re rangée le type de soirée, 2e rangée le moment (et mes DJ favoris)
   // Petits logos des pads (dessinés en trait, aux couleurs de chaque pad)
   const ICO_PAD = {
@@ -3344,10 +3350,12 @@
     const r = RAYONS[state.rayonIdx];
     $('#screen-agenda').innerHTML = `<div class="fader-module">
         <div class="acc-tete fd-tete"><div><h2>Agenda autour de moi</h2></div></div>
-        <button type="button" id="radar-hyeres-weekend" class="acc-chip" style="margin:8px 0 12px">📍 Hyères · 20 km · jeudi à dimanche</button>\n        <label class="radar-dep">Département <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>
+        <label class="radar-dep">Pays <select id="ag-pays">${codesPaysAgenda.map(code => `<option value="${code}" ${state.paysAgenda === code ? 'selected' : ''}>${esc(paysAgenda.of(code))}</option>`).join('')}</select></label>
+        <button type="button" class="acc-chip" id="ag-chercher-ville">🌍 Chercher une ville</button>
+        ${state.paysAgenda === 'FR' ? `<label class="radar-dep">Département <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>` : ''}
         <div class="fd-rail">
-          <input type="range" id="fader-rayon" min="0" max="${RAYONS.length - 1}" step="1" value="${state.rayonIdx}" aria-label="Rayon de recherche" aria-valuetext="${r} kilomètres">
-          <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k >= FRANCE_KM ? 'France' : k}</span>`).join('')}</div>
+          <input type="range" id="fader-rayon" min="0" max="${RAYONS.length - 1}" step="1" value="${state.rayonIdx}" aria-label="Rayon de recherche" aria-valuetext="${esc(kmTxt(r))}">
+          <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k >= FRANCE_KM ? 'Pays' : k}</span>`).join('')}</div>
         </div>
         
         <p class="demo-note">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements français avec annonces' + (RADAR.countryCoverage && RADAR.countryCoverage.BE ? ' · Belgique : ' + RADAR.countryCoverage.BE + ' soirées' : '') + (RADAR.countryCoverage && RADAR.countryCoverage.ES ? ' · Espagne : ' + RADAR.countryCoverage.ES + ' soirées' : '') + ' · collecte partielle.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
@@ -3355,17 +3363,18 @@
         <div id="ag-filtres"></div>
       </div>
       <div id="agenda-liste"></div>`;
-    $('#radar-hyeres-weekend')?.addEventListener('click', () => {
-      state.villeChoisie = true;
-      state.villeRecherche = [43.1205, 6.1286];
-      state.zoneGeo = { ...zoneDe([43.1205, 6.1286], false, 'Hyères'), nom: 'Hyères' };
-      state.rayonIdx = RAYONS.indexOf(20);
+    $('#ag-pays').addEventListener('change', e => {
+      state.paysAgenda = e.target.value;
       state.radarDep = '';
-      state.radarHyeresWeekend = true;
-      state.sudQuand = null;
-      state.sudAvecDj = false;
-      state.sudTypes = [];
+      state.rayonIdx = RAYONS.length - 1;
       renderAgendaSud();
+    });
+    $('#ag-chercher-ville').addEventListener('click', () => {
+      state.rechFiltre = 'ville';
+      if (!document.querySelector('.top').classList.contains('cherche')) $('#tab-cherche').click();
+      $('#recherche-dj').value = '';
+      $('#recherche-dj').placeholder = 'Ville, pays…';
+      $('#recherche-dj').focus();
     });
     listeAgendaSud();
   }
@@ -3407,7 +3416,7 @@
   function listeAgendaSud() {
     // Inclure aussi les soirées de ce soir dans l'agenda, pas uniquement celles de demain.
     // Les dates plus lointaines arrivent en descendant : 7 jours de plus à chaque fois qu'on atteint le bas de la liste
-    const auj0 = iso(new Date()), j7 = state.radarHyeresWeekend ? finWeekend() : auJour(state.agJours || 7);
+    const auj0 = iso(new Date()), j7 = auJour(state.agJours || 7);
     if (state.agDate && state.agDate < auj0) state.agDate = null;
     const r = RAYONS[state.rayonIdx], dansZone = (x) => state.radarDep ? x.l.dep === state.radarDep : dansRayonAg(x, r), toutesLoin = soireesAvecKm().filter((x) => x.date >= auj0 && dansZone(x));
     // Calendrier : une date choisie = seulement les soirées de ce jour-là
@@ -3423,7 +3432,7 @@
     const fr = $('#fader-rayon'); if (fr) fr.style.setProperty('--pct', (state.rayonIdx / (RAYONS.length - 1) * 100) + '%');
     let h = '';
     if (!toutes.length && state.agDate) h += `<div class="empty">Aucune soirée annoncée ce jour-là dans cette zone.<br><small>Choisis un jour avec un point dans le calendrier.</small></div>`;
-    else if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département.' : `Rien d’annoncé dans les 7 prochains jours ${r >= FRANCE_KM ? 'en France' : 'à moins de ' + r + ' km'}. Vérifie aussi les lieux et leurs annonces officielles.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
+    else if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département.' : `Rien d’annoncé dans les 7 prochains jours ${r >= FRANCE_KM ? 'dans le pays choisi (' + esc(paysAgenda.of(state.paysAgenda)) + ')' : 'à moins de ' + r + ' km'}. Vérifie aussi les lieux et leurs annonces officielles.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
     else {
       if (!liste.length) h += `<div class="empty">Aucune soirée pour ces filtres dans ce rayon.</div>`;
       // Un titre par jour (« SAM. 14 NOV. »), puis les soirées du jour en grandes cartes avec l'affiche
