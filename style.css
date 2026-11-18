@@ -3654,3 +3654,10 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 .dc-rail .dc-slide .dc-bas > span { font-size: 14px; }
 .dc-rail .dc-slide .dc-bas > span:last-child { display: none; }
 .dc-rail .dc-slide .dc-bang { bottom: 5px; padding: 6px 10px; font-size: 11px; }
+
+/* Keep the DJ visible while the two live counters sit over the sunset. */
+.acc-mesdj.md-hub .md-txt b { font-size: clamp(17px, 4.6vw, 19px); }
+.acc-mesdj.md-hub .md-txt small { font-size: 12px; }
+.acc-mesdj.md-hub .md-hub-row { background: rgba(20, 10, 24, .42); }
+.acc-mesdj.md-hub > video { object-position: left center; }
+.acc-mesdj.md-hub { background-position: left center; }

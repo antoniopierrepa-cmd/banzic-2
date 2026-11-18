@@ -5542,8 +5542,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const coeur = `<span class="md-coeur" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg></span>`;
     const flyers = gs.slice(0, 3).map(x => `<img src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="" referrerpolicy="no-referrer">`).join('');
     const fleche = '<svg class="md-fl" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
-    return `<section class="acc-mesdj md-illus md-fin md-video md-hub" aria-label="Mes DJ et mes soirées" style="--md-img:url('mesdj-banniere-poster.jpg?v=2')">
-      <video data-home-banner-video muted loop playsinline preload="none" poster="mesdj-banniere-poster.jpg?v=2" aria-hidden="true" tabindex="-1"><source src="mesdj-banniere.mp4?v=2" type="video/mp4"></video>
+    return `<section class="acc-mesdj md-illus md-fin md-video md-hub" aria-label="Mes DJ et mes soirées" style="--md-img:url('mesdj-banniere-poster.jpg?v=3')">
+      <video data-home-banner-video muted loop playsinline preload="none" poster="mesdj-banniere-poster.jpg?v=3" aria-hidden="true" tabindex="-1"><source src="mesdj-banniere.mp4?v=3" type="video/mp4"></video>
       <div class="md-hub-links"><button type="button" class="md-hub-row md-ligne" data-fav-open="dj">${coeur}<span class="md-txt"><b>Mes DJ</b><small>${sous}</small></span>${avs ? `<span class="md-avs">${avs}</span>` : ''}${fleche}</button>
       <button type="button" class="md-hub-row md-ligne md-hub-soirees" data-fav-open="soirees"><span class="md-coeur" aria-hidden="true">${ICO_BANG}</span><span class="md-txt"><b>Mes soirées</b><small>${n} soirée${n > 1 ? 's' : ''} gardée${n > 1 ? 's' : ''}</small></span>${flyers ? `<span class="ms-vignettes">${flyers}</span>` : ''}${fleche}</button></div></section>`;
   }
