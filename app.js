@@ -2955,10 +2955,7 @@
         <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em>${o.festif ? `<span class="ck-festif">${esc(o.festif)}</span>` : ''}${o.adulte ? '<span class="bz-ck-18" aria-label="Club libertin, réservé aux plus de 18 ans" style="display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:7px;background:#b91c1c;color:#fff;font-weight:800;font-size:12px;line-height:1.2;white-space:nowrap;box-shadow:0 1px 5px #0005">CLUB LIBERTIN · 18+</span>' : ''}<b>${esc(o.nom)}</b>${!lignesSeules && o.ville ? `<span class="ck-ville"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>${esc(String(o.ville).replace(/ arrondissement$/i, ""))}</span>` : ''}${statutBang}${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span>${!lignesSeules && (o.img || o.gp) ? `<span class="ck-vignette${o.img ? ' ok' : ' ck-gp'}" data-gp="${esc(JSON.stringify(o.gp || {}))}" aria-hidden="true">${o.img ? `<img src="${esc(o.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="const z=this.parentNode;this.remove();z.classList.remove('ok');z.classList.add('ck-gp');window.__photosCheckin&&window.__photosCheckin()">` : ''}</span>` : ''}</button>${puces}</div>`; };
     const i = CK_RAYONS.indexOf(r);
     if (lignesSeules) return L.map(rangee);
-    // Mêmes bulles que l'Agenda (Discothèques, Festivals, Concerts, Bars festifs avec leurs sous-menus, Avec DJ, Mes DJ)
-    const evs = L.map((o) => o.ev).filter(Boolean), tps = state.ckTypes || [];
-    const ckPasse = (x) => (!estLibertin(x) || (state.ckSous.club || []).includes('libertin')) && (!tps.length || tps.some((k) => typeOkSous(x, k, state.ckSous) && passeSous(x, k, state.ckSous))) && (!state.ckAvecDj || x.djSet || !!x.djs) && (!state.ckMesDj || PAD_TEST['mesdj|oui'](x));
-    const visibles = L.filter((o) => o.ev ? ckPasse(o.ev) : !tps.length && !state.ckAvecDj && !state.ckMesDj);
+    const visibles = L.filter(o => passeFamilles(o.ev, 'ck'));
     if (!zoneCarte) {
       const todayRows = visibles.filter(o => iso(new Date(o.t || now)) <= auj);
       state.ckTodayRows = todayRows.flatMap(row => {
@@ -2975,10 +2972,7 @@
       const mapCounter = document.getElementById('nav-map-count');
       if (mapCounter) { mapCounter.textContent = state.ckTodayCount; mapCounter.closest('button').setAttribute('aria-label', 'Carte : ' + state.ckTodayCount + ' soirées en cours ou à venir aujourd’hui à ' + r + ' km'); }
     }
-    const nbPad = (p) => p.g === 'avecdj' ? evs.filter((x) => x.djSet || !!x.djs).length : p.g === 'mesdj' ? evs.filter(PAD_TEST['mesdj|oui']).length : p.k === 'tout' ? evs.filter((x) => !estLibertin(x)).length : evs.filter((x) => typeOkSous(x, p.k, state.ckSous) && passeSous(x, p.k, state.ckSous)).length;
-    const onPad = (p) => p.g === 'avecdj' ? !!state.ckAvecDj : p.g === 'mesdj' ? !!state.ckMesDj : p.k === 'tout' ? !tps.length : tps.includes(p.k);
-    const barreFiltres = `<div class="ck-outils">${boutonFiltres('ck', resumeFiltres(tps, state.ckSous, state.ckAvecDj, state.ckMesDj), state.ckFiltresOuverts)}</div><div class="filtres-panneau"${state.ckFiltresOuverts ? '' : ' hidden'}><div class="pads ck-pads" role="group" aria-label="Filtrer les départs">${PADS.filter((p) => p.g !== 'quand').map((p) => `<button class="pad${onPad(p) ? ' on' : ''}${state.ckOuvert === p.k && onPad(p) ? ' ouvert' : ''}" style="--pc:${p.c}" data-ckpad="${p.g}|${p.k}" aria-pressed="${onPad(p)}">${icoPad(p.g === 'type' ? p.k : p.g === 'avecdj' ? 'avecdj' : 'mesdj')}<span class="pad-nom">${p.nom}${SOUS_MENUS[p.k] ? '<i class="pad-fl" aria-hidden="true">▾</i>' : ''}</span><small class="pad-nb">${nbPad(p)}</small></button>`).join('')}</div>
-      ${state.ckOuvert && tps.includes(state.ckOuvert) ? panneauSous(state.ckOuvert, evs, 'ck') : ''}<button type="button" class="fp-ok" data-filtres-ok="ck">Voir les départs</button></div>`;
+    const barreFiltres = touchesFamilles('ck');
     box.innerHTML = `<div class="ck-tete"><div><h2>Check-in</h2><small>Départs autour de ${esc(nomPos)} · <b>${r} km</b> · ${L.length} départ${L.length > 1 ? 's' : ''}</small></div><span class="ck-horloge">${flap(hm(now), 5)}</span></div>
 
       <div class="ck-rayon"><div class="ckr-tete"><span>Distance</span><b id="ckr-val">${r} km</b></div>
@@ -2988,16 +2982,6 @@
       ${jours.map((date) => { const lignes = visibles.filter((o) => { const j = iso(new Date(o.t || now)); return date === auj ? j <= auj : j === date; }); return `<section class="ck-jour ${clJour(date)}"><h3 class="ck-jour-bandeau"><span class="cjb-nom">${titreJour(date)}</span><span class="cjb-info"><b>${new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</b><small>${lignes.length} départ${lignes.length > 1 ? 's' : ''}</small></span></h3>${lignes.length ? `<div class="ck-liste">${lignes.map(rangee).join('')}</div>` : `<p class="empty">Aucune soirée répertoriée à moins de ${r} km pour cette journée.</p>`}</section>`; }).join('')}<p class="aide">Mise à jour automatique. Sans horaire de fin publié, la fin est estimée à six heures après le début ; sans horaire, la soirée reste affichée jusqu’à minuit.</p>`;
     setTimeout(() => window.__photosCheckin && window.__photosCheckin(), 0);
   }
-  document.addEventListener('click', (e) => {
-    const pd = e.target.closest('[data-ckpad]'); if (!pd) return;
-    const [g, k] = pd.dataset.ckpad.split('|'), t = state.ckTypes || [];
-    if (g === 'type') {
-      if (k !== 'tout' && t.includes(k) && SOUS_MENUS[k] && state.ckOuvert !== k) state.ckOuvert = k;
-      else { state.ckTypes = k === 'tout' ? [] : t.includes(k) ? t.filter((y) => y !== k) : t.concat(k); state.ckOuvert = SOUS_MENUS[k] && state.ckTypes.includes(k) ? k : null;
-        if (k === 'tout') state.ckSous = { club: [], bar: [], festival: [], concert: [] }; else if (!state.ckTypes.includes(k)) state.ckSous[k] = []; }
-    } else if (g === 'avecdj') state.ckAvecDj = !state.ckAvecDj; else state.ckMesDj = !state.ckMesDj;
-    renderCheckin();
-  });
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#ck-hyeres')) return;
     state.villeChoisie = true;
@@ -3293,12 +3277,6 @@
     mesdj: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'
   };
   const icoPad = (k) => `<svg class="pad-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO_PAD[k] || ''}</svg>`;
-  const PADS = [
-    { g: 'type', k: 'tout', nom: 'Tout', c: '#C9CFDD' }, { g: 'type', k: 'club', nom: 'Discothèques', c: '#3D8BFF' },
-    { g: 'type', k: 'festival', nom: 'Festivals', c: '#FF8A3D' },
-    { g: 'type', k: 'concert', nom: 'Concerts', c: '#F2C53A' }, { g: 'type', k: 'bar', nom: 'Bars festifs', c: '#3DD6C6' },
-    { g: 'quand', k: 'weekend', nom: 'Week-end', c: '#A77BFF' }, { g: 'avecdj', k: 'oui', nom: 'Avec DJ', c: '#FF5FD2' }, { g: 'mesdj', k: 'oui', nom: 'Mes DJ', c: '#3DF28A' }
-  ];
   // Styles musicaux : familles reconnues dans les genres et le nom de la soirée (une soirée peut en avoir plusieurs)
   const STYLES_AG = [
     ['electro', 'Électro et dance', /\b(?:house|techno|hardtechno|minimal|trance|psytrance|dnb|d&b|drum\s*(?:and|&|n)\s*bass|dubstep|bass music|garage|edm|big room|hardstyle|hardcore|nu[\s-]?disco|electro|electronica|dance)\b/],
@@ -3318,49 +3296,39 @@
       return re.test(genres);
     }).map(([k]) => k));
   }
-  // Discothèque = lieu présent dans notre liste des discothèques de France (OpenStreetMap)
-  const _discoCache = {};
-  const estDiscotheque = (l) => { if (!l) return false; const k = l.lat + ',' + l.lng; if (k in _discoCache) return _discoCache[k];
-    return (_discoCache[k] = !!(window.DISCOTHEQUES || []).find((c) => Math.abs(c[2] - l.lat) < 0.0014 && Math.abs(c[3] - l.lng) < 0.0019)); };
-  const BARS_SOUS = [['karaoke', 'Karaoké', /karaok/], ['blind', 'Blind test', /blind/], ['afterwork', 'Afterwork', /afterwork/], ['apero', 'Apéro musical', /ap[eé]ro/], ['bardj', 'Bar avec DJ', null]];
-  // Sous-menus des pads : on coche ce qu'on cherche (rien de coché = tout le pad)
-  const SOUS_MENUS = {
-    club: { titre: 'Discothèques et clubs', lieux: [['discotheque', 'Discothèque'], ['club', 'Club'], ['libertin', 'Club 🔞', true]], styles: true },
-    bar: { titre: 'Bars festifs', lieux: BARS_SOUS.map(([k, n]) => [k, n]), styles: true },
-    festival: { titre: 'Festivals', lieux: [], styles: true },
-    concert: { titre: 'Concerts', lieux: [], styles: true }
+  const selectionMusicale = {
+    ag: { familles: new Set(), club: false },
+    ck: { familles: new Set(), club: false }
   };
-  state.sudSous = state.sudSous || { club: [], bar: [], festival: [], concert: [] };
-  function passeLieuSous(x, k, v) {
-    if (k === 'club') return v === 'libertin' ? estLibertin(x) : !estLibertin(x) && (v === 'discotheque' ? estDiscotheque(x.l) : !estDiscotheque(x.l));
-    if (k === 'bar') { const b = BARS_SOUS.find((y) => y[0] === v); return b[2] ? b[2].test(sansAccent(String(x.genres || '') + ' ' + x.nom).toLowerCase()) : !!(x.djs || x.djSet); }
-    return true;
+  const symboles = {electro: '⚡', urbain: '🎤', groove: '🎷', festif: '🎉', ambiance: '🌅'};
+  function passeFamilles(x, ctx) {
+    const { familles, club } = selectionMusicale[ctx];
+    if (Boolean(x && estLibertin(x)) !== club) return false;
+    return !familles.size || !!x && stylesDe(x).some(k => familles.has(k));
   }
-  state.ckSous = { club: [], bar: [], festival: [], concert: [] };
-  // Le pad Discothèques montre les clubs libertins seulement si on a coché « Club libertin » dans son sous-menu
-  const typeOkSous = (x, k, sous) => k === 'club' ? (x.type || 'club') === 'club' && (!estLibertin(x) || (sous.club || []).includes('libertin')) : PAD_TEST['type|' + k](x);
-  function passeSous(x, k, sous = state.sudSous) {
-    const sel = sous[k] || [], m = SOUS_MENUS[k]; if (!m || !sel.length) return true;
-    const lieux = sel.filter((v) => m.lieux.some((y) => y[0] === v)), styles = sel.filter((v) => STYLES_AG.some((y) => y[0] === v));
-    return (!lieux.length || lieux.some((v) => passeLieuSous(x, k, v))) && (!styles.length || stylesDe(x).some((v) => styles.includes(v)));
+  function touchesFamilles(ctx) {
+    const { familles, club } = selectionMusicale[ctx];
+    const touches = STYLES_AG.map(([k, nom]) => `<button type="button" class="pad${familles.has(k) ? ' on' : ''}" style="--pc:#78BBFC" data-famille="${ctx}|${k}" aria-pressed="${familles.has(k)}"><span aria-hidden="true">${symboles[k]}</span><span class="pad-nom">${nom}</span></button>`).join('');
+    return `<div class="pads" role="group" aria-label="Familles musicales">${touches}</div><button type="button" class="sous-chip${club ? ' on' : ''}" data-famille="${ctx}|club" aria-pressed="${club}">Club 🔞</button>`;
   }
-  function panneauSous(k, toutes, ctx = 'ag') {
-    const m = SOUS_MENUS[k]; if (!m) return ''; const sous = ctx === 'ck' ? state.ckSous : state.sudSous;
-    const base = toutes.filter((x) => typeOkSous(x, k, sous)), libre = toutes.filter((x) => (x.type || 'club') === 'club' && estLibertin(x)), sel = sous[k] || [];
-    const chip = (v, nom, n, m18) => `<button type="button" class="sous-chip${sel.includes(v) ? ' on' : ''}" data-sous="${ctx}|${k}|${v}" aria-pressed="${sel.includes(v)}">${esc(nom)}<small>${n}</small></button>`;
-    const lieux = m.lieux.map(([v, nom, m18]) => chip(v, nom, (v === 'libertin' ? libre : base).filter((x) => passeLieuSous(x, k, v)).length, m18)).join('');
-    const styles = STYLES_AG.map(([v, nom]) => [v, nom, base.filter((x) => stylesDe(x).includes(v)).length]).map(([v, nom, n]) => chip(v, nom, n)).join('');
-    return `<div class="sous-menu" style="--pc:${(PADS.find((p) => p.k === k) || {}).c}"><div class="sm-tete"><b>${m.titre}</b>${sel.length ? `<button type="button" class="sm-effacer" data-sous-effacer="${ctx}|${k}">Tout décocher</button>` : ''}<button type="button" class="sm-ok" data-sous-ok="${ctx}">OK</button></div>
-      ${lieux ? `<div class="sm-groupe"><small>Type de lieu</small><div class="sm-chips">${lieux}</div></div>` : ''}
-      ${styles ? `<div class="sm-groupe"><small>Ambiance musicale</small><div class="sm-chips">${styles}</div></div>` : '<p class="aide">Aucun style musical annoncé pour l\u2019instant.</p>'}</div>`;
-  }
+  document.addEventListener('click', e => {
+    const bouton = e.target.closest('[data-famille]');
+    if (!bouton) return;
+    const [ctx, k] = bouton.dataset.famille.split('|');
+    const sel = selectionMusicale[ctx];
+    if (k === 'club') sel.club = !sel.club;
+    else if (sel.familles.has(k)) sel.familles.delete(k);
+    else sel.familles.add(k);
+    if (ctx === 'ck') renderCheckin();
+    else { state.sudTypes = []; state.agJours = 7; listeAgendaSud(); }
+  });
   // Club libertin : réservé aux plus de 18 ans (repéré au nom du lieu ou de la soirée)
   const estLibertin = (x) => !!(x.libertin || Number(x.ageMin) >= 18 || (x.l && (x.l.libertin || (x.l.categories || []).includes('libertin')))) || /libertin|échangis|echangis|\bswing/i.test((x.nom || '') + ' ' + ((x.l || SUD.lieux[x.lieu] || {}).nom || ''));
   const auJour = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
   function finWeekend() { const d = new Date(), j = d.getDay(); d.setDate(d.getDate() + (j === 0 ? 0 : 7 - j)); return iso(d); }
   function debutWeekend() { const d = new Date(), j = d.getDay(); if (j >= 5 || j === 0) return iso(d); d.setDate(d.getDate() + (5 - j)); return iso(d); }
   const PAD_TEST = {
-    'type|club': (x) => (x.type || 'club') === 'club' && (!estLibertin(x) || (state.sudSous.club || []).includes('libertin')), 'type|libertin': (x) => estLibertin(x), 'type|festival': (x) => x.type === 'festival', 'type|concert': (x) => x.type === 'concert',
+    'type|club': (x) => (x.type || 'club') === 'club' && !estLibertin(x), 'type|libertin': (x) => estLibertin(x), 'type|festival': (x) => x.type === 'festival', 'type|concert': (x) => x.type === 'concert',
     'type|bar': (x) => /^(bar|restaurant|soiree)$/.test(x.type || '') && !estLibertin(x), 'type|tout': () => true,
     'quand|weekend': (x) => x.date >= debutWeekend() && x.date <= finWeekend(), 'quand|semaine': (x) => x.date < auJour(7),
     'mesdj|oui': (x) => !!x.djs && state.favs.some((f) => sansAccent(x.djs).includes(sansAccent(f)))
@@ -3384,10 +3352,7 @@
         
         <p class="demo-note">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements français avec annonces' + (RADAR.countryCoverage && RADAR.countryCoverage.BE ? ' · Belgique : ' + RADAR.countryCoverage.BE + ' soirées' : '') + (RADAR.countryCoverage && RADAR.countryCoverage.ES ? ' · Espagne : ' + RADAR.countryCoverage.ES + ' soirées' : '') + ' · collecte partielle.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
         <div id="ag-cal-zone"></div>
-        <div class="filtres-panneau" id="ag-filtres"${state.agFiltresOuverts ? '' : ' hidden'}>
-        <div class="pads" role="group" aria-label="Filtres">${PADS.map((x) => `<button class="pad${x.moins18 ? ' pad-18' : ''}" style="--pc:${x.c}" data-pad="${x.g}|${x.k}" aria-pressed="false"${x.moins18 ? ' title="Interdit aux moins de 18 ans"' : ''}>${icoPad(x.g === 'type' ? x.k : x.g === 'avecdj' ? 'avecdj' : x.k === 'oui' ? 'mesdj' : x.k)}<span class="pad-nom">${x.nom}${SOUS_MENUS[x.k] ? '<i class="pad-fl" aria-hidden="true">▾</i>' : ''}</span><small class="pad-nb"></small></button>`).join('')}</div>
-        <div id="sous-menu-zone"></div>
-        <button type="button" class="fp-ok" data-filtres-ok="ag">Voir les soirées</button></div>
+        <div id="ag-filtres"></div>
       </div>
       <div id="agenda-liste"></div>`;
     $('#radar-hyeres-weekend')?.addEventListener('click', () => {
@@ -3404,24 +3369,6 @@
     });
     listeAgendaSud();
   }
-  // Résumé des filtres choisis, affiché sur la seule touche « Filtres » (Agenda et Check-in)
-  function resumeFiltres(types, sous, avecDj, mesDj, quand) {
-    const noms = [];
-    types.forEach((k) => { const p = PADS.find((x) => x.k === k); const m = SOUS_MENUS[k], sel = (sous[k] || []).map((v) => ((m && m.lieux.find((y) => y[0] === v)) || STYLES_AG.find((y) => y[0] === v) || [, v])[1].split(' · ')[0]);
-      noms.push(sel.length ? sel.join(', ') : p ? p.nom : k); });
-    if (quand === 'weekend') noms.push('Week-end'); if (avecDj) noms.push('Avec DJ'); if (mesDj) noms.push('Mes DJ');
-    return noms;
-  }
-  const ICO_FILTRE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>';
-  function boutonFiltres(ctx, noms, ouvert) {
-    return `<button type="button" class="filtre-btn${noms.length ? ' actif' : ''}${ouvert ? ' ouvert' : ''}" data-filtres="${ctx}" aria-expanded="${!!ouvert}">${ICO_FILTRE}<span>${noms.length ? esc(noms.join(' · ')) : 'Tout'}</span>${noms.length ? `<em>${noms.length}</em>` : ''}<i aria-hidden="true">▾</i></button>`;
-  }
-  document.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-filtres], [data-filtres-ok]'); if (!b) return;
-    const ctx = b.dataset.filtres || b.dataset.filtresOk, ok = !!b.dataset.filtresOk;
-    if (ctx === 'ck') { state.ckFiltresOuverts = ok ? false : !state.ckFiltresOuverts; if (!state.ckFiltresOuverts) state.ckOuvert = null; renderCheckin(); }
-    else { state.agFiltresOuverts = ok ? false : !state.agFiltresOuverts; if (!state.agFiltresOuverts) state.padOuvert = null; const f = $('#ag-filtres'); if (f) f.hidden = !state.agFiltresOuverts; listeAgendaSud(); }
-  });
   // ---- Calendrier de l'agenda : on choisit un jour ; les points montrent les jours qui ont des soirées (avec les filtres choisis) ----
   const MOIS_LONG = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
   function calendrierAgenda(soirees, extra = '') {
@@ -3466,25 +3413,19 @@
     // Calendrier : une date choisie = seulement les soirées de ce jour-là
     const garde = mesSoirees(), toutesG = soireesAvecKm().filter((x) => garde.includes(x.id));
     const toutes = state.agGardees ? toutesG : state.agDate ? toutesLoin.filter((x) => x.date === state.agDate) : toutesLoin.filter((x) => x.date <= j7);
-    const types = (state.sudTypes || []).filter((k) => PAD_TEST['type|' + k]), quand = state.sudQuand === 'weekend' ? 'weekend' : null, mesdj = !!state.sudMesDj;
-    const passeFiltres = (x) => (!estLibertin(x) || (state.sudSous.club || []).includes('libertin')) && (!types.length || types.some((k) => typeOkSous(x, k, state.sudSous) && passeSous(x, k))) && (!quand || PAD_TEST['quand|' + quand](x)) && (!mesdj || PAD_TEST['mesdj|oui'](x)) && (!state.sudAvecDj || x.djSet || !!x.djs);
+    const types = state.sudTypes || [];
+    const passeFiltres = x => passeFamilles(x, 'ag') && (!types.length || types.some(k => PAD_TEST['type|' + k]?.(x)));
     const liste = toutes.filter(passeFiltres);
-    { const z = $('#ag-cal-zone'); if (z) z.innerHTML = state.agGardees ? `<div class="ag-cal-barre"><span class="ag-cal-btn choisi">${ICO_BANG}<span>Mes soirées gardées (${toutesG.length})</span></span><button type="button" class="ag-cal-x" data-ag-toutes="1">Tout l’agenda</button></div>` : calendrierAgenda(toutesLoin.filter(passeFiltres), boutonFiltres('ag', resumeFiltres(types, state.sudSous, state.sudAvecDj, mesdj, quand), state.agFiltresOuverts)); }
-    { const f = $('#ag-filtres'); if (f) f.hidden = !state.agFiltresOuverts; }
-    document.querySelectorAll('[data-pad]').forEach((b) => {
-      const [g, k] = b.dataset.pad.split('|'), on = g === 'type' ? (k === 'tout' ? !types.length : types.includes(k)) : g === 'quand' ? quand === k : g === 'avecdj' ? !!state.sudAvecDj : mesdj;
-      b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.classList.toggle('ouvert', state.padOuvert === k && on);
-      const vis = toutes.filter((x) => !estLibertin(x) || (state.sudSous.club || []).includes('libertin'));
-      b.querySelector('.pad-nb').textContent = g === 'avecdj' ? vis.filter((x) => x.djSet || !!x.djs).length : vis.filter((x) => PAD_TEST[b.dataset.pad](x) && (g !== 'type' || passeSous(x, k))).length;
-    });
-    { const z = $('#sous-menu-zone'); if (z) z.innerHTML = state.padOuvert && types.includes(state.padOuvert) ? panneauSous(state.padOuvert, toutes) : ''; }
+    { const z = $('#ag-cal-zone'); if (z) z.innerHTML = state.agGardees ? `<div class="ag-cal-barre"><span class="ag-cal-btn choisi">${ICO_BANG}<span>Mes soirées gardées (${toutesG.length})</span></span><button type="button" class="ag-cal-x" data-ag-toutes="1">Tout l’agenda</button></div>` : calendrierAgenda(toutesLoin.filter(passeFiltres)); }
+    const filtres = $('#ag-filtres');
+    if (filtres) filtres.innerHTML = touchesFamilles('ag');
     document.querySelectorAll('.fd-graduations span').forEach((s, i) => s.classList.toggle('on', i === state.rayonIdx));
     const fr = $('#fader-rayon'); if (fr) fr.style.setProperty('--pct', (state.rayonIdx / (RAYONS.length - 1) * 100) + '%');
     let h = '';
     if (!toutes.length && state.agDate) h += `<div class="empty">Aucune soirée annoncée ce jour-là dans cette zone.<br><small>Choisis un jour avec un point dans le calendrier.</small></div>`;
     else if (!toutes.length) h += `<div class="empty">${state.radarDep ? 'Aucune soirée annoncée dans ce département.' : `Rien d’annoncé dans les 7 prochains jours ${r >= FRANCE_KM ? 'en France' : 'à moins de ' + r + ' km'}. Vérifie aussi les lieux et leurs annonces officielles.`}<br><small>Une absence d’annonce ne signifie pas qu’il n’y a pas de soirée.</small></div>`;
     else {
-      if (!liste.length) h += `<div class="empty">Rien pour ces pads dans ce rayon.${mesdj && !state.favs.length ? ' Ajoute des DJ en favori (♥) pour utiliser « Mes DJ ».' : ''}</div>`;
+      if (!liste.length) h += `<div class="empty">Aucune soirée pour ces filtres dans ce rayon.</div>`;
       // Un titre par jour (« SAM. 14 NOV. »), puis les soirées du jour en grandes cartes avec l'affiche
       let jour = '';
       liste.forEach((x) => {
@@ -3501,31 +3442,11 @@
     const sent = $('#ag-plus');
     if (sent && 'IntersectionObserver' in window) { const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); state.agJours = (state.agJours || 7) + 7; listeAgendaSud(); } }, { rootMargin: '300px' }); io.observe(sent); }
   }
-  document.addEventListener('click', (e) => {
-    const c = e.target.closest('[data-sous]');
-    const maj = (ctx) => { if (ctx === 'ck') renderCheckin(); else { state.agJours = 7; listeAgendaSud(); } };
-    if (c) { const [ctx, k, v] = c.dataset.sous.split('|'), sous = ctx === 'ck' ? state.ckSous : state.sudSous, t = sous[k] || []; sous[k] = t.includes(v) ? t.filter((y) => y !== v) : t.concat(v); maj(ctx); return; }
-    const ef = e.target.closest('[data-sous-effacer]'); if (ef) { const [ctx, k] = ef.dataset.sousEffacer.split('|'); (ctx === 'ck' ? state.ckSous : state.sudSous)[k] = []; maj(ctx); return; }
-    const ok = e.target.closest('[data-sous-ok]'); if (ok) { if (ok.dataset.sousOk === 'ck') state.ckOuvert = null; else state.padOuvert = null; maj(ok.dataset.sousOk); }
-  });
   document.addEventListener('change', (e) => { if (e.target.id === 'radar-departement') { state.radarDep = e.target.value; listeAgendaSud(); } if (e.target.id === 'radar-avec-dj') { state.sudAvecDj = e.target.checked; listeAgendaSud(); } });
   const reglerRayon = (i) => { state.rayonIdx = Math.max(0, Math.min(RAYONS.length - 1, i)); store.set('rayonIdx', state.rayonIdx);
     const f = $('#fader-rayon'); if (f) { f.value = state.rayonIdx; f.setAttribute('aria-valuetext', kmTxt(RAYONS[state.rayonIdx])); } listeAgendaSud(); };
   document.addEventListener('input', (e) => { if (e.target.id === 'fader-rayon') reglerRayon(+e.target.value); });
   document.addEventListener('click', (e) => { const g = e.target.closest('.fd-graduations [data-rayon]'); if (g) reglerRayon(+g.dataset.rayon); });
-  document.addEventListener('click', (e) => {
-    const pd = e.target.closest('[data-pad]'); if (!pd) return;
-    const [g, k] = pd.dataset.pad.split('|');
-    if (g === 'type') { const t = state.sudTypes || []; // plusieurs types à la fois : ex. Discothèques + Festivals
-      // Pad avec sous-menu : 1er appui = on le sélectionne et le menu s'ouvre ; appui sur un pad déjà ouvert = on le retire
-      if (k !== 'tout' && t.includes(k) && SOUS_MENUS[k] && state.padOuvert !== k) state.padOuvert = k;
-      else { state.sudTypes = k === 'tout' ? [] : t.includes(k) ? t.filter((y) => y !== k) : t.concat(k); state.padOuvert = SOUS_MENUS[k] && state.sudTypes.includes(k) ? k : null; if (k === 'tout') state.sudSous = { club: [], bar: [], festival: [], concert: [] }; else if (!state.sudTypes.includes(k)) state.sudSous[k] = []; } }
-    else if (g === 'avecdj') state.sudAvecDj = !state.sudAvecDj;
-    else if (g === 'quand') state.sudQuand = state.sudQuand === k ? null : k;
-    else state.sudMesDj = !state.sudMesDj;
-    pd.classList.remove('frappe'); void pd.offsetWidth; pd.classList.add('frappe'); state.agJours = 7;
-    listeAgendaSud();
-  });
   // Affiche inventée pour une soirée (style jeu vidéo néon, aucun flyer repris) : ciel, soleil rayé, silhouette, titre en gros
   const _affCache = {};
   function afficheSoiree(x) {
