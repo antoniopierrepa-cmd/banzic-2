@@ -321,7 +321,7 @@
   // Page commune : deux collections distinctes, alimentées par les actions existantes.
   function soireesGardees() {
     const ids = new Set(mesSoirees());
-    return soireesAvecKm().filter(x => ids.has(x.id));
+    return soireesAvecKm().concat(window.BANZIC_FLYER_SAMPLES || []).filter(x => ids.has(x.id));
   }
   function renderFavs() {
     const soirees = state.favPanel === 'soirees', gs = soireesGardees();
@@ -336,6 +336,7 @@
     else {
       document.querySelectorAll('#screen-fav > :not(#fav-list):not(#fav-hub-tabs)').forEach(el => { el.hidden = true; });
       $('#fav-list').innerHTML = `<p class="fav-hub-note">Les soirées que tu as gardées avec « Banger » · rappel le jour J</p>` + (gs.length ? `<div class="ms-liste">${gs.map(x => {
+        if (x.demo) return `<div class="ms-item"><div class="ms-open"><img src="${esc(x.flyerUrl)}" alt=""><span class="ms-txt"><small>TEST · Aucune soirée réelle</small><b>${esc(x.nom)}</b><span>Flyer de démonstration</span></span></div><button type="button" class="ag-bang on" data-garder="${esc(x.id)}" aria-pressed="true">${ICO_BANG}<span>Intéressé</span></button></div>`;
         ficheSoireeJour(x); const dt = new Date(x.date + 'T12:00:00');
         return `<div class="ms-item"><button type="button" class="ms-open" data-ag-fiche="s:${esc(x.id)}" aria-label="Voir la soirée ${esc(x.nom)}"><img src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="" referrerpolicy="no-referrer"><span class="ms-txt"><small>${['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'][dt.getDay()]} ${dt.getDate()} ${MOIS_CRT[dt.getMonth()]}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}</small><b>${esc(x.nom)}</b><span>${esc(x.l.nom)} · ${esc(x.l.ville || '')}</span></span></button><button type="button" class="ag-bang on" data-garder="${esc(x.id)}" aria-pressed="true" aria-label="Retirer ${esc(x.nom)} de mes soirées">${ICO_BANG}<span>Gardée</span></button></div>`;
       }).join('')}</div>` : `<div class="empty">Aucune soirée gardée pour l’instant.<br>Touche « Banger » sur un flyer de l’accueil pour la retrouver ici.</div>`);
@@ -3552,7 +3553,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     return `<div class="ag-carte agc-h" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
       <div class="agc-visuel${x.flyerUrl ? '' : ' agc-gp'}${/^img\/clubs\//.test(aff) ? ' agc-logo' : ''}" data-gp="${esc(JSON.stringify({ nom: x.l.nom, adresse: x.l.ville || '', lat: x.l.lat, lng: x.l.lng }))}" style="--aff:url('${esc(aff).replace(/'/g, '%27')}')"><img src="${esc(aff)}" data-fallback="${x.l.visuel || afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback;this.parentNode.style.setProperty('--aff','none');this.parentNode.classList.add('agc-gp');window.__photosAgenda&&window.__photosAgenda()" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC'}" loading="lazy" referrerpolicy="no-referrer">
         ${estLibertin(x) ? '<span class="moins18 agc-18" title="Interdit aux moins de 18 ans">-18</span>' : ''}</div>
-      ${(() => { const g = mesSoirees().includes(x.id); return `<button type="button" class="ag-bang${g ? ' on' : ''}" data-garder="${esc(x.id)}" aria-pressed="${g}" aria-label="Garder cette soirée">${ICO_BANG}<span>${g ? 'Gardée' : 'Banger'}</span></button>`; })()}
+      ${(() => { const g = mesSoirees().includes(x.id); return `<button type="button" class="ag-bang${g ? ' on' : ''}" data-garder="${esc(x.id)}" aria-pressed="${g}" aria-label="Garder cette soirée">${ICO_BANG}<span>${g ? 'Intéressé' : 'Banger intéressé'}</span></button>`; })()}
       <div class="agc-txt"><span class="agc-date">${esc(jour)}</span><b class="agc-nom">${esc(x.nom)}</b>
         <span class="agc-ville"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>${esc(x.l.ville || x.l.nom)}${pays ? ' · ' + pays : ''}</span>
         <span class="agc-meta">${type}${horaire ? ' • ' + horaire : ''}</span>
@@ -5200,10 +5201,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     e.stopPropagation(); e.preventDefault();
     const id = b.dataset.garder, l = mesSoirees(), garde = !l.includes(id);
     store.set('mesSoirees', garde ? l.concat(id) : l.filter((y) => y !== id));
-    document.querySelectorAll(`[data-garder="${CSS.escape(id)}"]`).forEach((x) => { x.classList.toggle('on', garde); x.setAttribute('aria-pressed', garde); const t = x.querySelector('span'); if (t) t.textContent = garde ? 'Gardée' : 'Banger'; });
+    document.querySelectorAll(`[data-garder="${CSS.escape(id)}"]`).forEach((x) => { x.classList.toggle('on', garde); x.setAttribute('aria-pressed', garde); const t = x.querySelector('span'); if (t) t.textContent = garde ? 'Intéressé' : 'Banger intéressé'; });
     if (b.classList.contains('dc-bang')) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
-    toast(garde ? 'Soirée gardée dans « Mes soirées » : rappel le jour J' : 'Soirée retirée de « Mes soirées »');
-    if (garde && 'Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission().then(() => rappelsSoirees()); } catch (er) { /* navigateur sans notifications */ } }
+    toast(garde ? (id.startsWith('demo:') ? 'Flyer test ajouté à « Mes soirées »' : 'Soirée ajoutée à « Mes soirées » : rappel le jour J') : 'Soirée retirée de « Mes soirées »');
+    if (garde && !id.startsWith('demo:') && 'Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission().then(() => rappelsSoirees()); } catch (er) { /* navigateur sans notifications */ } }
     dcPause = Date.now() + 8000;
     const hub = document.querySelector('.md-hub'); if (hub) { hub.outerHTML = bandeauMesDj(); remplirAvatars($('#accueil').querySelector('.md-hub')); if (window.BANZIC_AGENDA_VIDEO) window.BANZIC_AGENDA_VIDEO.sync($('#accueil')); }
     if (state.tab === 'fav') renderFavs();
@@ -5292,7 +5293,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       .filter((x) => !selonStyles || prefStyles.some((g) => sansAccent(String(x.genres || '') + ' ' + x.nom).toLowerCase().includes(g)))
       .filter((x) => { const k = x.date + '|' + x.lieu; if (dejaPub.has(k)) return false; dejaPub.add(k); return true; })
       .filter(x => radarUrl(x.flyerUrl)).sort((a, b) => Number(!!b.featuredOfficialFlyer) - Number(!!a.featuredOfficialFlyer) || a.date.localeCompare(b.date) || a.km - b.km).slice(0, 10);
-    const demoFlyers = window.BANZIC_FLYER_DEMO ? window.BANZIC_FLYER_DEMO() : '';
+    const demoFlyers = window.BANZIC_FLYER_DEMO ? window.BANZIC_FLYER_DEMO(mesSoirees(), ICO_BANG) : '';
     const slides = demoFlyers || pubs.map((x) => { ficheSoireeJour(x); const dt = new Date(x.date + 'T12:00:00'), img = radarUrl(x.flyerUrl) || afficheSoiree(x);
       const garde = mesSoirees().includes(x.id);
       return `<div class="dc-slide" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
