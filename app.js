@@ -2910,7 +2910,7 @@
         <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em>${o.festif ? `<span class="ck-festif">${esc(o.festif)}</span>` : ''}${o.adulte ? '<span class="bz-ck-18" aria-label="Club libertin, réservé aux plus de 18 ans" style="display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:7px;background:#b91c1c;color:#fff;font-weight:800;font-size:12px;line-height:1.2;white-space:nowrap;box-shadow:0 1px 5px #0005">CLUB LIBERTIN · 18+</span>' : ''}<b>${esc(o.nom)}</b>${!lignesSeules && o.ville ? `<span class="ck-ville"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>${esc(String(o.ville).replace(/ arrondissement$/i, ""))}</span>` : ''}${statutBang}${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span>${!lignesSeules && (o.img || o.gp) ? `<span class="ck-vignette${o.img ? ' ok' : ' ck-gp'}" data-gp="${esc(JSON.stringify(o.gp || {}))}" aria-hidden="true">${o.img ? `<img src="${esc(o.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="const z=this.parentNode;this.remove();z.classList.remove('ok');z.classList.add('ck-gp');window.__photosCheckin&&window.__photosCheckin()">` : ''}</span>` : ''}</button>${puces}</div>`; };
     const i = CK_RAYONS.indexOf(r);
     if (!zoneCarte) {
-      state.ckTodayCount = L.filter(o => o.ev && o.ev.date === auj).length;
+      state.ckTodayCount = L.filter(o => iso(new Date(o.t || now)) <= auj).length;
       const counter = document.getElementById('nav-checkin-count');
       if (counter) { counter.textContent = state.ckTodayCount; counter.closest('button').setAttribute('aria-label', 'Check-in : ' + state.ckTodayCount + ' départs aujourd’hui à ' + r + ' km'); }
     }
@@ -2919,6 +2919,11 @@
     const evs = L.map((o) => o.ev).filter(Boolean), tps = state.ckTypes || [];
     const ckPasse = (x) => (!estLibertin(x) || (state.ckSous.club || []).includes('libertin')) && (!tps.length || tps.some((k) => typeOkSous(x, k, state.ckSous) && passeSous(x, k, state.ckSous))) && (!state.ckAvecDj || x.djSet || !!x.djs) && (!state.ckMesDj || PAD_TEST['mesdj|oui'](x));
     const visibles = L.filter((o) => o.ev ? ckPasse(o.ev) : !tps.length && !state.ckAvecDj && !state.ckMesDj);
+    if (!zoneCarte) {
+      state.ckTodayCount = visibles.filter(o => iso(new Date(o.t || now)) <= auj).length;
+      const counter = document.getElementById('nav-checkin-count');
+      if (counter) counter.textContent = state.ckTodayCount;
+    }
     const nbPad = (p) => p.g === 'avecdj' ? evs.filter((x) => x.djSet || !!x.djs).length : p.g === 'mesdj' ? evs.filter(PAD_TEST['mesdj|oui']).length : p.k === 'tout' ? evs.filter((x) => !estLibertin(x)).length : evs.filter((x) => typeOkSous(x, p.k, state.ckSous) && passeSous(x, p.k, state.ckSous)).length;
     const onPad = (p) => p.g === 'avecdj' ? !!state.ckAvecDj : p.g === 'mesdj' ? !!state.ckMesDj : p.k === 'tout' ? !tps.length : tps.includes(p.k);
     const barreFiltres = `<div class="ck-outils">${boutonFiltres('ck', resumeFiltres(tps, state.ckSous, state.ckAvecDj, state.ckMesDj), state.ckFiltresOuverts)}</div><div class="filtres-panneau"${state.ckFiltresOuverts ? '' : ' hidden'}><div class="pads ck-pads" role="group" aria-label="Filtrer les départs">${PADS.filter((p) => p.g !== 'quand').map((p) => `<button class="pad${onPad(p) ? ' on' : ''}${state.ckOuvert === p.k && onPad(p) ? ' ouvert' : ''}" style="--pc:${p.c}" data-ckpad="${p.g}|${p.k}" aria-pressed="${onPad(p)}">${icoPad(p.g === 'type' ? p.k : p.g === 'avecdj' ? 'avecdj' : 'mesdj')}<span class="pad-nom">${p.nom}${SOUS_MENUS[p.k] ? '<i class="pad-fl" aria-hidden="true">▾</i>' : ''}</span><small class="pad-nb">${nbPad(p)}</small></button>`).join('')}</div>
@@ -2952,7 +2957,7 @@
   });
   const reglerCk = (j) => { state.ckRayon = CK_RAYONS[Math.max(0, Math.min(CK_RAYONS.length - 1, j))]; store.set('ckRayon', state.ckRayon); renderCheckin(); };
   document.addEventListener('change', (e) => { if (e.target.id === 'fader-ck') reglerCk(+e.target.value); });
-  document.addEventListener('input', (e) => { if (e.target.id === 'fader-ck') { const j = +e.target.value; e.target.style.setProperty('--pct', j / (CK_RAYONS.length - 1) * 100 + '%'); document.querySelectorAll('[data-ck-rayon]').forEach((s, k) => s.classList.toggle('on', k === j)); const v = document.getElementById('ckr-val'); if (v) v.textContent = CK_RAYONS[j] + ' km'; } });
+  document.addEventListener('input', (e) => { if (e.target.id === 'fader-ck') { const j = +e.target.value; state.ckRayon = CK_RAYONS[j]; store.set('ckRayon', state.ckRayon); renderCheckin(true); e.target.style.setProperty('--pct', j / (CK_RAYONS.length - 1) * 100 + '%'); document.querySelectorAll('[data-ck-rayon]').forEach((s, k) => s.classList.toggle('on', k === j)); const v = document.getElementById('ckr-val'); if (v) v.textContent = CK_RAYONS[j] + ' km'; } });
   document.addEventListener('click', (e) => { const g = e.target.closest('[data-ck-rayon]'); if (g) reglerCk(+g.dataset.ckRayon); });
 
   // Mini-carte des pages saison, comme celle de l'accueil : DJ en live, déclarés, spots et clubs, avec l'encart au doigt
