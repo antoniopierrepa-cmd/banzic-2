@@ -5308,6 +5308,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const auj100 = soireesAvecKm().filter((x) => x.date === auj && x.km <= rCk && !estLibertin(x)).length;
     const cAcc = centreGeographique(), clubs100 = (window.DISCOTHEQUES || []).filter((c) => distKm(cAcc, [c[2], c[3]]) <= rCk).length;
     let nbDeparts = 0; try { nbDeparts = (renderCheckin(true) || []).length; } catch (e) { nbDeparts = 0; }
+    // Reuse the same nearby counts in the bottom navigation icons.
+    const mapCount = document.getElementById('nav-map-count');
+    const checkinCount = document.getElementById('nav-checkin-count');
+    if (mapCount) { mapCount.textContent = auj100; mapCount.setAttribute('font-size', auj100 > 99 ? '6' : '8'); mapCount.closest('button').setAttribute('aria-label', 'Carte : ' + auj100 + ' soirées ce soir autour de toi'); }
+    if (checkinCount) { checkinCount.textContent = nbDeparts; checkinCount.setAttribute('font-size', nbDeparts > 99 ? '6' : '8'); checkinCount.closest('button').setAttribute('aria-label', 'Check-in : ' + nbDeparts + ' départs du jour autour de toi'); }
     const accesPivotants = `<section class="home-flip" aria-label="Direct et départs autour de moi"><div class="home-flip-rotor">
       <button class="ligne-acc la-direct home-flip-face" data-tab="map"><span class="la-ico" aria-hidden="true"><span class="ico-diffusion"><i></i><b></b><b></b></span></span><span class="la-txt"><b>Direct autour de moi</b><small><em>${auj100}</em> soirée${auj100 > 1 ? 's' : ''} ce soir · <em>${clubs100}</em> clubs à ${rCk} km</small></span><span class="la-btn">Carte →</span></button>
       <button class="ligne-acc la-ck home-flip-face" inert aria-hidden="true" data-tab="checkin"><span class="la-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16l20-5-2-3-6 1.5L8 4 6 5l3 6-5 1.3L2.5 10 1 11l1 5z"/><path d="M3 21h18"/></svg></span><span class="la-txt"><b>Départs du jour</b><small><em>${nbDeparts}</em> départ${nbDeparts > 1 ? 's' : ''} aujourd’hui autour de toi</small></span><span class="la-btn">Check-in →</span></button>

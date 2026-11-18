@@ -204,12 +204,12 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Accueil
     </button>
     <button class="tab" data-tab="map">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Carte
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><text id="nav-map-count" x="12" y="12" text-anchor="middle" fill="currentColor" stroke="none" font-size="8" font-weight="800">0</text></svg>Carte
     </button>
     <button class="tab tab-plus carte-banger" id="tab-plus" type="button" aria-label="Banger : valider le DJ qui joue ici, ou signaler un DJ"><span class="cbx-onde" aria-hidden="true"></span><span class="cbx-onde o2" aria-hidden="true"></span><span class="cbx-carte">BANGER</span></button>
     <button class="tab tab-cherche" id="tab-cherche" type="button" aria-label="Chercher un DJ, un club ou une ville"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Recherche</button>
     <button class="tab" data-tab="checkin">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 13h4M7 16h7M15 13h2"/></svg>Check-in
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><text id="nav-checkin-count" x="12" y="17" text-anchor="middle" fill="currentColor" stroke="none" font-size="8" font-weight="800">0</text></svg>Check-in
     </button>
   </nav>
 
@@ -277,7 +277,7 @@ try { if (/[?&]reinit=1/.test(location.search) || localStorage.getItem('setly.de
 <script src="agenda-banner-video.js?v=3"></script>
 <script src="home-flip.js?v=1"></script>
 <script src="flyer-layout.js?v=4"></script>
-<script src="app.js?v=20261118-banner-accents"></script>
+<script src="app.js?v=20261118-nav-counts"></script>
 <!-- Prototype 2 : pop-up « Deviens membre » désactivée -->
 </body>
 </html>
