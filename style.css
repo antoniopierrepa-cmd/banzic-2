@@ -3567,3 +3567,19 @@ nav.tabs .tab.nav-has-live svg { color: #e72e49; }
 nav.tabs .tab[data-tab="map"] svg > path { fill: #e72e49; stroke: #e72e49; }
 nav.tabs .tab[data-tab="map"] svg > circle { display: none; }
 #nav-map-count { fill: #fff; font-size: 10px; stroke: none; font-weight: 900; }
+
+/* Compact vertical discovery feed: full posters, no horizontal dragging. */
+.dc-rail { display: block; height: 300px !important; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y mandatory; overscroll-behavior-y: auto; touch-action: pan-y pinch-zoom; }
+.dc-rail .dc-slide { position: relative; display: flex; flex-direction: column; height: 300px; min-height: 300px; max-height: 300px; width: 100%; opacity: 1; visibility: visible; pointer-events: auto; scroll-snap-align: start; scroll-snap-stop: always; transition: none; }
+.dc-rail .dc-media { flex: 0 0 180px; height: 180px; min-height: 0; max-height: none; aspect-ratio: auto; }
+.dc-rail .dc-footer { flex: 1; min-height: 0; align-items: center; padding: 10px; }
+.dc-rail .dc-bang { font-size: 10px; padding: 7px; }
+.dc-rail .dc-portrait { flex-direction: row-reverse; }
+.dc-rail .dc-portrait .dc-media { flex: 0 0 46%; width: 46%; height: 300px; }
+.dc-rail .dc-portrait .dc-footer { flex-direction: column; justify-content: center; align-items: flex-start; gap: 14px; }
+.dc-rail .dc-portrait .dc-bas { flex: none; }
+.dc-rail .dc-slide img { object-fit: contain; }
+.dc-cadre .dc-pub { position: absolute; top: 4px; right: 5px; font-size: 8px; z-index: 2; pointer-events: none; }
+.flyer-test-dialog { max-width: 340px; width: calc(100% - 48px); border: 1px solid #51415d; border-radius: 18px; padding: 20px; background: #111421; color: #fff; }
+.flyer-test-dialog::backdrop { background: rgba(0,0,0,.7); }
+.flyer-test-dialog button { padding: 10px 18px; border-radius: 12px; border: 0; }
