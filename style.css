@@ -3590,3 +3590,23 @@ nav.tabs .tab[data-tab="map"] svg > circle { display: none; }
 .dc-rail .dc-portrait .dc-media { height: var(--discovery-height, 300px); }
 .dc-rail .dc-slide:not(.dc-portrait) .dc-media { flex-basis: calc(var(--discovery-height, 300px) * .62); height: calc(var(--discovery-height, 300px) * .62); }
 .dc-explore { display: block; width: 100%; height: 28px; border: 0; background: rgba(15,17,27,.9); color: #e5b08c; font: 600 11px 'DM Sans',sans-serif; cursor: pointer; }
+
+/* Horizontal swipe leaves vertical scrolling to the page. */
+.dc-rail { display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; touch-action: pan-x pan-y pinch-zoom; align-items: stretch; }
+.dc-rail .dc-slide { flex: 0 0 100%; width: 100%; min-width: 100%; padding-bottom: 52px; box-sizing: border-box; }
+.dc-rail .dc-portrait .dc-media { height: calc(var(--discovery-height,300px) - 52px); }
+.dc-rail .dc-portrait .dc-footer { padding: 12px; }
+.dc-rail .dc-slide .dc-bang { position: absolute; right: 12px; bottom: 10px; z-index: 3; font-size: 12px; padding: 9px 12px; }
+.dc-rail .dc-slide .dc-bas small { font-size: 10px; }
+.dc-rail .dc-slide .dc-bas b { font-size: 16px; }
+.dc-explore { display: none; }
+.flyer-review-dialog { width: min(440px,calc(100% - 28px)); max-height: 88dvh; overflow-y: auto; border: 1px solid #644154; border-radius: 20px; padding: 20px; background: #10131e; color: #f7f5f3; font: 14px/1.5 'DM Sans',sans-serif; box-sizing: border-box; }
+.flyer-review-dialog::backdrop { background: rgba(0,0,0,.75); }
+.flyer-review-dialog h2 { font: 800 24px/1.1 'Syne',sans-serif; }
+.flyer-review-dialog .review-close { float: right; border: 0; border-radius: 12px; background: #30283b; color: #fff; padding: 8px 12px; cursor: pointer; }
+.review-poster { display: block; max-width: 100%; max-height: 44dvh; margin: 16px auto; object-fit: contain; }
+.flyer-review-dialog dl > div { padding: 8px 0; border-bottom: 1px solid #ffffff15; }
+.flyer-review-dialog dt { color: #edaa88; font-weight: 700; }
+.flyer-review-dialog dd { margin: 2px 0; }
+.review-status { color: #56eda2; } .review-note { background: #5f392833; padding: 12px; border-radius: 12px; }
+.flyer-review-dialog a { color: #ffb681; }
