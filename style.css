@@ -3537,3 +3537,10 @@ nav.tabs .tab[data-tab="map"], nav.tabs .tab[data-tab="checkin"] { gap: 2px; }
 nav.tabs .tab.nav-has-live svg { color: #3df28a; animation: nav-live-pulse 1.5s ease-in-out infinite; }
 @keyframes nav-live-pulse { 0%,100% { opacity: 1; filter: drop-shadow(0 0 7px #3df28a); } 50% { opacity: .65; filter: drop-shadow(0 0 1px #3df28a); } }
 @media(prefers-reduced-motion: reduce) { nav.tabs .tab.nav-has-live svg { animation: none; } }
+
+/* Distinct and readable navigation counters. */
+nav.tabs .tab[data-tab="checkin"] svg { background: #e72e49; border-radius: 7px; width: 36px; height: 36px; color: #fff; padding: 2px; }
+nav.tabs .tab[data-tab="checkin"] svg > rect, nav.tabs .tab[data-tab="checkin"] svg > path { display: none; }
+#nav-checkin-count { font-size: 13px; fill: #fff; stroke: none; }
+nav.tabs .tab[data-tab="map"] svg { width: 38px; height: 38px; color: #25e486; }
+#nav-map-count { font-size: 9px; fill: #086a3a; stroke: none; }
