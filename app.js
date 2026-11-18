@@ -2922,7 +2922,9 @@
     const ckPasse = (x) => (!estLibertin(x) || (state.ckSous.club || []).includes('libertin')) && (!tps.length || tps.some((k) => typeOkSous(x, k, state.ckSous) && passeSous(x, k, state.ckSous))) && (!state.ckAvecDj || x.djSet || !!x.djs) && (!state.ckMesDj || PAD_TEST['mesdj|oui'](x));
     const visibles = L.filter((o) => o.ev ? ckPasse(o.ev) : !tps.length && !state.ckAvecDj && !state.ckMesDj);
     if (!zoneCarte) {
-      state.ckTodayCount = visibles.filter(o => iso(new Date(o.t || now)) <= auj).length;
+      const todayRows = visibles.filter(o => iso(new Date(o.t || now)) <= auj);
+      state.ckTodayCount = todayRows.length;
+      state.ckTodayPoints = todayRows.map(o => o.gp).filter(p => p && Number.isFinite(p.lat) && Number.isFinite(p.lng)).map(p => [p.lat, p.lng]);
       const counter = document.getElementById('nav-checkin-count');
       if (counter) counter.textContent = state.ckTodayCount;
       const mapCounter = document.getElementById('nav-map-count');
@@ -5713,7 +5715,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     $('#screen-map').classList.toggle('verrouille', !libre);
     document.querySelectorAll('.tab[data-tab="live"], .tab[data-tab="map"]').forEach((b) => b.classList.toggle('verrou', !libre));
   }
-  function setTab(tab) {
+  function setTab(tab, fitCount = false) {
     state.tab = tab;
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
     $('#screen-live').hidden = tab !== 'live';
@@ -5727,7 +5729,18 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (tab === 'map') { initMap(); setTimeout(() => map && map.invalidateSize(), 0); }
     majPortails();
     render();
-    if (tab === 'map') setTimeout(centrerSurMoi, 250);
+    if (tab === 'map') {
+      if (fitCount) {
+        renderCheckin();
+        requestAnimationFrame(() => {
+          if (!map || state.tab !== 'map') return;
+          map.invalidateSize();
+          const points = state.ckTodayPoints || [];
+          if (points.length) map.fitBounds(L.latLngBounds(points), { padding: [40, 60], maxZoom: 15 });
+          else { map.setView(centreGeographique(), 10); toast('Aucune soirée à cadrer dans le rayon choisi'); }
+        });
+      } else setTimeout(centrerSurMoi, 250);
+    }
   }
   // En ouvrant la carte : on atterrit sur le point bleu de géolocalisation (position réelle du téléphone)
   function centrerSurMoi() {
@@ -5791,7 +5804,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const chip = e.target.closest('[data-filtre]');
     if (chip) { state.filtre = chip.dataset.filtre; render(); return; }
     const tab = e.target.closest('[data-tab]');
-    if (tab) { setTab(tab.dataset.tab); return; }
+    if (tab) { setTab(tab.dataset.tab, tab.dataset.tab === 'map' && !!tab.closest('nav')); return; }
     const lieu = e.target.closest('[data-lieu]');
     if (lieu) { if (map) map.closePopup(); ouvrirLieu(lieu.dataset.lieu); }
   });
