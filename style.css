@@ -3524,3 +3524,8 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .ag-titre .banner-live-accent { color: #e00072; background: linear-gradient(90deg,#f45b38 0%,#e00072 65%,#d00094 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
 .dc-bang { flex-shrink: 0; font-size: 11px; } .dc-bang svg { color: #3df28a; } .dc-bang.on svg { color: #06120b; }
+
+/* Gentle live signal in the bottom map icon. */
+.tab.nav-has-live svg { color: #3df28a; animation: nav-live-pulse 1.5s ease-in-out infinite; }
+@keyframes nav-live-pulse { 0%,100% { opacity: 1; filter: drop-shadow(0 0 4px #3df28a); } 50% { opacity: .4; filter: none; } }
+@media(prefers-reduced-motion: reduce) { .tab.nav-has-live svg { animation: none; } }

@@ -5311,9 +5311,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const cAcc = centreGeographique(), clubs100 = (window.DISCOTHEQUES || []).filter((c) => distKm(cAcc, [c[2], c[3]]) <= rCk).length;
     let nbDeparts = 0; try { nbDeparts = (renderCheckin(true) || []).length; } catch (e) { nbDeparts = 0; }
     // Reuse the same nearby counts in the bottom navigation icons.
+    const liveNearby = soireesAvecKm().some(x => { if (x.km > rCk || estLibertin(x) || !x.heure || !x.heureFin) return false; const t = horairesCheckin(x); return Date.now() >= t.debut && Date.now() < t.fin; });
     const mapCount = document.getElementById('nav-map-count');
     const checkinCount = document.getElementById('nav-checkin-count');
-    if (mapCount) { mapCount.textContent = auj100; mapCount.setAttribute('font-size', auj100 > 99 ? '6' : '8'); mapCount.closest('button').setAttribute('aria-label', 'Carte : ' + auj100 + ' soirées ce soir autour de toi'); }
+    if (mapCount) { mapCount.closest('button').classList.toggle('nav-has-live', liveNearby); mapCount.textContent = auj100; mapCount.setAttribute('font-size', auj100 > 99 ? '6' : '8'); mapCount.closest('button').setAttribute('aria-label', 'Carte : ' + auj100 + ' soirées ce soir autour de toi'); }
     if (checkinCount) { checkinCount.textContent = nbDeparts; checkinCount.setAttribute('font-size', nbDeparts > 99 ? '6' : '8'); checkinCount.closest('button').setAttribute('aria-label', 'Check-in : ' + nbDeparts + ' départs du jour autour de toi'); }
     const accesPivotants = `<section class="home-flip" aria-label="Direct et départs autour de moi"><div class="home-flip-rotor">
       <button class="ligne-acc la-direct home-flip-face" data-tab="map"><span class="la-ico" aria-hidden="true"><span class="ico-diffusion"><i></i><b></b><b></b></span></span><span class="la-txt"><b>Direct autour de moi</b><small><em>${auj100}</em> soirée${auj100 > 1 ? 's' : ''} ce soir · <em>${clubs100}</em> clubs à ${rCk} km</small></span><span class="la-btn">Carte →</span></button>
@@ -5372,7 +5373,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <span class="ag-txt"><small class="ag-kick">Top 100 · 2026</small><b class="ag-titre">Les DJ<br><span class="banner-live-accent">qui montent</span></b><span class="ag-sous">Découvre la nouvelle vague</span></span></button></section>`;
     // « Les DJ qui montent » prend la place du Top 100, qui descend en dernier
     h = h.includes('@@TOP100@@') ? h.replace('@@TOP100@@', secMonte) + secTop : h + secMonte;
-    $('#accueil').innerHTML = bandeauMesDj() + accesPivotants + h;
+    $('#accueil').innerHTML = bandeauMesDj() + h;
     if (window.BANZIC_HOME_FLIP) window.BANZIC_HOME_FLIP.sync($('#accueil'));
     if (window.BANZIC_FLYER_LAYOUT) window.BANZIC_FLYER_LAYOUT.sync($('#accueil'));
     if (window.BANZIC_AGENDA_VIDEO) window.BANZIC_AGENDA_VIDEO.sync($('#accueil'));
