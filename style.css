@@ -3552,3 +3552,13 @@ nav.tabs .tab[data-tab="checkin"] svg { padding: 0; background: transparent; bor
 nav.tabs .tab[data-tab="checkin"] svg > rect { display: block; x: 1; y: 2; width: 22px; height: 21px; rx: 3px; fill: #e72e49; stroke: none; }
 nav.tabs .tab[data-tab="checkin"] svg > path { display: block; stroke: #fff; stroke-width: 1.4px; }
 #nav-checkin-count { font-size: 10px; }
+
+/* Clean calendar silhouette and coordinated red map pin. */
+nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > rect.calendar-body { x: 2; y: 4; width: 20px; height: 18px; rx: 4px; fill: #e72e49; }
+nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-header { stroke: rgba(255,255,255,.65); stroke-width: 1px; }
+nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { stroke: #fff; stroke-width: 2px; stroke-linecap: round; }
+#nav-checkin-count { font-size: 9.5px; fill: #fff; font-weight: 900; }
+nav.tabs .tab[data-tab="map"] svg { color: #e72e49; }
+#nav-map-count { fill: #bf1832; }
+nav.tabs .tab.nav-has-live svg { color: #e72e49; }
+@keyframes nav-live-pulse { 0%,100% { opacity: 1; filter: drop-shadow(0 0 7px #e72e49); } 50% { opacity: .65; filter: drop-shadow(0 0 1px #e72e49); } }
