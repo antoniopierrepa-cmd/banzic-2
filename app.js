@@ -483,6 +483,7 @@
       '<p class="demo-note">Photos : Ibiza Spotlight, pour la démo. Pour l\'appli publique, il faudra les photos des lieux partenaires ou celles de Google, avec leur crédit.</p>';
   }
   function renderMap() {
+    renderCheckin();
     try { renderCartesMap(); } catch (e) { console.warn(e); }
     const leg = [['#B58CFF', 'Signalé en live'], ['#F2C94C', 'DJ déclaré aujourd’hui'], ['#3DD6C6', 'Soirée du jour']];
     $('.map-legend').innerHTML = leg.map(([c, t]) => `<span><i style="background:${c}"></i>${t}</span>`).join('');
@@ -2924,6 +2925,7 @@
     if (!zoneCarte) {
       const todayRows = visibles.filter(o => iso(new Date(o.t || now)) <= auj);
       state.ckTodayCount = todayRows.length;
+      state.ckTodayRows = todayRows;
       state.ckTodayPoints = todayRows.map(o => (CK_FICHES[o.fiche] || {}).lieu || o.gp).filter(p => p && Number.isFinite(p.lat) && Number.isFinite(p.lng)).map(p => [p.lat, p.lng]);
       const counter = document.getElementById('nav-checkin-count');
       if (counter) counter.textContent = state.ckTodayCount;
@@ -3174,6 +3176,17 @@
     });
   }
   function marqueursRadar() {
+    const rows = state.ckTodayRows || [];
+    rows.forEach((row) => {
+      const f = CK_FICHES[row.fiche], loc = f && f.lieu;
+      if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lng)) return;
+      const x = { ...(row.ev || {}), id: (row.ev || {}).id || row.fiche, nom: row.nom || f.titre, date: f.date, heure: f.heure, heureFin: f.heureFin, l: loc };
+      const marker = L.marker([loc.lat, loc.lng], { icon: iconeVinyle(x), title: x.nom });
+      marker.bindPopup('<div class="pop-venue">' + esc(x.nom) + '</div><div class="pop-slot">' + esc(f.sous || '') + '</div>');
+      marker.__fiche = row.fiche; marker.addTo(layer);
+    });
+  }
+  function marqueursRadarAncien() {
     soireesCarteJour().forEach((x) => {
       const marker = L.marker([x.l.lat, x.l.lng], { icon: iconeVinyle(x), title: x.nom + ' · aujourd’hui' });
       const url = radarUrl(x.ticketUrl || x.url);
