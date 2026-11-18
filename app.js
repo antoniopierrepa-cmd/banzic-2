@@ -2909,6 +2909,11 @@
         <div class="ck-bande"><span class="ck-h">${flap(o.heure, 5)}</span><span class="ck-porte"><small>Porte</small>${esc(o.porte)}</span><span class="ck-st ck-st-${o.st[1]}"><i></i>${esc(o.st[0])}</span></div>
         <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em>${o.festif ? `<span class="ck-festif">${esc(o.festif)}</span>` : ''}${o.adulte ? '<span class="bz-ck-18" aria-label="Club libertin, réservé aux plus de 18 ans" style="display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:7px;background:#b91c1c;color:#fff;font-weight:800;font-size:12px;line-height:1.2;white-space:nowrap;box-shadow:0 1px 5px #0005">CLUB LIBERTIN · 18+</span>' : ''}<b>${esc(o.nom)}</b>${!lignesSeules && o.ville ? `<span class="ck-ville"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>${esc(String(o.ville).replace(/ arrondissement$/i, ""))}</span>` : ''}${statutBang}${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span>${!lignesSeules && (o.img || o.gp) ? `<span class="ck-vignette${o.img ? ' ok' : ' ck-gp'}" data-gp="${esc(JSON.stringify(o.gp || {}))}" aria-hidden="true">${o.img ? `<img src="${esc(o.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="const z=this.parentNode;this.remove();z.classList.remove('ok');z.classList.add('ck-gp');window.__photosCheckin&&window.__photosCheckin()">` : ''}</span>` : ''}</button>${puces}</div>`; };
     const i = CK_RAYONS.indexOf(r);
+    if (!zoneCarte) {
+      state.ckTodayCount = L.filter(o => o.ev && o.ev.date === auj).length;
+      const counter = document.getElementById('nav-checkin-count');
+      if (counter) { counter.textContent = state.ckTodayCount; counter.closest('button').setAttribute('aria-label', 'Check-in : ' + state.ckTodayCount + ' départs aujourd’hui à ' + r + ' km'); }
+    }
     if (lignesSeules) return L.map(rangee);
     // Mêmes bulles que l'Agenda (Discothèques, Festivals, Concerts, Bars festifs avec leurs sous-menus, Avec DJ, Mes DJ)
     const evs = L.map((o) => o.ev).filter(Boolean), tps = state.ckTypes || [];
@@ -5309,7 +5314,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const rCk = state.ckRayon || 100; // même distance que celle réglée dans le Check-in
     const auj100 = soireesAvecKm().filter((x) => x.date === auj && x.km <= rCk && !estLibertin(x)).length;
     const cAcc = centreGeographique(), clubs100 = (window.DISCOTHEQUES || []).filter((c) => distKm(cAcc, [c[2], c[3]]) <= rCk).length;
-    let nbDeparts = 0; try { nbDeparts = (renderCheckin(true) || []).length; } catch (e) { nbDeparts = 0; }
+    let nbDeparts = 0; try { renderCheckin(true); nbDeparts = state.ckTodayCount || 0; } catch (e) { nbDeparts = 0; }
     // Reuse the same nearby counts in the bottom navigation icons.
     const liveNearby = soireesAvecKm().some(x => { if (x.km > rCk || estLibertin(x) || !x.heure || !x.heureFin) return false; const t = horairesCheckin(x); return Date.now() >= t.debut && Date.now() < t.fin; });
     const mapCount = document.getElementById('nav-map-count');
