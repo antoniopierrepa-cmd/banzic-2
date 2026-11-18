@@ -3344,7 +3344,7 @@
     const r = RAYONS[state.rayonIdx];
     $('#screen-agenda').innerHTML = `<div class="fader-module">
         <div class="acc-tete fd-tete"><div><h2>Agenda autour de moi</h2></div></div>
-        <button type="button" id="radar-hyeres-weekend" class="acc-chip" style="margin:8px 0 12px">📍 Hyères · 20 km · jeudi à dimanche</button>
+        <button type="button" id="radar-hyeres-weekend" class="acc-chip" style="margin:8px 0 12px">📍 Hyères · 20 km · jeudi à dimanche</button>\n        <label class="radar-dep">Département <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>
         <div class="fd-rail">
           <input type="range" id="fader-rayon" min="0" max="${RAYONS.length - 1}" step="1" value="${state.rayonIdx}" aria-label="Rayon de recherche" aria-valuetext="${r} kilomètres">
           <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k >= FRANCE_KM ? 'France' : k}</span>`).join('')}</div>
@@ -3442,7 +3442,7 @@
     const sent = $('#ag-plus');
     if (sent && 'IntersectionObserver' in window) { const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); state.agJours = (state.agJours || 7) + 7; listeAgendaSud(); } }, { rootMargin: '300px' }); io.observe(sent); }
   }
-  document.addEventListener('change', (e) => { if (e.target.id === 'radar-avec-dj') { state.sudAvecDj = e.target.checked; listeAgendaSud(); } });
+  document.addEventListener('change', (e) => { if (e.target.id === 'radar-departement') { state.radarDep = e.target.value; listeAgendaSud(); } if (e.target.id === 'radar-avec-dj') { state.sudAvecDj = e.target.checked; listeAgendaSud(); } });
   const reglerRayon = (i) => { state.rayonIdx = Math.max(0, Math.min(RAYONS.length - 1, i)); store.set('rayonIdx', state.rayonIdx);
     const f = $('#fader-rayon'); if (f) { f.value = state.rayonIdx; f.setAttribute('aria-valuetext', kmTxt(RAYONS[state.rayonIdx])); } listeAgendaSud(); };
   document.addEventListener('input', (e) => { if (e.target.id === 'fader-rayon') reglerRayon(+e.target.value); });
