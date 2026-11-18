@@ -3529,3 +3529,11 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .tab.nav-has-live svg { color: #3df28a; animation: nav-live-pulse 1.5s ease-in-out infinite; }
 @keyframes nav-live-pulse { 0%,100% { opacity: 1; filter: drop-shadow(0 0 4px #3df28a); } 50% { opacity: .4; filter: none; } }
 @media(prefers-reduced-motion: reduce) { .tab.nav-has-live svg { animation: none; } }
+
+/* Larger, high-contrast navigation counters for phone screens. */
+nav.tabs .tab[data-tab="map"] svg, nav.tabs .tab[data-tab="checkin"] svg { width: 34px; height: 34px; flex-shrink: 0; }
+#nav-map-count, #nav-checkin-count { font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 900; fill: #fff; paint-order: stroke; stroke: #080c17; stroke-width: 1.3px; stroke-linejoin: round; }
+nav.tabs .tab[data-tab="map"], nav.tabs .tab[data-tab="checkin"] { gap: 2px; }
+nav.tabs .tab.nav-has-live svg { color: #3df28a; animation: nav-live-pulse 1.5s ease-in-out infinite; }
+@keyframes nav-live-pulse { 0%,100% { opacity: 1; filter: drop-shadow(0 0 7px #3df28a); } 50% { opacity: .65; filter: drop-shadow(0 0 1px #3df28a); } }
+@media(prefers-reduced-motion: reduce) { nav.tabs .tab.nav-has-live svg { animation: none; } }
