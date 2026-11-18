@@ -3511,3 +3511,7 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 /* Sunset banner treatment for the nearby events heading. */
 .dc-tete h2 { font: 800 23px/1.05 'Syne', sans-serif; letter-spacing: -.01em; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.45); }
 .dc-tete h2 .dc-title-accent { color: #f43b91; background: linear-gradient(90deg,#ff795d,#f031a6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-shadow: none; }
+
+/* Compact agenda banner: complete visual, gently flattened. */
+.ag-banniere.ag-photo.ag-video { aspect-ratio: 800 / 288 !important; }
+.ag-banniere.ag-photo.ag-video > img, .ag-banniere.ag-photo.ag-video > video { object-fit: fill; }

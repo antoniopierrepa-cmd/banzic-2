@@ -5319,7 +5319,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     // Agenda autour de moi : la bannière « L'agenda » (visuel fourni par Antonio, textes dans la police de l'appli).
     // Un appui ouvre l'Agenda, où l'on choisit Club, Festival, Concert…
     h += `<section class="acc-rub ag-rub"><button class="ag-banniere ag-photo ag-video" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
-        <img src="agenda-banniere-poster.jpg?v=2" alt="" width="1472" height="624" loading="lazy"><video data-home-banner-video muted loop playsinline preload="none" poster="agenda-banniere-poster.jpg?v=2" aria-hidden="true" tabindex="-1"><source src="agenda-banniere.mp4?v=2" type="video/mp4"></video></button></section>`;
+        <img src="agenda-banniere-poster.jpg?v=2" alt="" width="1472" height="624" loading="lazy"><video data-home-banner-video muted loop playsinline preload="none" poster="agenda-banniere-poster.jpg?v=2" aria-hidden="true" tabindex="-1"><source src="agenda-banniere.mp4?v=3" type="video/mp4"></video></button></section>`;
     // 2. Les saisons
     // En saison d'abord, puis les autres dans l'ordre du compte à rebours (la plus proche en premier)
     const rangOpening = (id) => { const e = etatOpening(id); return !e ? 9e15 : e.avant ? e.ms : -1; };
