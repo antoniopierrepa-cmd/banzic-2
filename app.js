@@ -2954,14 +2954,6 @@
         <div class="ck-bande"><span class="ck-h">${flap(o.heure, 5)}</span><span class="ck-porte"><small>Porte</small>${esc(o.porte)}</span><span class="ck-st ck-st-${o.st[1]}"><i></i>${esc(o.st[0])}</span></div>
         <button class="fil-item k-${o.k}${v ? ' a-vis' : ''}" ${o.attr}>${v}<span class="fil-l1"><em class="fil-tag ${o.k}">${o.tag}</em>${o.festif ? `<span class="ck-festif">${esc(o.festif)}</span>` : ''}${o.adulte ? '<span class="bz-ck-18" aria-label="Club libertin, réservé aux plus de 18 ans" style="display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:7px;background:#b91c1c;color:#fff;font-weight:800;font-size:12px;line-height:1.2;white-space:nowrap;box-shadow:0 1px 5px #0005">CLUB LIBERTIN · 18+</span>' : ''}<b>${esc(o.nom)}</b>${!lignesSeules && o.ville ? `<span class="ck-ville"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>${esc(String(o.ville).replace(/ arrondissement$/i, ""))}</span>` : ''}${statutBang}${o.l1 ? `<span class="fil-t">${o.l1}</span>` : ''}</span><span class="fil-l2">${o.l2.filter((x) => x && x[0]).map((x) => `<span${x[1] ? ` class="${x[1]}"` : ''}>${x[0]}</span>`).join('')}</span>${!lignesSeules && (o.img || o.gp) ? `<span class="ck-vignette${o.img ? ' ok' : ' ck-gp'}" data-gp="${esc(JSON.stringify(o.gp || {}))}" aria-hidden="true">${o.img ? `<img src="${esc(o.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="const z=this.parentNode;this.remove();z.classList.remove('ok');z.classList.add('ck-gp');window.__photosCheckin&&window.__photosCheckin()">` : ''}</span>` : ''}</button>${puces}</div>`; };
     const i = CK_RAYONS.indexOf(r);
-    if (!zoneCarte) {
-      state.ckTodayCount = L.filter(o => iso(new Date(o.t || now)) <= auj).length;
-      state.ckTotalCount = L.length;
-      const counter = document.getElementById('nav-checkin-count');
-      const mapCounter = document.getElementById('nav-map-count');
-      if (mapCounter) { mapCounter.textContent = state.ckTodayCount; mapCounter.closest('button').setAttribute('aria-label', 'Carte : ' + state.ckTodayCount + ' soirées en cours ou à venir aujourd’hui à ' + r + ' km'); }
-      if (counter) { counter.textContent = state.ckTotalCount; counter.closest('button').setAttribute('aria-label', 'Check-in : ' + state.ckTotalCount + ' départs aujourd’hui, demain et après-demain à ' + r + ' km'); }
-    }
     if (lignesSeules) return L.map(rangee);
     // Mêmes bulles que l'Agenda (Discothèques, Festivals, Concerts, Bars festifs avec leurs sous-menus, Avec DJ, Mes DJ)
     const evs = L.map((o) => o.ev).filter(Boolean), tps = state.ckTypes || [];
@@ -2969,10 +2961,15 @@
     const visibles = L.filter((o) => o.ev ? ckPasse(o.ev) : !tps.length && !state.ckAvecDj && !state.ckMesDj);
     if (!zoneCarte) {
       const todayRows = visibles.filter(o => iso(new Date(o.t || now)) <= auj);
-      state.ckTodayCount = todayRows.length;
+      state.ckTodayRows = todayRows.flatMap(row => {
+        const loc = row.gp;
+        if (!loc || loc.lat == null || loc.lng == null || String(loc.lat).trim() === '' || String(loc.lng).trim() === '') return [];
+        const lat = Number(loc.lat), lng = Number(loc.lng);
+        return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180
+          ? [{ ...row, point: [lat, lng] }] : [];
+      });
+      state.ckTodayCount = state.ckTodayRows.length;
       state.ckTotalCount = visibles.length;
-      state.ckTodayRows = todayRows;
-      state.ckTodayPoints = todayRows.map(o => (CK_FICHES[o.fiche] || {}).lieu || o.gp).filter(p => p && Number.isFinite(p.lat) && Number.isFinite(p.lng)).map(p => [p.lat, p.lng]);
       const counter = document.getElementById('nav-checkin-count');
       if (counter) { counter.textContent = state.ckTotalCount; counter.closest('button').setAttribute('aria-label', 'Check-in : ' + state.ckTotalCount + ' départs aujourd’hui, demain et après-demain à ' + r + ' km'); }
       const mapCounter = document.getElementById('nav-map-count');
@@ -3187,7 +3184,8 @@
     if (!DISCOS.length || map.getZoom() < 9) return; // de loin, on ne charge pas les 1 000 clubs de France
     ICONE_DISCO = ICONE_DISCO || L.divIcon({ className: 'disco-pin', iconSize: [18, 18], iconAnchor: [9, 9], html: '<i></i>' });
     const b = map.getBounds();
-    DISCOS.forEach((c) => { if (!b.contains([c.lat, c.lng])) return;
+    const soirees = new Set((state.ckTodayRows || []).map(row => row.fiche));
+    DISCOS.forEach((c) => { if (soirees.has('c:' + c.id) || !b.contains([c.lat, c.lng])) return;
       const adulte = lieuAdulte(c);
       const icone = adulte ? L.divIcon({ className: 'bz-disco-adulte', iconSize: [26, 26], iconAnchor: [13, 13], html: '<span>18+</span>' }) : ICONE_DISCO;
       const m = L.marker([c.lat, c.lng], { icon: icone, zIndexOffset: 100, title: c.nom + (adulte ? ' · 18+' : '') }).bindPopup('');
@@ -3221,13 +3219,37 @@
       html: `<span class="bz-vinyle-disque" aria-hidden="true"><span class="bz-vinyle-centre ${n < 3 ? 'bz-vinyle-attente' : 'bz-vinyle-valide'}" title="${n < 3 ? 'BANGER à confirmer' : 'BANGER confirmé · validé'}">${n}</span></span>${adulte ? '<span class="bz-vinyle-adulte">18+</span>' : ''}`
     });
   }
+  // Reserve a separate touch target for each event, even at one address.
+  function positionVinyle(origin, occupied, size) {
+    const libre = p => occupied.every(q => Math.abs(p.x - q.x) >= 52 || Math.abs(p.y - q.y) >= 52);
+    if (libre(origin)) return origin;
+    const visible = p => p.x >= 26 && p.x <= size.x - 26 && p.y >= 26 && p.y <= size.y - 26;
+    let fallback;
+    for (let ring = 1; ; ring++) {
+      for (let i = 0; i < 8 * ring; i++) {
+        const angle = i * Math.PI / (4 * ring);
+        const p = origin.add([Math.round(56 * ring * Math.cos(angle)), Math.round(56 * ring * Math.sin(angle))]);
+        if (!libre(p)) continue;
+        if (!visible(origin) || visible(p)) return p;
+        fallback = fallback || p;
+      }
+      if (fallback && ring * 56 > Math.hypot(size.x, size.y)) return fallback;
+    }
+  }
   function marqueursRadar() {
-    const rows = state.ckTodayRows || [];
-    rows.forEach((row) => {
-      const f = CK_FICHES[row.fiche], loc = f && f.lieu;
-      if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lng)) return;
-      const x = { ...(row.ev || {}), id: (row.ev || {}).id || row.fiche, nom: row.nom || f.titre, date: f.date, heure: f.heure, heureFin: f.heureFin, l: loc };
-      const marker = L.marker([loc.lat, loc.lng], { icon: iconeVinyle(x), title: x.nom });
+    const occupied = [], size = map.getSize();
+    (state.ckTodayRows || []).forEach(row => {
+      const f = CK_FICHES[row.fiche], loc = row.gp;
+      const x = { ...row.ev, nom: row.nom, date: f.date, heure: f.heure, heureFin: f.heureFin, l: loc };
+      const origin = map.latLngToContainerPoint(row.point);
+      const pos = positionVinyle(origin, occupied, size);
+      occupied.push(pos);
+      const icon = iconeVinyle(x);
+      if (!pos.equals(origin)) {
+        icon.options.iconAnchor = [24 + origin.x - pos.x, 24 + origin.y - pos.y];
+        L.polyline([row.point, map.containerPointToLatLng(pos)], { interactive: false, color: '#3dd6c6', weight: 2 }).addTo(layer);
+      }
+      const marker = L.marker(row.point, { icon, title: x.nom, alt: x.nom, zIndexOffset: 1000 });
       marker.bindPopup('<div class="pop-venue">' + esc(x.nom) + '</div><div class="pop-slot">' + esc(f.sous || '') + '</div>');
       marker.__fiche = row.fiche; marker.addTo(layer);
     });
@@ -5790,12 +5812,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     render();
     if (tab === 'map') {
       if (fitCount) {
-        renderCheckin();
         requestAnimationFrame(() => {
           if (!map || state.tab !== 'map') return;
           map.invalidateSize();
-          const points = state.ckTodayPoints || [];
-          if (points.length) map.fitBounds(L.latLngBounds(points), { padding: [40, 60], maxZoom: 15 });
+          const points = (state.ckTodayRows || []).map(row => row.point);
+          if (points.length) map.fitBounds(L.latLngBounds(points), { padding: [48, 64], maxZoom: 15, animate: false });
           else { map.setView(centreGeographique(), 10); toast('Aucune soirée à cadrer dans le rayon choisi'); }
         });
       } else setTimeout(centrerSurMoi, 250);
