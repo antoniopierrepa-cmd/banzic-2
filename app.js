@@ -3301,18 +3301,22 @@
   ];
   // Styles musicaux : familles reconnues dans les genres et le nom de la soirée (une soirée peut en avoir plusieurs)
   const STYLES_AG = [
-    ['techno', 'Techno', /(^|[^a-z])(techno|minimal|ebm|industrial)/], ['hard', 'Hard techno · Hardcore', /hard ?(techno|groove|bounce|dance|trance|style|core|tek)|gabber|uptempo|frenchcore|acidcore|schranz/],
-    ['house', 'House', /house/], ['trance', 'Trance · Psytrance', /trance|psy/], ['bass', 'Drum & bass · Garage', /drum|dnb|d&b|jungle|garage|dubstep|(^|[^a-z])bass/],
-    ['electro', 'Électro · EDM', /electro|edm|(^|[^a-z])dance|electronica/], ['disco', 'Disco · Funk', /disco|funk|eurodance/],
-    ['afro', 'Afro · Amapiano · Latino', /afro|amapiano|latin|reggaeton|dancehall|kizomba|salsa|bachata|arabic|orient|shatta/], ['rap', 'Rap · Hip-hop · R&B', /rap|hip.?hop|r&b|rnb|trap|drill/],
-    ['rock', 'Rock · Métal', /rock|metal|punk|grunge/], ['pop', 'Pop · Variété · 80-90', /(^|[^a-z])pop|variet|annees ?(80|90|2000)|(80|90)'?s|chanson|generaliste|latino pop/],
-    ['jazz', 'Jazz · Soul · Reggae', /jazz|soul|blues|reggae|dub(?!step)|gospel/]
+    ['electro', 'Électro et dance', /\b(?:house|techno|hardtechno|minimal|trance|psytrance|dnb|d&b|drum\s*(?:and|&|n)\s*bass|dubstep|bass music|garage|edm|big room|hardstyle|hardcore|nu[\s-]?disco|electro|electronica|dance)\b/],
+    ['urbain', 'Urbain', /\b(?:rap|hip[\s-]?hop|trap|drill|r\s*(?:&|and|n)\s*b|afrobeats?|amapiano|dancehall|reggaeton|latino urbain|baile funk|funk bresilien)\b/],
+    ['groove', 'Groove et soul', /\b(?:funk|soul|disco|jazz|boogie)\b/],
+    ['festif', 'Généraliste et festif', /\b(?:generaliste|open[\s-]format|annees\s+(?:80|90|2000)|(?:80|90|2000)['’]?s|pop|variete|latino(?! urbain)|salsa|bachata|kizomba|reggae|rock|indie)\b/],
+    ['ambiance', 'Ambiance', /\b(?:lounge|chill(?:out)?|sunset|balearic|downtempo|ambient)\b/]
   ];
   const _stylesCache = {};
   function stylesDe(x) {
     if (_stylesCache[x.id]) return _stylesCache[x.id];
     const t = sansAccent(String(x.genres || '') + ' ' + x.nom).toLowerCase();
-    return (_stylesCache[x.id] = STYLES_AG.filter(([, , re]) => re.test(t)).map(([k]) => k));
+    return (_stylesCache[x.id] = STYLES_AG.filter(([key, , re]) => {
+      let genres = t;
+      if (key === 'groove') genres = genres.replace(/baile funk|funk bresilien|nu[\s-]?disco/g, '');
+      if (key === 'electro') genres = genres.replace(/dance[\s-]+pop/g, '');
+      return re.test(genres);
+    }).map(([k]) => k));
   }
   // Discothèque = lieu présent dans notre liste des discothèques de France (OpenStreetMap)
   const _discoCache = {};
@@ -3321,7 +3325,7 @@
   const BARS_SOUS = [['karaoke', 'Karaoké', /karaok/], ['blind', 'Blind test', /blind/], ['afterwork', 'Afterwork', /afterwork/], ['apero', 'Apéro musical', /ap[eé]ro/], ['bardj', 'Bar avec DJ', null]];
   // Sous-menus des pads : on coche ce qu'on cherche (rien de coché = tout le pad)
   const SOUS_MENUS = {
-    club: { titre: 'Discothèques et clubs', lieux: [['discotheque', 'Discothèque'], ['club', 'Club'], ['libertin', 'Club libertin', true]], styles: true },
+    club: { titre: 'Discothèques et clubs', lieux: [['discotheque', 'Discothèque'], ['club', 'Club'], ['libertin', 'Club 🔞', true]], styles: true },
     bar: { titre: 'Bars festifs', lieux: BARS_SOUS.map(([k, n]) => [k, n]), styles: true },
     festival: { titre: 'Festivals', lieux: [], styles: true },
     concert: { titre: 'Concerts', lieux: [], styles: true }
@@ -3343,9 +3347,9 @@
   function panneauSous(k, toutes, ctx = 'ag') {
     const m = SOUS_MENUS[k]; if (!m) return ''; const sous = ctx === 'ck' ? state.ckSous : state.sudSous;
     const base = toutes.filter((x) => typeOkSous(x, k, sous)), libre = toutes.filter((x) => (x.type || 'club') === 'club' && estLibertin(x)), sel = sous[k] || [];
-    const chip = (v, nom, n, m18) => `<button type="button" class="sous-chip${sel.includes(v) ? ' on' : ''}" data-sous="${ctx}|${k}|${v}" aria-pressed="${sel.includes(v)}">${m18 ? '<span class="moins18">-18</span>' : ''}${esc(nom)}<small>${n}</small></button>`;
+    const chip = (v, nom, n, m18) => `<button type="button" class="sous-chip${sel.includes(v) ? ' on' : ''}" data-sous="${ctx}|${k}|${v}" aria-pressed="${sel.includes(v)}">${esc(nom)}<small>${n}</small></button>`;
     const lieux = m.lieux.map(([v, nom, m18]) => chip(v, nom, (v === 'libertin' ? libre : base).filter((x) => passeLieuSous(x, k, v)).length, m18)).join('');
-    const styles = STYLES_AG.map(([v, nom]) => [v, nom, base.filter((x) => stylesDe(x).includes(v)).length]).filter((y) => y[2] || sel.includes(y[0])).map(([v, nom, n]) => chip(v, nom, n)).join('');
+    const styles = STYLES_AG.map(([v, nom]) => [v, nom, base.filter((x) => stylesDe(x).includes(v)).length]).map(([v, nom, n]) => chip(v, nom, n)).join('');
     return `<div class="sous-menu" style="--pc:${(PADS.find((p) => p.k === k) || {}).c}"><div class="sm-tete"><b>${m.titre}</b>${sel.length ? `<button type="button" class="sm-effacer" data-sous-effacer="${ctx}|${k}">Tout décocher</button>` : ''}<button type="button" class="sm-ok" data-sous-ok="${ctx}">OK</button></div>
       ${lieux ? `<div class="sm-groupe"><small>Type de lieu</small><div class="sm-chips">${lieux}</div></div>` : ''}
       ${styles ? `<div class="sm-groupe"><small>Ambiance musicale</small><div class="sm-chips">${styles}</div></div>` : '<p class="aide">Aucun style musical annoncé pour l\u2019instant.</p>'}</div>`;
