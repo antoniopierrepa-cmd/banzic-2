@@ -3661,3 +3661,28 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 .acc-mesdj.md-hub .md-hub-row { background: rgba(20, 10, 24, .42); }
 .acc-mesdj.md-hub > video { object-position: left center; }
 .acc-mesdj.md-hub { background-position: left center; }
+
+@media (max-width: 700px) {
+  .lect-grille { grid-template-columns: minmax(0, 1fr); }
+  .lecteur[data-lecteur], .lecteur.prevu { width: 100%; }
+  .lect-grille .lect-image { aspect-ratio: 16 / 9; }
+
+  .acc-mesdj.md-fin.md-hub { height: 96px !important; padding: 2px 10px; }
+  .md-hub .md-hub-links { gap: 2px; }
+  .acc-mesdj.md-hub .md-hub-row { min-height: 44px; padding-block: 2px; }
+  .acc-mesdj.md-hub .md-hub-row .md-txt { gap: 0; }
+  .acc-mesdj.md-hub .md-txt b { font-size: 16px; }
+  .acc-mesdj.md-hub .md-txt small { font-size: 11px; }
+
+  .dc-rail { height: max(85svh, var(--discovery-height, 300px)) !important; }
+  .dc-rail .dc-slide { height: 100%; min-height: 100%; max-height: none; }
+  .dc-rail .dc-slide .dc-footer,
+  .dc-rail .dc-slide.dc-portrait .dc-footer {
+    min-height: 72px; flex: 0 0 auto; padding: 6px 10px;
+    flex-direction: row; align-items: center; gap: 8px;
+  }
+  .dc-rail .dc-slide .dc-bas { flex: 1; width: auto; min-width: 0; }
+  .dc-rail .dc-slide .dc-bang { position: static; flex: none; }
+  .dc-rail .dc-slide .dc-bas small { font-size: 13px; }
+  .sf-affiche { max-height: 76svh; }
+}
