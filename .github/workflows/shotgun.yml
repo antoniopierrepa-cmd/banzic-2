@@ -1,4 +1,4 @@
-name: Soirées Shotgun (agenda public OpenAgenda) chaque nuit
+name: Soirées Shotgun (OpenAgenda) et Xceed chaque nuit
 on:
   workflow_dispatch:
   schedule:
@@ -8,7 +8,7 @@ permissions:
 jobs:
   maj:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,10 +19,13 @@ jobs:
           curl -sSfL --retry 3 -o /tmp/shotgun.json 'https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/evenements-publics-openagenda/exports/json?refine=originagenda_title%3A%22Shotgun%22&where=lastdate_end%3E%3Dnow()'
           node -e "const a=require('/tmp/shotgun.json'); console.log(a.length, 'évènements Shotgun'); if (a.length < 100) process.exit(1)"
       - run: node scripts/import-shotgun.mjs /tmp/shotgun.json
+      - name: Soirées Xceed (toutes les villes), sans bloquer Shotgun si Xceed ne répond pas
+        run: node scripts/import-xceed.mjs
+        continue-on-error: true
       - run: node scripts/radar.mjs
       - run: sed -i -E "s/agenda-radar\.js\?v=[^\"]+/agenda-radar.js?v=$(date -u +%Y%m%d%H%M)/" index.html
       - run: |
           git config user.name "banzic-radar"
           git config user.email "noreply@anthropic.com"
-          git add data/radar-events.json data/radar-belgium.json data/radar-spain.json agenda-radar.js index.html
-          git diff --cached --quiet || (git commit -m "Radar : soirées Shotgun mises à jour" && git pull --rebase -q && git push)
+          git add data agenda-radar.js index.html
+          git diff --cached --quiet || (git commit -m "Radar : soirées Shotgun et Xceed mises à jour" && git pull --rebase -q && git push)
