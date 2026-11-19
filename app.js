@@ -3228,25 +3228,42 @@
       if (fallback && ring * 44 > Math.hypot(size.x, size.y)) return fallback;
     }
   }
+  // Carte : seulement les soirées EN COURS (elles apparaissent à leur heure de début, disparaissent à leur fin ; les suivantes sont dans le Check-in).
+  // Les vinyles qui se chevauchent sont réunis en un seul (pastille « N soirées ») ; le toucher zoome dessus.
+  // De très près, ceux qui restent collés (même adresse) sont écartés, avec un petit trait vers leur vraie place.
   function marqueursRadar() {
-    const occupied = [], size = map.getSize();
-    (state.ckTodayRows || []).forEach(row => {
-      const f = CK_FICHES[row.fiche], loc = row.gp;
-      const x = { ...row.ev, nom: row.nom, date: f.date, heure: f.heure, heureFin: f.heureFin, l: loc };
-      const origin = map.latLngToContainerPoint(row.point);
-      const pos = positionVinyle(origin, occupied, size);
+    const size = map.getSize(), proche = map.getZoom() >= 16;
+    const rows = (state.ckTodayRows || []).map(row => {
+      const f = CK_FICHES[row.fiche];
+      return { row, f, x: { ...row.ev, nom: row.nom, date: f.date, heure: f.heure, heureFin: f.heureFin, l: row.gp }, p: map.latLngToContainerPoint(row.point) };
+    }).filter(o => soireeEnCoursCarte(o.x));
+    const groupes = [];
+    rows.forEach(o => { const g = groupes.find(g => Math.abs(g[0].p.x - o.p.x) < 40 && Math.abs(g[0].p.y - o.p.y) < 40); if (g) g.push(o); else groupes.push([o]); });
+    const occupied = [];
+    const poser = (o, ecarter) => {
+      const origin = o.p, pos = ecarter ? positionVinyle(origin, occupied, size) : origin;
       occupied.push(pos);
-      const icon = iconeVinyle(x);
+      const icon = iconeVinyle(o.x);
       if (!pos.equals(origin)) {
         icon.options.iconAnchor = [19 + origin.x - pos.x, 19 + origin.y - pos.y];
-        L.polyline([row.point, map.containerPointToLatLng(pos)], { interactive: false, color: '#3dd6c6', weight: 2 }).addTo(layer);
+        L.polyline([o.row.point, map.containerPointToLatLng(pos)], { interactive: false, color: '#3dd6c6', weight: 1.5, opacity: .7 }).addTo(layer);
       }
-      const marker = L.marker(row.point, { icon, title: x.nom, alt: x.nom, zIndexOffset: 1000 });
-      marker.bindPopup('<div class="pop-venue">' + esc(x.nom) + '</div><div class="pop-slot">' + esc(f.sous || '') + '</div>');
-      marker.__fiche = row.fiche;
+      const marker = L.marker(o.row.point, { icon, title: o.x.nom, alt: o.x.nom, zIndexOffset: 1000 });
+      marker.bindPopup('<div class="pop-venue">' + esc(o.x.nom) + '</div><div class="pop-slot">' + esc(o.f.sous || '') + '</div>');
+      marker.__fiche = o.row.fiche;
       // Sur ordinateur, passer la souris sur le vinyle ouvre l'encart de la soirée, comme un appui
       marker.on('mouseover', function () { if (window.__bulleCarte && matchMedia('(hover: hover)').matches) window.__bulleCarte(this.__fiche, this.getLatLng()); });
       marker.addTo(layer);
+    };
+    groupes.forEach(g => {
+      if (g.length === 1 || proche) { g.forEach(o => poser(o, g.length > 1)); return; }
+      const pts = g.map(o => o.row.point), lat = pts.reduce((s, q) => s + q[0], 0) / pts.length, lng = pts.reduce((s, q) => s + q[1], 0) / pts.length;
+      const img = g.map(o => visuelVinyle(o.x)).find(Boolean) || '';
+      const icon = L.divIcon({ className: 'bz-vinyle-marker bz-vinyle-petit bz-vinyle-groupe bz-vinyle-en-cours' + (img ? ' bz-vinyle-avec-img' : ''), iconSize: [38, 38], iconAnchor: [19, 19],
+        html: `<span class="bz-vinyle-disque" aria-hidden="true">${img ? `<img class="bz-vinyle-img" src="${esc(img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}</span><span class="bz-vinyle-nb">${g.length}</span>` });
+      const m = L.marker([lat, lng], { icon, title: g.length + ' soirées en cours ici', alt: g.length + ' soirées en cours', zIndexOffset: 1100 });
+      m.on('click', () => { const b = L.latLngBounds(pts); if (b.getNorthEast().equals(b.getSouthWest())) map.setView(b.getCenter(), Math.max(map.getZoom() + 3, 16)); else map.fitBounds(b, { padding: [60, 60], maxZoom: 17 }); });
+      m.addTo(layer);
     });
   }
   function marqueursRadarAncien() {
