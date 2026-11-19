@@ -1998,13 +1998,19 @@
 
   // ---------- Base partagée (Supabase) : ce que déclarent les DJ et les Bangers se voit sur tous les téléphones
   const BDD = (() => {
-    const C = window.BANZIC_DB; if (!C || !C.url) return { envoyerDecl() {}, envoyerSpot() {}, banguer() {}, charger() {} };
+    const C = window.BANZIC_DB; if (!C || !C.url) return { envoyerDecl() {}, envoyerLive() {}, envoyerSpot() {}, banguer() {}, charger() {} };
     const H = { apikey: C.cle, Authorization: 'Bearer ' + C.cle, 'Content-Type': 'application/json' };
     const req = (chemin, o) => fetch(C.url + '/rest/v1/' + chemin, Object.assign({ headers: H }, o || {})).then((r) => r.ok ? (r.status === 204 ? null : r.json().catch(() => null)) : Promise.reject(r.status));
     const ms = (s) => s ? new Date(s).getTime() : 0, iso = (n) => new Date(n).toISOString();
     const envoyerDecl = (x) => { if (!x || !MON_DJ) return; const l = lieuDe(x) || {};
       req('declarations', { method: 'POST', headers: Object.assign({ Prefer: 'return=minimal' }, H), body: JSON.stringify({ id: x.id, dj_nom: MON_DJ.nom, dj_photo: (photoProfil() || '').startsWith('data:') ? null : photoProfil(), lieu_nom: (l.nom || x.nomLieu || 'Spot').slice(0, 60),
         lat: l.lat != null ? l.lat : x.lat, lng: l.lng != null ? l.lng : x.lng, style: (x.style || '').slice(0, 30), debut: iso(x.debut), fin: iso(x.fin), liens_live: x.liensLive || {} }) }).catch(() => toast('Hors connexion : ta déclaration reste sur ton téléphone')); };
+    // Live YouTube d'un DJ : publié comme une déclaration sans position (« Live YouTube »), pour que les autres Bangers le voient dans « DJ en live »
+    const envoyerLive = (st) => { if (!st || !MON_DJ) return;
+      req('declarations', { method: 'POST', headers: Object.assign({ Prefer: 'return=minimal' }, H), body: JSON.stringify({ id: 'live-' + sansAccent(MON_DJ.nom).replace(/[^a-z0-9]+/g, '-') + '-' + st.depuis, dj_nom: MON_DJ.nom.slice(0, 40),
+        dj_photo: (photoProfil() || '').startsWith('data:') ? null : photoProfil(), lieu_nom: 'Live YouTube', lat: null, lng: null, style: ((MON_DJ.styles || [])[0] || '').slice(0, 30),
+        debut: iso(st.depuis), fin: iso(st.depuis + 6 * 3600000 - 60000), liens_live: { youtube: st.url, titre: (st.titre || '').slice(0, 80) } }) })
+        .then(() => true).catch(() => { toast('Hors connexion : ton live reste visible seulement sur ton téléphone'); }); };
     const envoyerSpot = (s) => req('spots', { method: 'POST', headers: Object.assign({ Prefer: 'return=minimal' }, H), body: JSON.stringify({ id: s.id, nom: (s.nom || '').slice(0, 60), type: s.type, dj: (s.dj || '').slice(0, 40), lat: s.lat, lng: s.lng,
       par: ((state.profil && state.profil.pseudo) || '').slice(0, 30), temp: s.temp, com: s.com || null }) }).catch(() => toast('Hors connexion : ton signalement reste sur ton téléphone'));
     const banguer = (table, id, temp, com) => req('rpc/banguer', { method: 'POST', body: JSON.stringify({ p_table: table, p_id: id, p_temp: temp == null ? null : temp, p_com: com || null }) }).catch(() => {});
@@ -2015,6 +2021,11 @@
         ds = ds || []; ss = ss || []; so = so || [];
         // DJ en live
         DJS_DISTANTS.length = 0;
+        const estLive = (r) => r.lat == null && r.liens_live && r.liens_live.youtube;
+        ds.filter(estLive).forEach((r) => { const id = 'r:' + sansAccent(r.dj_nom); if (DJS_DISTANTS.some((d) => d.id === id)) return;
+          DJS_DISTANTS.push({ id, nom: r.dj_nom, styles: r.style ? [r.style] : [], ville: '', formule: 'pro', liens: { youtube: r.liens_live.youtube }, annonces: [], photo: r.dj_photo || '', confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 },
+            stream: { url: r.liens_live.youtube, titre: r.liens_live.titre || 'Live de ' + r.dj_nom, depuis: ms(r.debut), vues: 0 } }); });
+        ds = ds.filter((r) => !estLive(r));
         ds.forEach((r) => { const id = 'r:' + sansAccent(r.dj_nom); if (!DJS_DISTANTS.some((d) => d.id === id)) DJS_DISTANTS.push({ id, nom: r.dj_nom, styles: r.style ? [r.style] : [], ville: '', formule: 'live', liens: {}, annonces: [], photo: r.dj_photo || '', confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 } }); });
         const miens = new Set(DECLS.filter((x) => x.mien).map((x) => x.id));
         DECLS = DECLS.filter((x) => x.mien || x.demo).concat(ds.filter((r) => !miens.has(r.id)).map((r) => ({ id: r.id, dj: 'r:' + sansAccent(r.dj_nom), dest: 'local', lieu: null, nomLieu: r.lieu_nom, lat: r.lat, lng: r.lng, style: r.style, debut: ms(r.debut), fin: ms(r.fin), conf: r.conf || 0, contest: 0, temp: r.temp, com: r.com, liensLive: r.liens_live || {}, distant: true })));
@@ -2032,7 +2043,7 @@
     }
     setTimeout(charger, 800); setInterval(charger, 30000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) charger(); });
-    return { envoyerDecl, envoyerSpot, banguer, charger };
+    return { envoyerDecl, envoyerLive, envoyerSpot, banguer, charger };
   })();
   // Pastille « En live » sur la fiche d'un DJ : un toucher mène là où il mixe (son live YouTube, ou sa position sur la carte)
   function badgeLiveDj(pro, live) {
@@ -4681,7 +4692,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       const f = new FormData(e.target), u = urlPropre(f.get('url'));
       if (!u || !/(^|\.)(youtube\.com|youtu\.be)$/i.test(new URL(u).hostname)) { $('#err-stream').hidden = false; return; }
       MON_DJ.stream = { url: u, titre: String(f.get('titre') || '').trim() || 'Live de ' + MON_DJ.nom, depuis: Date.now(), vues: 0 };
-      store.set('djPro', MON_DJ); state.vueDj = null; renderProfil(); majDjLive(); toast('Tu es dans « DJ en live »');
+      store.set('djPro', MON_DJ); BDD.envoyerLive(MON_DJ.stream); state.vueDj = null; renderProfil(); majDjLive(); toast('Tu es dans « DJ en live », visible par tous les Bangers');
       return;
     }
     if (e.target.id === 'form-annonce') {
