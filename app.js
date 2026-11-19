@@ -398,6 +398,7 @@
   function toggleFav(dj) {
     const i = state.favs.indexOf(dj);
     if (i >= 0) state.favs.splice(i, 1); else { state.favs.push(dj); rappelCompte(); }
+    BDD.envoyerInteraction(dj, i >= 0 ? 'desabonne' : 'abonne');
     store.set('favs', state.favs);
     render();
     if (state.lieuOuvert) renderSheet();
@@ -1837,6 +1838,7 @@
     if (state.lieuOuvert) { const sp = $('#dj-back span'); if (sp) sp.textContent = 'Retour'; }
     if (state.djLiveOuvert) { const sp = $('#dj-back span'); if (sp) sp.textContent = 'Retour aux départs'; }
     renderDj();
+    BDD.chargerStatsDj(nom).then((r) => { if (r && state.djOuvert === nom && !document.querySelector('#dj-body iframe')) renderDj(); });
     $('#sheet-dj').classList.add('open');
     $('#sheet-dj').setAttribute('aria-hidden', 'false');
   }
@@ -1965,7 +1967,7 @@
   const LIKES_DJ = store.get('likesDj', {});
   const baseLikes = (nom) => { if (SANS_DEMO) return 0; // test réel : plus de faux chiffres
  let g = 7; for (const ch of nom) g = (g * 31 + ch.charCodeAt(0)) >>> 0; const r = window.DJMAG2026 ? DJMAG2026.djs.findIndex((x) => sansAccent(x[0]) === sansAccent(nom)) + 1 : 0; return r ? 2000 + (101 - r) * 180 + g % 900 : 40 + g % 600; };
-  const nbLikes = (nom) => baseLikes(nom) + (LIKES_DJ[sansAccent(nom)] ? 1 : 0);
+  const nbLikes = (nom) => { const s = STATS_DJ[sansAccent(nom).slice(0, 40)]; return s ? s.likes + (LIKES_DJ[sansAccent(nom)] && !s.moiLike ? 1 : 0) : baseLikes(nom) + (LIKES_DJ[sansAccent(nom)] ? 1 : 0); };
   const fmtLikes = (n) => n >= 10000 ? (n / 1000).toFixed(0) + 'k' : n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',') + 'k' : String(n);
   const boutonCasque = (nom) => { const on = !!LIKES_DJ[sansAccent(nom)];
     return `<button class="casque-like${on ? ' on' : ''}" data-casque="${esc(nom)}" aria-pressed="${on}" aria-label="${on ? 'Tu aimes ce DJ' : 'J\'aime ce DJ'}"><img src="banger-casque.png" alt=""><span class="cl-nb">${fmtLikes(nbLikes(nom))}</span><span class="cl-txt">${on ? 'Tu bangues' : 'Je bangue'}</span></button>`; };
@@ -1998,7 +2000,7 @@
 
   // ---------- Base partagée (Supabase) : ce que déclarent les DJ et les Bangers se voit sur tous les téléphones
   const BDD = (() => {
-    const C = window.BANZIC_DB; if (!C || !C.url) return { envoyerDecl() {}, envoyerLive() {}, envoyerInteraction() {}, chargerNotifsDj() {}, envoyerSpot() {}, banguer() {}, charger() {} };
+    const C = window.BANZIC_DB; if (!C || !C.url) return { envoyerDecl() {}, envoyerLive() {}, envoyerInteraction() {}, chargerNotifsDj() {}, chargerStatsDj() { return Promise.resolve(null); }, publierDj() {}, envoyerSpot() {}, banguer() {}, charger() {} };
     const H = { apikey: C.cle, Authorization: 'Bearer ' + C.cle, 'Content-Type': 'application/json' };
     const req = (chemin, o) => fetch(C.url + '/rest/v1/' + chemin, Object.assign({ headers: H }, o || {})).then((r) => r.ok ? (r.status === 204 ? null : r.json().catch(() => null)) : Promise.reject(r.status));
     const ms = (s) => s ? new Date(s).getTime() : 0, iso = (n) => new Date(n).toISOString();
@@ -2017,15 +2019,33 @@
       if (MON_DJ && sansAccent(MON_DJ.nom) === cle) return; // pas de notification pour soi-même
       req('interactions', { method: 'POST', headers: Object.assign({ Prefer: 'return=minimal' }, H), body: JSON.stringify({ dj_cle: cle, dj_nom: String(djNom).slice(0, 40), type,
         par: ((state.profil && state.profil.pseudo) || '').slice(0, 30) || null, texte: texte ? String(texte).slice(0, 280) : null, appareil }) }).catch(() => {}); };
+    // Les chiffres d'un DJ d'après la base : Bangers (un par téléphone), abonnés (dernier choix de chaque téléphone), commentaires
+    const statsDe = (rows) => { const likes = new Set(), abo = {}, coms = [];
+      rows.slice().sort((x, y) => new Date(x.cree_le) - new Date(y.cree_le)).forEach((r) => {
+        if (r.type === 'like') likes.add(r.appareil); else if (r.type === 'abonne') abo[r.appareil] = true; else if (r.type === 'desabonne') abo[r.appareil] = false;
+        else if (r.type === 'commentaire' && r.appareil !== appareil) coms.push({ id: 'b' + new Date(r.cree_le).getTime() + r.appareil.slice(-4), auteur: r.par || 'Un Banger', texte: r.texte || '', t: new Date(r.cree_le).getTime(), likes: 0, reponses: [] }); });
+      return { likes: likes.size, moiLike: likes.has(appareil), abonnes: Object.values(abo).filter(Boolean).length, coms }; };
+    const chargerStatsDj = (nom) => { const cle = sansAccent(String(nom || '')).slice(0, 40); if (cle.length < 2) return Promise.resolve(null);
+      return req('interactions?select=type,par,texte,appareil,cree_le&dj_cle=eq.' + encodeURIComponent(cle) + '&order=cree_le.desc&limit=500').then((rows) => { STATS_DJ[cle] = statsDe(rows || []); return rows || []; }).catch(() => null); };
     const chargerNotifsDj = () => { if (!MON_DJ || !MON_DJ.nom) return;
-      req('interactions?select=type,par,texte,cree_le&dj_cle=eq.' + encodeURIComponent(sansAccent(MON_DJ.nom).slice(0, 40)) + '&order=cree_le.desc&limit=50')
-        .then((rows) => { if (window.__notifsDj) window.__notifsDj(rows || []); }).catch(() => {}); };
+      chargerStatsDj(MON_DJ.nom).then((rows) => { if (rows && window.__notifsDj) window.__notifsDj(rows.filter((r) => r.type !== 'desabonne')); }); };
+    // Publier ma fiche DJ (seul ce téléphone peut la modifier, grâce à sa clé secrète)
+    const publierDj = () => { if (!MON_DJ || !MON_DJ.nom) return;
+      let jeton = store.get('djJeton', ''); if (!jeton) { jeton = Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => b.toString(16).padStart(2, '0')).join(''); store.set('djJeton', jeton); }
+      const ph = photoProfil() || '';
+      const profil = { styles: MON_DJ.styles || [], ville: MON_DJ.ville || '', formule: MON_DJ.formule || 'live', liens: MON_DJ.liens || {}, annonces: (MON_DJ.annonces || []).slice(-30),
+        photo: ph.startsWith('data:') ? '' : ph, residence: MON_DJ.residence || null, confirmes: setsConfirmes(MON_DJ) };
+      req('rpc/publier_dj', { method: 'POST', body: JSON.stringify({ p_cle: sansAccent(MON_DJ.nom).slice(0, 40), p_nom: MON_DJ.nom.slice(0, 40), p_jeton: jeton, p_profil: profil }) })
+        .then((ok) => { if (ok === false) toast('Ce nom de DJ est déjà pris par un autre téléphone : choisis-en un autre pour être visible de tous'); }).catch(() => {}); };
     const envoyerSpot = (s) => req('spots', { method: 'POST', headers: Object.assign({ Prefer: 'return=minimal' }, H), body: JSON.stringify({ id: s.id, nom: (s.nom || '').slice(0, 60), type: s.type, dj: (s.dj || '').slice(0, 40), lat: s.lat, lng: s.lng,
       par: ((state.profil && state.profil.pseudo) || '').slice(0, 30), temp: s.temp, com: s.com || null }) }).catch(() => toast('Hors connexion : ton signalement reste sur ton téléphone'));
     const banguer = (table, id, temp, com) => req('rpc/banguer', { method: 'POST', body: JSON.stringify({ p_table: table, p_id: id, p_temp: temp == null ? null : temp, p_com: com || null }) }).catch(() => {});
     let enCours = false;
     function charger() {
       if (enCours || document.hidden) return; enCours = true;
+      req('djs?select=cle,nom,profil,maj').then((rows) => { DJS_ANNUAIRE.length = 0; (rows || []).forEach((r) => { const p = r.profil || {};
+        DJS_ANNUAIRE.push({ id: 'a:' + r.cle, nom: r.nom, styles: p.styles || [], ville: p.ville || '', formule: p.formule === 'pro' ? 'pro' : 'live', liens: p.liens || {}, annonces: p.annonces || [], photo: p.photo || '',
+          residence: p.residence || null, confirmes: p.confirmes || 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 } }); }); INDEX_DJ = null; }).catch(() => {});
       Promise.all([req('declarations?select=*'), req('spots?select=*'), req('soirees?select=*&order=date')]).then(([ds, ss, so]) => {
         ds = ds || []; ss = ss || []; so = so || [];
         // DJ en live
@@ -2051,9 +2071,9 @@
       }).catch(() => {}).finally(() => { enCours = false; });
     }
     setTimeout(charger, 800); setInterval(charger, 30000);
-    setTimeout(chargerNotifsDj, 1500); setInterval(chargerNotifsDj, 30000);
+    setTimeout(chargerNotifsDj, 1500); setInterval(chargerNotifsDj, 30000); setTimeout(publierDj, 2500);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) charger(); });
-    return { envoyerDecl, envoyerLive, envoyerInteraction, chargerNotifsDj, envoyerSpot, banguer, charger };
+    return { envoyerDecl, envoyerLive, envoyerInteraction, chargerNotifsDj, chargerStatsDj, publierDj, envoyerSpot, banguer, charger };
   })();
   // Pastille « En live » sur la fiche d'un DJ : un toucher mène là où il mixe (son live YouTube, ou sa position sur la carte)
   function badgeLiveDj(pro, live) {
@@ -2075,13 +2095,14 @@
     const c = pro ? credibilite(pro) : null;
     const img = avatarIllusDj(nom) || avPinDj(pro) || (pro && pro.photo) || (photoLibre(nom) && photoLibre(nom).f) || '';
     let g = 7; for (const ch of nom) g = (g * 31 + ch.charCodeAt(0)) >>> 0;
-    const abonnes = pro ? (pro.abonnes || (SANS_DEMO ? 0 : tier === 'pro' ? 1200 + g % 9000 : 40 + g % 400)) : 0;
+    const st0 = STATS_DJ[sansAccent(nom).slice(0, 40)];
+    const abonnes = pro ? (st0 ? st0.abonnes : (pro.abonnes || (SANS_DEMO ? 0 : tier === 'pro' ? 1200 + g % 9000 : 40 + g % 400))) : 0;
     const k = (n) => n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',').replace(',0', '') + 'k' : n;
     const sous = pro ? [pro.ville, ...(pro.residences || [])].filter(Boolean).map(esc).join(' · ') : (ceSoirN ? 'Joue ce soir' : 'Ne joue pas ce soir') + ' · ' + nbSaison + ' date' + (nbSaison > 1 ? 's' : '') + ' à Ibiza en 2025';
     const styles = pro ? pro.styles : [];
     const stat = (v, t) => `<span class="fp-stat"><b>${v}</b><small>${t}</small></span>`;
-    const stats = tier === 'pro' ? stat(k(abonnes), 'abonnés') + stat((pro.annonces || []).length + nbSaison, 'dates') + stat(pro.confirmes, 'sets confirmés')
-      : tier === 'live' ? stat(pro.confirmes, 'sets confirmés') + stat(k(abonnes), 'abonnés')
+    const stats = tier === 'pro' ? stat(k(abonnes), 'abonnés') + stat((pro.annonces || []).length + nbSaison, 'dates') + stat(setsConfirmes(pro), 'sets confirmés')
+      : tier === 'live' ? stat(setsConfirmes(pro), 'sets confirmés') + stat(k(abonnes), 'abonnés')
       : stat(nbSaison, 'dates 2025') + stat(ceSoirN, 'ce soir') + stat(state.favs.includes(nom) ? 'Oui' : 'Non', 'tu le suis');
     const suivi = state.favs.includes(nom), al = !!ALERTES_DJ[sansAccent(nom)];
     const TOPM = window.DJMAG2026, iTop = TOPM ? TOPM.djs.findIndex((x) => sansAccent(x[0]) === sansAccent(nom)) : -1;
@@ -4183,10 +4204,22 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     djMonde('dax-volt', 'Dax Volt', ['Électro'], 'Paris', '🇫🇷', [11, 1, 13, 8], { url: '#', titre: 'Électro warehouse, Pantin', depuis: ilYaM(9), vues: 288 })
   );
   let MON_DJ = store.get('djPro', null);
+  // Ma fiche DJ : gardée sur le téléphone, et publiée dans la base partagée pour que tous les Bangers la voient
+  function sauverMonDj() { store.set('djPro', MON_DJ); clearTimeout(sauverMonDj.t); sauverMonDj.t = setTimeout(() => { try { BDD.publierDj(); } catch (e) { /* */ } }, 800); }
   // Sans démo : plus aucun DJ Pro fictif (ni fiche, ni live)
   if (SANS_DEMO) DJS_DEMO.length = 0;
   const DJS_DISTANTS = []; // DJ en live venus de la base partagée (autres téléphones)
-  const tousDjsPro = () => DJS_DEMO.concat(MON_DJ ? [MON_DJ] : [], DJS_DISTANTS.filter((d) => !MON_DJ || sansAccent(d.nom) !== sansAccent(MON_DJ.nom)));
+  const DJS_ANNUAIRE = []; // fiches DJ publiées par les autres téléphones (table « djs »)
+  // Ce que la base partagée sait d'un DJ : abonnés, Bangers (casque), commentaires des autres
+  const STATS_DJ = {};
+  const tousDjsPro = () => {
+    const moi = MON_DJ ? sansAccent(MON_DJ.nom) : '', vus = new Set(moi ? [moi] : []);
+    const res = DJS_DEMO.concat(MON_DJ ? [MON_DJ] : []);
+    DJS_ANNUAIRE.forEach((d) => { const c = sansAccent(d.nom); if (vus.has(c)) return; vus.add(c);
+      const live = DJS_DISTANTS.find((x) => sansAccent(x.nom) === c); res.push(live && live.stream ? { ...d, stream: live.stream, formule: 'pro' } : d); });
+    DJS_DISTANTS.forEach((d) => { const c = sansAccent(d.nom); if (!vus.has(c)) { vus.add(c); res.push(d); } });
+    return res;
+  };
   const djProParNom = (nom) => tousDjsPro().find((d) => sansAccent(d.nom) === sansAccent(nom));
 
   // Crédibilité sur 100 : 70 % fiabilité (déclarations confirmées par les Bangers, lissée pour les débutants)
@@ -4216,7 +4249,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   }
   function verifierOfficiel() {
     if (!MON_DJ || MON_DJ.officiel) return;
-    if (etatVerif(MON_DJ).ok) { MON_DJ.officiel = true; store.set('djPro', MON_DJ); setTimeout(() => toast('Bravo : ton profil est maintenant officiel, vérifié par les Bangers'), 300); }
+    if (etatVerif(MON_DJ).ok) { MON_DJ.officiel = true; sauverMonDj(); setTimeout(() => toast('Bravo : ton profil est maintenant officiel, vérifié par les Bangers'), 300); }
   }
   function blocVerif(d) {
     if (d.officiel) return `<div class="jour verif ok"><b>✓ Profil officiel</b><p class="conseil" style="margin:6px 0 0">Validé par les Bangers : ta présence sur place et le public l'ont confirmé sur plusieurs soirs.${etatVerif(d).connu ? ' Ta fiche existante (dates, avis) est maintenant reliée à ton compte.' : ''}</p></div>`;
@@ -4269,6 +4302,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     return Number.isFinite(debut) && declActive(x) && (debut <= now || iso(new Date(debut)) === iso(new Date(now)));
   }
   const declConfirmee = (x) => x.conf >= 2;
+  // Sets confirmés d'un DJ : ses déclarations confirmées par au moins 2 Bangers (gardé sur sa fiche publiée)
+  const setsConfirmes = (pro) => !pro ? 0 : Math.max(pro.confirmes || 0, DECLS.filter((x) => declConfirmee(x) && (pro.mien ? x.mien : sansAccent((djDe(x) || {}).nom || '') === sansAccent(pro.nom))).length);
   const declsVisibles = () => DECLS.filter((x) => x.dest === state.dest && declActive(x) && djDe(x));
   const hm = (ms) => { const d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
 
@@ -4694,14 +4729,14 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       if (nom.length < 2) { $('#err-djnom').hidden = false; return; }
       if (String(f.get('ville') || '').trim().length < 2) { $('#err-ville-dj').hidden = false; $('#champ-ville-dj').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
       MON_DJ = { id: 'moi', formule: f.get('formule') || 'live', liens: {}, annonces: [], nom, styles: f.getAll('styles'), ville: String(f.get('ville') || '').trim(), residence: lieuDe_json(f.get('residLieu')), confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 }, mien: true }; INDEX_DJ = null;
-      store.set('djPro', MON_DJ); state.vueDj = null; state.nomRevendique = null; renderProfil(); toast('Profil DJ créé · formule ' + formuleDe(MON_DJ).nom + ' (démo)');
+      sauverMonDj(); state.vueDj = null; state.nomRevendique = null; renderProfil(); toast('Profil DJ créé · formule ' + formuleDe(MON_DJ).nom + ' (démo)');
     }
     if (e.target.id === 'form-liens') {
       e.preventDefault();
       const f = new FormData(e.target); MON_DJ.liens = {};
       RESEAUX.forEach((r) => { const u = urlPropre(f.get(r.id)); if (u) MON_DJ.liens[r.id] = u; });
       MON_DJ.residence = lieuDe_json(f.get('residLieu'));
-      store.set('djPro', MON_DJ); state.vueDj = null; renderProfil(); toast('Liens et club attitré enregistrés');
+      sauverMonDj(); state.vueDj = null; renderProfil(); toast('Liens et club attitré enregistrés');
       return;
     }
     if (e.target.id === 'form-stream') {
@@ -4709,7 +4744,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       const f = new FormData(e.target), u = urlPropre(f.get('url'));
       if (!u || !/(^|\.)(youtube\.com|youtu\.be)$/i.test(new URL(u).hostname)) { $('#err-stream').hidden = false; return; }
       MON_DJ.stream = { url: u, titre: String(f.get('titre') || '').trim() || 'Live de ' + MON_DJ.nom, depuis: Date.now(), vues: 0 };
-      store.set('djPro', MON_DJ); BDD.envoyerLive(MON_DJ.stream); state.vueDj = null; renderProfil(); majDjLive(); toast('Tu es dans « DJ en live », visible par tous les Bangers');
+      sauverMonDj(); BDD.envoyerLive(MON_DJ.stream); state.vueDj = null; renderProfil(); majDjLive(); toast('Tu es dans « DJ en live », visible par tous les Bangers');
       return;
     }
     if (e.target.id === 'form-annonce') {
@@ -4717,7 +4752,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       const f = new FormData(e.target), lieu = String(f.get('lieu') || '').trim();
       if (lieu.length < 2) { $('#err-lieu').hidden = false; return; }
       MON_DJ.annonces = (MON_DJ.annonces || []).concat([{ date: f.get('date'), heure: f.get('heure') || '', lieu, texte: String(f.get('texte') || '').trim(), billet: urlPropre(f.get('billet')) }]);
-      store.set('djPro', MON_DJ); state.vueDj = null; renderProfil(); toast('Date publiée sur ta fiche');
+      sauverMonDj(); state.vueDj = null; renderProfil(); toast('Date publiée sur ta fiche');
       return;
     }
     if (e.target.id === 'form-mixe') {
@@ -4750,10 +4785,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (e.target.closest('[data-djpro-liens]')) { state.vueDj = 'liens'; renderProfil(); return; }
     if (e.target.closest('[data-djpro-annonce]')) { state.vueDj = 'annonce'; renderProfil(); return; }
     if (e.target.closest('[data-djpro-stream]')) { state.vueDj = 'stream'; renderProfil(); return; }
-    if (e.target.closest('[data-stream-fin]') && MON_DJ) { delete MON_DJ.stream; store.set('djPro', MON_DJ); renderProfil(); majDjLive(); toast('Live terminé : tu n\'apparais plus dans « DJ en live »'); return; }
-    if (e.target.closest('[data-djpro-upgrade]') && MON_DJ) { MON_DJ.formule = 'pro'; MON_DJ.liens = MON_DJ.liens || {}; MON_DJ.annonces = MON_DJ.annonces || []; store.set('djPro', MON_DJ); renderProfil(); toast('Tu es passé en DJ Pro (démo)'); return; }
+    if (e.target.closest('[data-stream-fin]') && MON_DJ) { delete MON_DJ.stream; sauverMonDj(); renderProfil(); majDjLive(); toast('Live terminé : tu n\'apparais plus dans « DJ en live »'); return; }
+    if (e.target.closest('[data-djpro-upgrade]') && MON_DJ) { MON_DJ.formule = 'pro'; MON_DJ.liens = MON_DJ.liens || {}; MON_DJ.annonces = MON_DJ.annonces || []; sauverMonDj(); renderProfil(); toast('Tu es passé en DJ Pro (démo)'); return; }
     const sup = e.target.closest('[data-annonce-suppr]');
-    if (sup && MON_DJ) { const as = annoncesAVenir(MON_DJ), a = as[+sup.dataset.annonceSuppr]; MON_DJ.annonces = MON_DJ.annonces.filter((x) => x !== a); store.set('djPro', MON_DJ); renderProfil(); return; }
+    if (sup && MON_DJ) { const as = annoncesAVenir(MON_DJ), a = as[+sup.dataset.annonceSuppr]; MON_DJ.annonces = MON_DJ.annonces.filter((x) => x !== a); sauverMonDj(); renderProfil(); return; }
     const lp = e.target.closest('#form-djpro label.choix-pin');
     if (lp) { setTimeout(() => document.querySelectorAll('#form-djpro label.choix-pin').forEach((l) => l.classList.toggle('on', l.querySelector('input').checked)), 0); }
     const lab2 = e.target.closest('#form-djpro label.formule');
@@ -4777,7 +4812,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       if (x.conf === 2 && MON_DJ) {
         MON_DJ.confirmes += 1;
         MON_DJ.sets = (MON_DJ.sets || []).concat([{ jour: new Date().toISOString().slice(0, 10), lieu: x.lieu || x.nomLieu, presence: true }]);
-        store.set('djPro', MON_DJ); verifierOfficiel();
+        sauverMonDj(); verifierOfficiel();
       }
       sauverDecls(); render();
       toast(x.conf >= 2 ? 'Live confirmé par les Bangers : +1 set confirmé pour ta crédibilité' : 'Une personne sur place a confirmé (1/2)');
@@ -4786,11 +4821,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (e.target.closest('[data-verif-demo]') && MON_DJ) {
       const n = (MON_DJ.sets || []).length + 1, LIEUX_DEMO = ['pacha', 'lio', 'Terrasse du port', 'amnesia'];
       MON_DJ.sets = (MON_DJ.sets || []).concat([{ jour: new Date(Date.now() - n * 86400000 * 2).toISOString().slice(0, 10), lieu: LIEUX_DEMO[n % LIEUX_DEMO.length], presence: true }]);
-      MON_DJ.confirmes += 1; store.set('djPro', MON_DJ); verifierOfficiel(); renderProfil(); return;
+      MON_DJ.confirmes += 1; sauverMonDj(); verifierOfficiel(); renderProfil(); return;
     }
-    if (e.target.closest('[data-verif-insta]') && MON_DJ) { MON_DJ.preuveInsta = true; store.set('djPro', MON_DJ); verifierOfficiel(); renderProfil(); return; }
+    if (e.target.closest('[data-verif-insta]') && MON_DJ) { MON_DJ.preuveInsta = true; sauverMonDj(); verifierOfficiel(); renderProfil(); return; }
     const fin = e.target.closest('[data-decl-fin]');
-    if (fin) { const x = DECLS.find((y) => y.id === fin.dataset.declFin); if (x) { if (x.conf < 2 && MON_DJ) { MON_DJ.expires += 1; store.set('djPro', MON_DJ); } x.fin = Date.now() - 1; sauverDecls(); render(); toast('Set terminé'); } }
+    if (fin) { const x = DECLS.find((y) => y.id === fin.dataset.declFin); if (x) { if (x.conf < 2 && MON_DJ) { MON_DJ.expires += 1; sauverMonDj(); } x.fin = Date.now() - 1; sauverDecls(); render(); toast('Set terminé'); } }
   });
 
   // ---------- Photos des DJ
@@ -4915,7 +4950,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     lirePhoto(e.target.files[0], (data) => {
       if (!data) { toast('Choisis une image (JPG ou PNG)'); return; }
       MON_DJ.photo = data;
-      try { store.set('djPro', MON_DJ); toast('Photo enregistrée'); } catch (err) { toast('Photo trop lourde'); }
+      try { sauverMonDj(); toast('Photo enregistrée'); } catch (err) { toast('Photo trop lourde'); }
       renderProfil();
     });
   });
@@ -4979,7 +5014,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     </form>`;
   }
   function blocCommentaires(nom) {
-    const k = sansAccent(nom), cs = (COMS[k] || []).filter((c) => !c.masque).sort((a, b) => b.t - a.t);
+    const k = sansAccent(nom), sb = STATS_DJ[k.slice(0, 40)], cs = (COMS[k] || []).concat(sb ? sb.coms : []).filter((c) => !c.masque).sort((a, b) => b.t - a.t);
     const n = cs.reduce((a, c) => a + 1 + (c.reponses || []).filter((r) => !r.masque).length, 0);
     return `<div class="section-title">Commentaires <small>${n ? n + ' message' + (n > 1 ? 's' : '') : 'sois le premier'}</small></div>
       ${formCom(k, null)}
@@ -5661,8 +5696,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   window.__notifsDj = (rows) => {
     const vuT = store.get('notifsVuesT', 0), deja = store.get('notifsAvertiT', 0);
     NOTIFS_DJ = rows.map((r) => { const t = new Date(r.cree_le).getTime(), qui = esc(r.par || 'Un Banger');
-      return { t, nouveau: t > vuT, ico: r.type === 'like' ? '🎧' : '💬', dj: MON_DJ && MON_DJ.nom,
-        txt: r.type === 'like' ? `<b>${qui}</b> te bangue` : `<b>${qui}</b> a commenté ta fiche : « ${esc(String(r.texte || '').slice(0, 90))} »`, brut: (r.par || 'Un Banger') + (r.type === 'like' ? ' te bangue 🎧' : ' a commenté ta fiche : ' + (r.texte || '')) }; });
+      return { t, nouveau: t > vuT, ico: r.type === 'like' ? '🎧' : r.type === 'abonne' ? '➕' : '💬', dj: MON_DJ && MON_DJ.nom,
+        txt: r.type === 'like' ? `<b>${qui}</b> te bangue` : r.type === 'abonne' ? `<b>${qui}</b> s'est abonné à toi` : `<b>${qui}</b> a commenté ta fiche : « ${esc(String(r.texte || '').slice(0, 90))} »`, brut: (r.par || 'Un Banger') + (r.type === 'like' ? ' te bangue 🎧' : r.type === 'abonne' ? ' s\'est abonné à toi' : ' a commenté ta fiche : ' + (r.texte || '')) }; });
     const neufs = NOTIFS_DJ.filter((x) => x.t > deja);
     if (neufs.length && deja) { try { if ('Notification' in window && Notification.permission === 'granted') neufs.slice(0, 3).forEach((x) => new Notification('Banzic', { body: x.brut, tag: 'banzic-dj-' + x.t })); } catch (e) { /* */ } }
     if (NOTIFS_DJ.length) store.set('notifsAvertiT', NOTIFS_DJ[0].t);
