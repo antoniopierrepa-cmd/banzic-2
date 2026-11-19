@@ -1810,7 +1810,6 @@
     state.villeChoisie = true;
     state.villeRecherche = [v[2], v[3]];
     const paysVille = v[5] || codesPaysAgenda.find(code => sansAccent(paysAgenda.of(code)) === sansAccent(v[1] || ''));
-    if (paysVille && codesPaysAgenda.includes(paysVille)) state.paysAgenda = paysVille;
     state.rayonIdx = RAYONS.indexOf(100);
     state.radarDep = '';
     state.zoneGeo = { ...zoneDe([v[2], v[3]], false, v[0]), nom: v[0] };
@@ -3378,8 +3377,10 @@
     'mesdj|oui': (x) => !!x.djs && state.favs.some((f) => sansAccent(x.djs).includes(sansAccent(f)))
   };
   state.rayonIdx = Math.max(0, Math.min(RAYONS.length - 1, Number(store.get('rayonIdx', 2)) || 0));
-  function soireesAvecKm() {
-    const centre = centreGeographique(), auj = iso(new Date());
+  // L'Agenda ne suit que ta vraie position (GPS), jamais la ville choisie sur la carte ou dans le Check-in, et ne la change pas non plus
+  function centreAgenda() { return state.maPos ? [state.maPos.lat, state.maPos.lng] : DEST.local.centre; }
+  function soireesAvecKm(centre = centreGeographique()) {
+    const auj = iso(new Date());
     return SUD.soirees.filter((x) => x.date >= auj && SUD.lieux[x.lieu])
       .map((x) => ({ ...x, l: SUD.lieux[x.lieu], km: distKm(centre, [SUD.lieux[x.lieu].lat, SUD.lieux[x.lieu].lng]) }))
       .sort((a, b) => a.date.localeCompare(b.date) || a.km - b.km);
@@ -3388,8 +3389,6 @@
     const r = RAYONS[state.rayonIdx];
     $('#screen-agenda').innerHTML = `<div class="fader-module">
         <div class="acc-tete fd-tete"><div><h2>Agenda autour de moi</h2></div></div>
-        <label class="radar-dep">Pays <select id="ag-pays">${codesPaysAgenda.map(code => `<option value="${code}" ${state.paysAgenda === code ? 'selected' : ''}>${esc(paysAgenda.of(code))}</option>`).join('')}</select></label>
-        <button type="button" class="acc-chip" id="ag-chercher-ville">🌍 Chercher une ville</button>
         ${state.paysAgenda === 'FR' ? `<label class="radar-dep">Département <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>` : ''}
         <div class="fd-rail">
           <input type="range" id="fader-rayon" min="0" max="${RAYONS.length - 1}" step="1" value="${state.rayonIdx}" aria-label="Rayon de recherche" aria-valuetext="${esc(kmTxt(r))}">
@@ -3401,19 +3400,6 @@
         <div id="ag-filtres"></div>
       </div>
       <div id="agenda-liste"></div>`;
-    $('#ag-pays').addEventListener('change', e => {
-      state.paysAgenda = e.target.value;
-      state.radarDep = '';
-      state.rayonIdx = RAYONS.length - 1;
-      renderAgendaSud();
-    });
-    $('#ag-chercher-ville').addEventListener('click', () => {
-      state.rechFiltre = 'ville';
-      if (!document.querySelector('.top').classList.contains('cherche')) $('#tab-cherche').click();
-      $('#recherche-dj').value = '';
-      $('#recherche-dj').placeholder = 'Ville, pays…';
-      $('#recherche-dj').focus();
-    });
     listeAgendaSud();
   }
   // ---- Calendrier de l'agenda : on choisit un jour ; les points montrent les jours qui ont des soirées (avec les filtres choisis) ----
@@ -3456,9 +3442,9 @@
     // Les dates plus lointaines arrivent en descendant : 7 jours de plus à chaque fois qu'on atteint le bas de la liste
     const auj0 = iso(new Date()), j7 = auJour(state.agJours || 7);
     if (state.agDate && state.agDate < auj0) state.agDate = null;
-    const r = RAYONS[state.rayonIdx], dansZone = (x) => state.radarDep ? x.l.dep === state.radarDep : dansRayonAg(x, r), toutesLoin = soireesAvecKm().filter((x) => x.date >= auj0 && dansZone(x));
+    const r = RAYONS[state.rayonIdx], dansZone = (x) => state.radarDep ? x.l.dep === state.radarDep : dansRayonAg(x, r), toutesLoin = soireesAvecKm(centreAgenda()).filter((x) => x.date >= auj0 && dansZone(x));
     // Calendrier : une date choisie = seulement les soirées de ce jour-là
-    const garde = mesSoirees(), toutesG = soireesAvecKm().filter((x) => garde.includes(x.id));
+    const garde = mesSoirees(), toutesG = soireesAvecKm(centreAgenda()).filter((x) => garde.includes(x.id));
     const toutes = state.agGardees ? toutesG : state.agDate ? toutesLoin.filter((x) => x.date === state.agDate) : toutesLoin.filter((x) => x.date <= j7);
     const types = state.sudTypes || [];
     const passeFiltres = x => passeFamilles(x, 'ag') && (!types.length || types.some(k => PAD_TEST['type|' + k]?.(x)));
@@ -3481,7 +3467,7 @@
         h += carteAgenda(x);
       });
     }
-    const reste = state.agDate || state.agGardees ? 0 : soireesAvecKm().filter((x) => x.date > j7 && dansZone(x)).length;
+    const reste = state.agDate || state.agGardees ? 0 : soireesAvecKm(centreAgenda()).filter((x) => x.date > j7 && dansZone(x)).length;
     if (reste) h += `<div class="ag-plus" id="ag-plus"><span class="ag-plus-rond"></span>Les dates suivantes arrivent…</div>`;
     h += `<p class="demo-note">Sources : déclarations des DJ et des Bangers, et le radar Banzic (agendas et billetteries autorisés). Vérifie toujours sur la page de la soirée avant de sortir.</p>`;
     $('#agenda-liste').innerHTML = h;
