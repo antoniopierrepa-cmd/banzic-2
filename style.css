@@ -3773,3 +3773,5 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 #accueil .sorties-rubriques>span { gap: 3px; }
 #accueil .sorties-rubriques>span+span { padding-left: 6px; }
 #accueil .sorties-rubriques small { font-size: 6.5px; }
+
+#accueil .ag-banniere.sorties-banniere .ag-txt { background: transparent; }
