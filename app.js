@@ -5354,8 +5354,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const TYPES_AG = [['tout', 'Agenda', '✦', '#C9CFDD'], ['club', 'Club', '🪩', '#3D8BFF'], ['festival', 'Festival', '🎪', '#FF8A3D'], ['concert', 'Concert', '🎤', '#F2C53A'], ['bar', 'Bar', '🍸', '#A77BFF'], ['resto', 'Restaurant', '🍽️', '#3DF28A']];
     // Agenda autour de moi : la bannière « L'agenda » (visuel fourni par Antonio, textes dans la police de l'appli).
     // Un appui ouvre l'Agenda, où l'on choisit Club, Festival, Concert…
-    h += `<section class="acc-rub ag-rub"><button class="ag-banniere ag-photo ag-video" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
-        <img src="agenda-banniere-poster.jpg?v=2" alt="" width="1472" height="624" loading="lazy"><video data-home-banner-video muted loop playsinline preload="none" poster="agenda-banniere-poster.jpg?v=2" aria-hidden="true" tabindex="-1"><source src="agenda-banniere.mp4?v=3" type="video/mp4"></video></button></section>`;
+    h += `<section class="acc-rub ag-rub"><button class="ag-banniere ag-photo ag-video sorties-banniere" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
+        <img src="agenda-banniere-poster.jpg?v=5" alt="" width="1472" height="624" loading="lazy"><video data-home-banner-video muted loop playsinline preload="none" poster="agenda-banniere-poster.jpg?v=5" aria-hidden="true" tabindex="-1"><source src="agenda-banniere.mp4?v=5" type="video/mp4"></video><span class="ag-txt"><b class="ag-titre">Les prochaines<br><span class="banner-live-accent">sorties</span></b><span class="ag-sous">Clubs, concerts et festivals</span></span></button></section>`;
     // 2. Les saisons
     // En saison d'abord, puis les autres dans l'ordre du compte à rebours (la plus proche en premier)
     const rangOpening = (id) => { const e = etatOpening(id); return !e ? 9e15 : e.avant ? e.ms : -1; };
