@@ -4436,7 +4436,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       <div class="slot">Depuis ${depuisTxt(st.depuis)}${st.vues ? ' · ' + st.vues.toLocaleString('fr-FR') + ' spectateurs' : ''}</div>
       ${lien}</div>`;
   }
+  // Petit compteur sur la bannière « Les DJ en live » : les vrais DJ en live en ce moment (sans les DJ de démonstration)
+  const nbVraisLives = () => streamsActifs().filter((d) => !d.demo).length;
+  const compteurLives = () => { const n = nbVraisLives(); return `<span class="lv-compte${n ? '' : ' vide'}" aria-label="${n} DJ en live en ce moment"><i aria-hidden="true"></i>${n ? n + ' en live' : 'Aucun live'}</span>`; };
   function majDjLive() {
+    document.querySelectorAll('.lv-compte').forEach((c) => { c.outerHTML = compteurLives(); });
     const n = streamsActifs().length, b = $('#btn-djlive'); if (!b) return;
     $('#djlive-n').textContent = n ? n : '';
     b.classList.toggle('vide', !n);
@@ -5413,7 +5417,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const puces = `<div class="genre-puces">${['', ...genres].map((g) => `<button class="genre-puce${(state.genreLive || '') === g ? ' on' : ''}" data-genre-live="${esc(g)}" style="--gc:${g ? coulGenre(g) : '#C9CFDD'}">${g ? esc(g) : 'Tous'}</button>`).join('')}</div>`;
     // Bannière « Les DJ en live » (visuel fourni par Antonio, textes dans la police de l'appli) : un appui ouvre tous les lives disponibles
     h += `<section class="acc-rub ag-rub"><button class="ag-banniere live-banniere lv-photo ag-video ag-live-video" data-live-tous="1" aria-label="Les DJ en live : écouter un live">
-        <img src="live-banniere-poster.jpg?v=4" alt="" width="800" height="288" loading="eager" fetchpriority="high"><video data-home-banner-video muted loop playsinline preload="none" poster="live-banniere-poster.jpg?v=4" aria-hidden="true" tabindex="-1"><source src="live-banniere.mp4?v=4" type="video/mp4"></video><span class="ag-txt"><b class="ag-titre">Les DJ<br><span class="banner-live-accent">en live</span></b><span class="ag-sous">Écoute les DJ en direct</span></span></button></section>`;
+        <img src="live-banniere-poster.jpg?v=4" alt="" width="800" height="288" loading="eager" fetchpriority="high"><video data-home-banner-video muted loop playsinline preload="none" poster="live-banniere-poster.jpg?v=4" aria-hidden="true" tabindex="-1"><source src="live-banniere.mp4?v=4" type="video/mp4"></video><span class="ag-txt"><b class="ag-titre">Les DJ<br><span class="banner-live-accent">en live</span></b><span class="ag-sous">Écoute les DJ en direct</span></span>${compteurLives()}</button></section>`;
     // La rubrique « DJ live dans le monde » (titre, styles, lecteurs) est retirée de l'accueil : la bannière ci-dessus ouvre tous les lives
     // 4. Classement DJ Mag Top 100 2026, du 1er au 100e (à la place des clubs d'Ibiza)
     const TOP = window.DJMAG2026; let secTop = '';
