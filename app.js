@@ -5396,8 +5396,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const MONTEES = [['John Summit', 22], ['Mau P', 22], ['CHRIS STASSY', 22], ['GORDO', 18], ['Fred again..', 17], ['The Martinez Brothers', 15], ['Korolova', 14], ['Solomun', 14], ['Miss Monique', 14], ['B Jones', 14], ['Michael Bibi', 11], ['Indira Paganotto', 10], ['Mochakk', 10], ['Anyma', 7]];
     window.__MONTEES = MONTEES;
     // Bannière « Les DJ qui montent » (visuel fourni par Antonio, textes dans la police de l'appli) : un appui ouvre la page de tous les DJ qui montent
-    const secMonte = `<section class="acc-rub ag-rub"><button class="ag-banniere mt-banniere" data-page-montent="1" aria-label="Les DJ qui montent : découvre la nouvelle vague">
-        <img src="montent-banniere.jpg?v=1" alt="" loading="lazy">
+    const secMonte = `<section class="acc-rub ag-rub"><button class="ag-banniere mt-banniere ag-video montent-video" data-page-montent="1" aria-label="Les DJ qui montent : découvre la nouvelle vague">
+        <img src="montent-banniere-poster.jpg?v=2" alt="" loading="lazy" width="640" height="230"><video data-home-banner-video muted loop playsinline preload="none" poster="montent-banniere-poster.jpg?v=2" aria-hidden="true" tabindex="-1"><source src="montent-banniere.mp4?v=2" type="video/mp4"></video>
         <span class="ag-txt"><small class="ag-kick">Top 100 · 2026</small><b class="ag-titre">Les DJ<br><span class="banner-live-accent">qui montent</span></b><span class="ag-sous">Découvre la nouvelle vague</span></span></button></section>`;
     // « Les DJ qui montent » prend la place du Top 100, qui descend en dernier
     h = h.includes('@@TOP100@@') ? h.replace('@@TOP100@@', secMonte) + secTop : h + secMonte;
@@ -5955,6 +5955,9 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   `;
   document.head.appendChild(favorisStyle);
 
+  const montentStyle = document.createElement('style');
+  montentStyle.textContent = '#accueil .montent-video{background:#080c1d}#accueil .montent-video>img,#accueil .montent-video>video{object-fit:fill;clip-path:inset(0 0 0 53%)}';
+  document.head.appendChild(montentStyle);
   applyLangue();
   majPortails();
   if (state.mode === 'ibiza') state.dest = 'ibiza';
