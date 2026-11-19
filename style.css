@@ -3748,3 +3748,13 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
   justify-content: center;
   overflow: hidden;
 }
+
+#accueil .ag-banniere.sorties-banniere .ag-txt{top:6%;bottom:6%;width:68%;max-width:72%;padding:6px 10px;gap:3px}
+#accueil .ag-banniere.sorties-banniere .ag-titre{font-size:clamp(15px,5.3vw,23px);line-height:.95}
+#accueil .sorties-banniere .ag-kick{font-size:8px}
+#accueil .sorties-rubriques{display:flex;align-items:center;gap:8px;color:#f02e84;font-size:15px}
+#accueil .sorties-rubriques>span{display:flex;align-items:center;gap:4px}
+#accueil .sorties-rubriques>span+span{border-left:1px solid #ffffff60;padding-left:8px}
+#accueil .sorties-rubriques small{font:700 7px/1.05 'DM Sans',sans-serif;color:white}
+#accueil .ag-banniere.sorties-banniere .ag-sous{font-size:9px}
+#accueil .sorties-distance{font:500 8px/1.1 'DM Sans',sans-serif;color:#d4d7e2}
