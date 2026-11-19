@@ -3758,3 +3758,18 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 #accueil .sorties-rubriques small{font:700 7px/1.05 'DM Sans',sans-serif;color:white}
 #accueil .ag-banniere.sorties-banniere .ag-sous{font-size:9px}
 #accueil .sorties-distance{font:500 8px/1.1 'DM Sans',sans-serif;color:#d4d7e2}
+
+/* Agenda : cartouche plus discret et pictogrammes compacts. */
+#accueil .ag-banniere.sorties-banniere .ag-txt {
+  background: rgba(0,0,0,.22);
+  padding: 5px 8px;
+  gap: 2px;
+}
+#accueil .ag-banniere.sorties-banniere .ag-titre {
+  font-size: clamp(15px,5vw,21px);
+  line-height: .95;
+}
+#accueil .sorties-rubriques { font-size: 11px; gap: 6px; line-height: 1; }
+#accueil .sorties-rubriques>span { gap: 3px; }
+#accueil .sorties-rubriques>span+span { padding-left: 6px; }
+#accueil .sorties-rubriques small { font-size: 6.5px; }
