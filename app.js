@@ -361,6 +361,14 @@
     state.favPanel = id; renderFavs(); $('#fav-tab-' + id).focus();
   });
 
+  // Un set futur ne tourne pas : seules les diffusions et déclarations commencées sont live.
+  function liveFavori(nom) {
+    const pro = djProParNom(nom);
+    if (!pro) return '';
+    if (enStream(pro)) return 'En live en ligne';
+    const decl = DECLS.find(x => x.dj === pro.id && Number(x.debut) <= Date.now() && declActive(x));
+    return decl ? 'En live · ' + ((lieuDe(decl) || {}).nom || 'Aux platines') : '';
+  }
   function renderFavDjs() {
     const ibiza = state.dest === 'ibiza';
     document.querySelectorAll('#screen-fav > :not(#fav-list):not(#fav-hub-tabs)').forEach((el) => { el.hidden = !ibiza; });
@@ -369,23 +377,12 @@
     if (!state.favs.length) {
       $('#fav-list').innerHTML = `<div class="empty">Ajoute tes DJ préférés : l'appli te dit où et à quelle heure ils jouent ce soir.</div>`;
     } else {
-      const liveFav = (dj) => { const pro = djProParNom(dj); return !!pro && (enStream(pro) || DECLS.some((x) => x.dj === pro.id && declActive(x))); };
-      const favCartes = state.favs.slice().sort((x, y) => (liveFav(y) ? 1 : 0) - (liveFav(x) ? 1 : 0)).map((dj) => {
-        // DJ Pro / Premium de l'appli : en live s'il s'est déclaré (et pas encore fini) ou s'il diffuse son live
-        const pro = djProParNom(dj), decl = pro && DECLS.find((x) => x.dj === pro.id && declActive(x));
-        if (decl || (pro && enStream(pro))) { const l = decl ? lieuDe(decl) || {} : {};
-          return vCarte({ tag: 'div', attr: decl ? `role="button" tabindex="0" data-dj-pro="${esc(dj)}"` : `role="button" tabindex="0" data-dj-pro="${esc(dj)}"`, c: '#F2C53A', img: avPinDj(pro) || (decl && l.id ? imgLieu(l) : ''), badge: 'En live',
-            extra: heart(dj), type: decl ? esc(l.nom || 'Spot') : 'Live en ligne', nom: esc(dj), lieu: decl ? `${esc(l.nom || 'Spot')} · jusqu'à ${hm(decl.fin)}` : 'En direct sur sa chaîne' }); }
-        const p = prochainSetDe(dj);
-        let info, badge;
-        if (!p) { info = 'Ne joue plus ce soir'; badge = '<span class="badge b-off">Pas ce soir</span>'; }
-        else if (t >= p.d) { info = `${lieux[p.lieu].nom} · jusqu'à ${p.fin}`; badge = `<span class="badge b-live ${lieux[p.lieu].type}">En ce moment</span>`; }
-        else { info = `${lieux[p.lieu].nom} · ${p.debut} – ${p.fin}`; badge = `<span class="badge b-soon">Dans ${dans(p.d - t)}</span>`; }
-        const c = !p ? '#5A6378' : t >= p.d ? (COUL_TYPE_LIEU[lieux[p.lieu].type] || '#FF8A3D') : '#F2B53A';
-        return vCarte({ tag: 'div', attr: p ? `role="button" tabindex="0" data-lieu="${p.lieu}"` : '', c, img: p ? imgLieu(lieux[p.lieu]) : '', badge: badge.replace(/<[^>]+>/g, ''),
-          extra: heart(dj), type: p ? esc(lieux[p.lieu].nom) : 'Mes DJ', nom: esc(dj), lieu: esc(info) });
+      const rows = state.favs.slice().sort((a, b) => Number(!!liveFavori(b)) - Number(!!liveFavori(a))).map(nom => {
+        const live = liveFavori(nom);
+        return `<div class="fav-dj-bandeau"><button type="button" class="fav-dj-ouvrir" data-dj-pro="${esc(nom)}"><span class="fav-vinyle${live ? ' tourne' : ''}">${avatarDj(nom)}</span><span class="fav-dj-identite"><b>${esc(nom)}</b><small>${live ? esc(live) : 'DJ favori'}</small></span>${live ? '<span class="fav-live"><i></i>LIVE</span>' : ''}<span aria-hidden="true">›</span></button>${heart(nom)}</div>`;
       });
-      $('#fav-list').innerHTML = `<div class="section-title">Mes DJ <small>${state.favs.length} suivi${state.favs.length > 1 ? 's' : ''} · touche le cœur pour arrêter</small></div>` + rangCartes(favCartes);
+      $('#fav-list').innerHTML = `<div class="section-title">Mes DJ <small>${state.favs.length} suivis</small></div><div class="fav-dj-liste">${rows.join('')}</div>`;
+      remplirAvatars($('#fav-list'));
     }
     // Annuaire : une fiche pour chaque DJ passé à Ibiza (line-up de ce soir + toute la saison 2025)
     const q = sansAccent(($('#fav-search').value || '').trim());
@@ -5489,9 +5486,9 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   function bandeauMesDj() {
     const fav = state.favs || [], ce = fav.filter((n) => passages.some((p) => p.dj === n && !p.inconnu && p.f > state.t));
     // Les DJ Pro / Premium suivis qui sont en live (stream ou déclarés) passent devant et tournent comme un vinyle
-    const enLiveMd = (n) => { const pro = djProParNom(n); return !!pro && (enStream(pro) || DECLS.some((x) => x.dj === pro.id && declActive(x))); };
+    const enLiveMd = n => !!liveFavori(n);
     const ordre = fav.slice().sort((x, y) => (enLiveMd(y) ? 1 : 0) - (enLiveMd(x) ? 1 : 0));
-    const avs = ordre.slice(0, 4).map(n => `<span class="md-dj-thumb${enLiveMd(n) ? ' md-live' : ''}" title="${esc(n)}">${avatarDj(n, 'md-av')}</span>`).join('');
+    const avs = ordre.filter(enLiveMd).slice(0, 4).map(n => `<span class="md-dj-thumb${enLiveMd(n) ? ' md-live' : ''}" title="${esc(n)}">${avatarDj(n, 'md-av')}<i class="md-live-point"></i></span>`).join('');
     const sous = !fav.length ? 'Touche le ♥ sur la fiche d\'un DJ pour le suivre ici'
       : `${fav.length} DJ suivi${fav.length > 1 ? 's' : ''}${fav.filter(enLiveMd).length ? ` · ${fav.filter(enLiveMd).length} en live` : ''}${ce.length ? ` · ${ce.length} joue${ce.length > 1 ? 'nt' : ''} ce soir` : ''}`;
     const gs = soireesGardees(), n = gs.length;
@@ -5930,6 +5927,26 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       el.addEventListener('click', (e) => { if (!e.target.closest('.splash-langue')) lancer(); });
     }
   })();
+
+  const favorisStyle = document.createElement('style');
+  favorisStyle.textContent = `
+    .fav-dj-liste{display:flex;flex-direction:column;gap:8px}
+    .fav-dj-bandeau{display:flex;align-items:center;border:1px solid #ffffff20;border-radius:12px;background:#ffffff08;min-width:0}
+    .fav-dj-ouvrir{display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:9px 12px;border:0;background:none;color:inherit;text-align:left;cursor:pointer}
+    .fav-vinyle{display:grid;place-items:center;flex-shrink:0;width:46px;height:46px;border-radius:50%;background:repeating-radial-gradient(circle,#111 0 3px,#333 4px,#111 5px);box-shadow:0 0 0 1px #ffffff30}
+    .fav-vinyle .avatar{width:32px!important;height:32px!important;border-radius:50%;object-fit:cover}
+    .fav-vinyle.tourne{animation:fav-disque 5s linear infinite}
+    .fav-dj-identite{flex:1;min-width:0}.fav-dj-identite b,.fav-dj-identite small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .fav-dj-identite b{font-size:15px}.fav-dj-identite small{font-size:11px;opacity:.65;margin-top:3px}
+    .fav-live{font-size:10px;color:#ff5b64;font-weight:800;white-space:nowrap}.fav-live i,.md-live-point{display:inline-block;width:6px;height:6px;background:#ff3548;border-radius:50%;margin-right:4px}
+    .md-live-point{position:absolute;right:0;bottom:0;border:1px solid #fff}
+    .md-dj-thumb.md-live{position:relative;animation:none!important}
+    .md-dj-thumb.md-live .md-av{animation:fav-disque 5s linear infinite}
+    @keyframes fav-disque{to{transform:rotate(360deg)}}
+    @media(prefers-reduced-motion:reduce){.fav-vinyle.tourne,.md-dj-thumb.md-live .md-av{animation:none!important}}
+  `;
+  document.head.appendChild(favorisStyle);
+
   applyLangue();
   majPortails();
   if (state.mode === 'ibiza') state.dest = 'ibiza';
