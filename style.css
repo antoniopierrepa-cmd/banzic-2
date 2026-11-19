@@ -3710,3 +3710,23 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 #screen-fav .ms-txt small,
 #screen-fav .ms-txt span { overflow-wrap: anywhere; }
 #screen-fav .ms-item .ag-bang { max-width: 90px; white-space: normal; }
+
+/* Trois rubriques d'accueil : proportions et typographie communes. */
+#accueil .ag-banniere:is(.live-banniere,.mt-banniere,.td-banniere) {
+  aspect-ratio: 800 / 288 !important;
+  height: auto !important;
+  border-radius: 16px;
+}
+#accueil .ag-banniere:is(.live-banniere,.mt-banniere,.td-banniere) .ag-txt {
+  left: 5%; top: 0; bottom: 0; width: 55%;
+  display: flex; flex-direction: column; justify-content: center;
+  align-items: flex-start; gap: 4px; z-index: 2;
+}
+#accueil .ag-banniere:is(.live-banniere,.mt-banniere,.td-banniere) .ag-titre {
+  margin: 0; font-family: 'Syne', sans-serif; font-size: 23px;
+  font-weight: 800; line-height: 1; letter-spacing: -.01em;
+  font-style: normal; text-transform: none; color: #fff;
+}
+#accueil .ag-banniere:is(.live-banniere,.mt-banniere,.td-banniere) .ag-sous {
+  margin: 0; font: 500 11.5px/1.25 'DM Sans', sans-serif; color: #A9B1CC;
+}
