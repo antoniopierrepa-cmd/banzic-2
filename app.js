@@ -3196,28 +3196,36 @@
     const h = horairesCheckin(x);
     return h.debut != null && Date.now() >= h.debut && Date.now() < h.fin;
   }
+  // Visuel au centre du vinyle : le flyer de la soirée, sinon le logo du lieu (club officiel ou visuel connu)
+  function visuelVinyle(x) {
+    const l = x.l || SUD.lieux[x.lieu] || {}, off = l.lat != null ? clubOfficiel(l.lat, l.lng) : null;
+    return radarUrl(x.flyerUrl) || radarUrl(l.visuel) || (off && radarUrl(off.logo)) || '';
+  }
   function iconeVinyle(x) {
-    const n = compteurSoiree(x), adulte = soireeAdulte(x);
+    const n = compteurSoiree(x), adulte = soireeAdulte(x), img = visuelVinyle(x);
+    const centre = img
+      ? `<img class="bz-vinyle-img" src="${esc(img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()"><span class="bz-vinyle-compte ${n < 3 ? 'bz-vinyle-attente' : 'bz-vinyle-valide'}" title="${n < 3 ? 'BANGER à confirmer' : 'BANGER confirmé · validé'}">${n}</span>`
+      : `<span class="bz-vinyle-centre ${n < 3 ? 'bz-vinyle-attente' : 'bz-vinyle-valide'}" title="${n < 3 ? 'BANGER à confirmer' : 'BANGER confirmé · validé'}">${n}</span>`;
     return L.divIcon({
-      className: 'bz-vinyle-marker' + (soireeEnCoursCarte(x) ? ' bz-vinyle-en-cours' : ''), iconSize: [48, 48], iconAnchor: [24, 24],
-      html: `<span class="bz-vinyle-disque" aria-hidden="true"><span class="bz-vinyle-centre ${n < 3 ? 'bz-vinyle-attente' : 'bz-vinyle-valide'}" title="${n < 3 ? 'BANGER à confirmer' : 'BANGER confirmé · validé'}">${n}</span></span>${adulte ? '<span class="bz-vinyle-adulte">18+</span>' : ''}`
+      className: 'bz-vinyle-marker bz-vinyle-petit' + (img ? ' bz-vinyle-avec-img' : '') + (soireeEnCoursCarte(x) ? ' bz-vinyle-en-cours' : ''), iconSize: [38, 38], iconAnchor: [19, 19],
+      html: `<span class="bz-vinyle-disque" aria-hidden="true">${centre}</span>${adulte ? '<span class="bz-vinyle-adulte">18+</span>' : ''}`
     });
   }
   // Reserve a separate touch target for each event, even at one address.
   function positionVinyle(origin, occupied, size) {
-    const libre = p => occupied.every(q => Math.abs(p.x - q.x) >= 52 || Math.abs(p.y - q.y) >= 52);
+    const libre = p => occupied.every(q => Math.abs(p.x - q.x) >= 42 || Math.abs(p.y - q.y) >= 42);
     if (libre(origin)) return origin;
-    const visible = p => p.x >= 26 && p.x <= size.x - 26 && p.y >= 26 && p.y <= size.y - 26;
+    const visible = p => p.x >= 20 && p.x <= size.x - 20 && p.y >= 20 && p.y <= size.y - 20;
     let fallback;
     for (let ring = 1; ; ring++) {
       for (let i = 0; i < 8 * ring; i++) {
         const angle = i * Math.PI / (4 * ring);
-        const p = origin.add([Math.round(56 * ring * Math.cos(angle)), Math.round(56 * ring * Math.sin(angle))]);
+        const p = origin.add([Math.round(44 * ring * Math.cos(angle)), Math.round(44 * ring * Math.sin(angle))]);
         if (!libre(p)) continue;
         if (!visible(origin) || visible(p)) return p;
         fallback = fallback || p;
       }
-      if (fallback && ring * 56 > Math.hypot(size.x, size.y)) return fallback;
+      if (fallback && ring * 44 > Math.hypot(size.x, size.y)) return fallback;
     }
   }
   function marqueursRadar() {
@@ -3230,12 +3238,15 @@
       occupied.push(pos);
       const icon = iconeVinyle(x);
       if (!pos.equals(origin)) {
-        icon.options.iconAnchor = [24 + origin.x - pos.x, 24 + origin.y - pos.y];
+        icon.options.iconAnchor = [19 + origin.x - pos.x, 19 + origin.y - pos.y];
         L.polyline([row.point, map.containerPointToLatLng(pos)], { interactive: false, color: '#3dd6c6', weight: 2 }).addTo(layer);
       }
       const marker = L.marker(row.point, { icon, title: x.nom, alt: x.nom, zIndexOffset: 1000 });
       marker.bindPopup('<div class="pop-venue">' + esc(x.nom) + '</div><div class="pop-slot">' + esc(f.sous || '') + '</div>');
-      marker.__fiche = row.fiche; marker.addTo(layer);
+      marker.__fiche = row.fiche;
+      // Sur ordinateur, passer la souris sur le vinyle ouvre l'encart de la soirée, comme un appui
+      marker.on('mouseover', function () { if (window.__bulleCarte && matchMedia('(hover: hover)').matches) window.__bulleCarte(this.__fiche, this.getLatLng()); });
+      marker.addTo(layer);
     });
   }
   function marqueursRadarAncien() {
