@@ -4454,7 +4454,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const n = streamsActifs().length, b = $('#btn-djlive'); if (!b) return;
     $('#djlive-n').textContent = n ? n : '';
     b.classList.toggle('vide', !n);
-    if (state.djLiveOuvert) renderDjLive();
+    // La page « DJ en live » n'est redessinée que si la liste des lives a changé : sinon les lecteurs en cours seraient coupés
+    const sig = streamsActifs().map((d) => d.id + ':' + d.stream.url).join('|');
+    if (state.djLiveOuvert && sig !== majDjLive.sig) renderDjLive();
+    majDjLive.sig = sig;
   }
   // Tableau « DJ en live » façon panneau des départs d'aéroport (lettres à palettes qui tournent)
   const flap = (txt, n) => { txt = String(txt).toUpperCase(); if (n) txt = txt.padEnd(n).slice(0, n); return [...txt].map((c) => `<span class="fl${c === ' ' ? ' vide' : ''}" data-c="${esc(c)}">${c === ' ' ? '&nbsp;' : esc(c)}</span>`).join(''); };
@@ -4520,7 +4523,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   });
   function ouvrirDjLive() {
     $('#suggestions-dj').hidden = true;
-    state.djLiveOuvert = true; renderDjLive();
+    state.djLiveOuvert = true; renderDjLive(); majDjLive.sig = streamsActifs().map((d) => d.id + ':' + d.stream.url).join('|');
     $('#sheet-djlive').classList.add('open'); $('#sheet-djlive').setAttribute('aria-hidden', 'false');
   }
   function fermerDjLive() {
@@ -5921,7 +5924,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     renderClock();
     if (['live', 'map', 'fav', 'checkin'].includes(state.tab)) render();
     if (state.lieuOuvert) renderSheet();
-    if (state.djOuvert) renderDj();
+    // On ne reconstruit pas la fiche DJ pendant qu'un live y est affiché : ça couperait le lecteur YouTube
+    if (state.djOuvert && !document.querySelector('#dj-body iframe')) renderDj();
   }, 30000);
   $('#fav-search').addEventListener('input', renderFavs);
 
