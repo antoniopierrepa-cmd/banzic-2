@@ -3686,3 +3686,27 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
   .dc-rail .dc-slide .dc-bas small { font-size: 13px; }
   .sf-affiche { max-height: 76svh; }
 }
+
+/* Favoris : une colonne fixe, défilement vertical uniquement sur mobile. */
+#screen-fav {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-x: none;
+  touch-action: pan-y pinch-zoom;
+}
+#screen-fav #fav-list,
+#screen-fav .ms-liste {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+#screen-fav .ms-liste { grid-template-columns: minmax(0, 1fr); }
+#screen-fav .ms-item { min-width: 0; max-width: 100%; box-sizing: border-box; gap: 8px; }
+#screen-fav .ms-open { min-width: 0; overflow: hidden; gap: 9px; }
+#screen-fav .ms-txt { min-width: 0; overflow: hidden; }
+#screen-fav .ms-txt small,
+#screen-fav .ms-txt span { overflow-wrap: anywhere; }
+#screen-fav .ms-item .ag-bang { max-width: 90px; white-space: normal; }
