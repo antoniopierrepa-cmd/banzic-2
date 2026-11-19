@@ -4438,7 +4438,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   }
   // Petit compteur sur la bannière « Les DJ en live » : les vrais DJ en live en ce moment (sans les DJ de démonstration)
   const nbVraisLives = () => streamsActifs().filter((d) => !d.demo).length;
-  const compteurLives = () => { const n = nbVraisLives(); return `<span class="lv-compte${n ? '' : ' vide'}" aria-label="${n} DJ en live en ce moment"><i aria-hidden="true"></i>${n ? n + ' en live' : 'Aucun live'}</span>`; };
+  const compteurLives = () => { const n = nbVraisLives(); return `<span class="lv-compte${n ? '' : ' vide'}" aria-label="${n} DJ en live en ce moment"><svg class="lv-onde" viewBox="0 0 24 14" aria-hidden="true"><path d="M6.5 2.5a6.5 6.5 0 0 0 0 9M3.5 0.5a10 10 0 0 0 0 13M17.5 2.5a6.5 6.5 0 0 1 0 9M20.5 0.5a10 10 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="7" r="2.6" fill="#FF3D5A"/></svg>${n}</span>`; };
   function majDjLive() {
     document.querySelectorAll('.lv-compte').forEach((c) => { c.outerHTML = compteurLives(); });
     const n = streamsActifs().length, b = $('#btn-djlive'); if (!b) return;
