@@ -3788,10 +3788,10 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 /* Encart payé par un club, un bar ou un DJ du coin : marqué « À la une » sur son flyer */
 .dc-media{position:relative}.dc-une{position:absolute;top:8px;left:8px;z-index:2;font-style:normal;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:#F2C53A;color:#0A0D16}
 
-/* Compteur des DJ en live sur la bannière d'accueil */
+/* Compteur des DJ en live sur la bannière d'accueil : discret, un point rouge et le nombre */
 .live-banniere{position:relative}
-.lv-compte{position:absolute;top:10px;right:10px;z-index:3;display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:#E0243F;color:#fff;font:800 12px/1 inherit;letter-spacing:.02em;box-shadow:0 2px 8px #0008}
-.lv-compte i{width:7px;height:7px;border-radius:50%;background:#fff;animation:lv-pouls 1.4s ease-in-out infinite}
-.lv-compte.vide{background:#1b1f2bcc;color:#c9cfdd}.lv-compte.vide i{background:#6b7280;animation:none}
-@keyframes lv-pouls{50%{opacity:.25}}
+.lv-compte{position:absolute;bottom:8px;right:8px;z-index:3;display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#0a0d16a6;color:#fff;font-weight:700;font-size:10.5px;line-height:1;letter-spacing:.02em;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.lv-compte i{width:6px;height:6px;border-radius:50%;background:#FF3D5A;animation:lv-pouls 1.6s ease-in-out infinite}
+.lv-compte.vide{color:#c9cfdd99}.lv-compte.vide i{background:#6b7280;animation:none}
+@keyframes lv-pouls{50%{opacity:.3}}
 @media(prefers-reduced-motion:reduce){.lv-compte i{animation:none}}
