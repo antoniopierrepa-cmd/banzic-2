@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          H='-H Accept:application/json -H Origin:https://xceed.me -H Referer:https://xceed.me/'
+          H='-g -H Accept:application/json -H Origin:https://xceed.me -H Referer:https://xceed.me/'
           curl -sS $H 'https://event-b2c.xceed.me/v1/cities' > cities.json
           python3 - <<'PY'
           import json,collections
@@ -16,8 +16,8 @@ jobs:
           k=lambda x: (x.get('country') or {}).get('isoCode') or (x.get('country') or {}).get('code') or json.dumps(x.get('country'))[:40]
           print(collections.Counter(k(x) for x in c).most_common(40))
           for x in c:
-            if k(x) in ('FR','BE'): print(x['slug'], x.get('numEvents'), x.get('isArchived'))
+            pass
           PY
-          curl -sS $H 'https://event-b2c.xceed.me/v2/events?cities[0]=barcelona&limit=2&page=1' | python3 -c "import json,sys; d=json.load(sys.stdin)['data']; print(d['meta']); print(json.dumps(d['items'][0])[:3000])"
+          curl -sS $H 'https://event-b2c.xceed.me/v2/events?cities[0]=paris&limit=2&page=1' | python3 -c "import json,sys; d=json.load(sys.stdin)['data']; print(d['meta']); print(json.dumps(d['items'][0])[:3000])"
           ID=$(curl -sS $H 'https://event-b2c.xceed.me/v2/events?cities[0]=barcelona&limit=1&page=1' | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['items'][0]['legacyId'])")
           curl -sS $H "https://event-b2c.xceed.me/v1/events/$ID" | python3 -c "import json,sys; d=json.load(sys.stdin)['data']; print(json.dumps(d)[:3000])"
