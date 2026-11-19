@@ -3135,7 +3135,7 @@
   { const off = SUD.soirees.map((x) => [x.date, SUD.lieux[x.lieu]]).filter((y) => y[1]);
     SUD.soirees.push(...RADAR.soirees.filter((x) => { const l = (RADAR.lieux || {})[x.lieu] || SUD.lieux[x.lieu]; return !l || !off.some(([d, m]) => d === x.date && Math.abs(m.lat - l.lat) < 0.003 && Math.abs(m.lng - l.lng) < 0.004); })); }
   appliquerMonClub(); // la fiche du club revendiqué (horaires, soirées) passe par-dessus les données publiques
-  const radarUrl = (value) => { try { if (/^img\/(clubs|flyers)\/[\w.-]+$/.test(String(value || ''))) return value; const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch (e) { return ''; } };
+  const radarUrl = (value) => { try { if (/^img\/(clubs|flyers|review-flyers)\/[\w.-]+$/.test(String(value || ''))) return value; const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch (e) { return ''; } };
   function centreGeographique() {
     if (state.villeChoisie && state.villeRecherche) return state.villeRecherche;
     return state.maPos ? [state.maPos.lat, state.maPos.lng] : DEST.local.centre;
@@ -5315,23 +5315,28 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     // ---- « À découvrir près de toi » : grand carrousel de flyers (futurs encarts publicitaires vendus aux clubs) ----
     // En attendant les pubs vendues : les soirées à venir autour de chez lui, flyers d'abord ; tous styles mélangés,
     // sauf si le Banger active « Selon mes styles ». Les clubs libertins n'y sont jamais.
-    const nbGardees = soireesAvecKm().filter((x) => mesSoirees().includes(x.id)).length;
+    // Les flyers des soirées à venir à moins de 50 km du Banger (sa position, ou la ville qu'il a choisie ; Hyères tant qu'on ne la connaît pas).
+    // Les encarts payés par les clubs, bars et DJ du coin (champ « encart » de la soirée) passent en premier, marqués « À la une ».
+    const centrePub = (state.villeChoisie && state.villeRecherche) || (state.maPos && [state.maPos.lat, state.maPos.lng]) || [43.1205, 6.1286], auj0 = iso(new Date());
+    const nomCentrePub = state.villeChoisie ? (state.zoneGeo && state.zoneGeo.nom) || 'ta ville' : state.maPos ? 'toi' : 'Hyères';
     const prefStyles = ((state.profil && state.profil.styles) || []).map((g) => sansAccent(String(g).toLowerCase())).filter(Boolean);
-    const dans14 = iso(new Date(Date.now() + 14 * 864e5)), selonStyles = !!state.pubStyles && prefStyles.length > 0;
-    const dejaPub = new Set(), pubs = soireesAvecKm().filter((x) => x.date <= dans14 && x.km <= 50 && !estLibertin(x))
+    const selonStyles = !!state.pubStyles && prefStyles.length > 0;
+    const dejaPub = new Set(), pubs = SUD.soirees.filter((x) => x.date >= auj0 && SUD.lieux[x.lieu])
+      .map((x) => ({ ...x, l: SUD.lieux[x.lieu], km: distKm(centrePub, [SUD.lieux[x.lieu].lat, SUD.lieux[x.lieu].lng]) }))
+      .filter((x) => x.km <= 50 && !estLibertin(x) && radarUrl(x.flyerUrl))
       .filter((x) => !selonStyles || prefStyles.some((g) => sansAccent(String(x.genres || '') + ' ' + x.nom).toLowerCase().includes(g)))
-      .filter((x) => { const k = x.date + '|' + x.lieu; if (dejaPub.has(k)) return false; dejaPub.add(k); return true; })
-      .filter(x => radarUrl(x.flyerUrl)).sort((a, b) => Number(!!b.featuredOfficialFlyer) - Number(!!a.featuredOfficialFlyer) || a.date.localeCompare(b.date) || a.km - b.km).slice(0, 10);
-    const demoFlyers = window.BANZIC_FLYER_DEMO ? window.BANZIC_FLYER_DEMO(mesSoirees(), ICO_BANG) : '';
+        .sort((a, b) => Number(!!b.encart) - Number(!!a.encart) || a.date.localeCompare(b.date) || a.km - b.km)
+      .filter((x) => { const k = x.date + '|' + x.lieu, f = x.nom + '|' + x.l.lat.toFixed(3) + ',' + x.l.lng.toFixed(3); if (dejaPub.has(k) || dejaPub.has(f)) return false; dejaPub.add(k); dejaPub.add(f); return true; }).slice(0, 12); // un festival de plusieurs jours : une seule affiche
+    const demoFlyers = '';
     const slides = demoFlyers || pubs.map((x) => { ficheSoireeJour(x); const dt = new Date(x.date + 'T12:00:00'), img = radarUrl(x.flyerUrl) || afficheSoiree(x);
       const garde = mesSoirees().includes(x.id);
       return `<div class="dc-slide" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
-        <span class="dc-media"><img src="${esc(img)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.removeAttribute('src');this.alt='Affiche officielle momentanément indisponible'" alt="" loading="${x.featuredOfficialFlyer ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer"></span><div class="dc-footer">
+        <span class="dc-media">${x.encart ? '<em class="dc-une">À la une</em>' : ''}<img src="${esc(img)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.removeAttribute('src');this.alt='Affiche officielle momentanément indisponible'" alt="" loading="${x.featuredOfficialFlyer ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer"></span><div class="dc-footer">
         <span class="dc-bas"><small>${['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'][dt.getDay()]} ${dt.getDate()} ${MOIS_CRT[dt.getMonth()]}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}</small><b>${esc(x.nom)}</b><span>${esc(x.l.nom)} · ${esc(x.l.ville || '')} · ${Math.round(x.km)} km</span></span><button type="button" class="dc-bang${garde ? ' on' : ''}" data-garder="${esc(x.id)}" aria-pressed="${garde}" aria-label="${garde ? 'Retirer de mes soirées' : 'Garder cette soirée'}">${ICO_BANG}<span>${garde ? 'Gardée' : 'Banger'}</span></button></div></div>`; }).join('');
     const interStyles = `<button type="button" class="dc-inter${selonStyles ? ' on' : ''}" data-pub-styles="1" role="switch" aria-checked="${selonStyles}"${prefStyles.length ? '' : ' disabled title="Choisis tes styles dans ton profil"'}><i aria-hidden="true"></i>Selon mes styles</button>`;
     // « Mes soirées » juste sous « Mes DJ » : les soirées gardées avec le bouton Banger
     // Les soirées gardées sont réunies avec Mes DJ dans le bandeau commun.
-    h += `<section class="acc-rub dc-rub"><div class="dc-tete"><div><h2>Les <span class="dc-title-accent">soirées</span><br>près de toi</h2><small>${selonStyles ? 'Tes styles' : 'Tous les styles'} · autour de ${esc(state.zoneGeo.nom)}</small></div>${interStyles}</div>
+    h += `<section class="acc-rub dc-rub"><div class="dc-tete"><div><h2>Les <span class="dc-title-accent">soirées</span><br>près de toi</h2><small>${selonStyles ? 'Tes styles' : 'Tous les styles'} · à moins de 50 km ${nomCentrePub === 'toi' ? 'de toi' : 'de ' + esc(nomCentrePub)}</small></div>${interStyles}</div>
       ${slides ? `<div class="dc-cadre"><span class="dc-pub">${demoFlyers ? 'ESSAI · FLYERS FOURNIS' : 'Affiches des organisateurs'}</span><div class="dc-rail" id="dc-rail">${slides}</div></div>` : '<p class="aide">Rien à découvrir pour l’instant avec tes styles. Désactive « Selon mes styles ».</p>'}</section>`;
     // ---- « Direct autour de moi » et « Départs du jour » : une ligne chacun (la carte et le Check-in détaillent) ----
     const rCk = state.ckRayon || 100; // même distance que celle réglée dans le Check-in

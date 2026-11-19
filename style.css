@@ -3784,3 +3784,6 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 #accueil .sorties-rubriques small { font-size:6px; line-height:1; }
 #accueil .ag-banniere.sorties-banniere .ag-sous { font-size:8px; line-height:1.1; }
 #accueil .sorties-distance { font-size:7px; line-height:1.1; }
+
+/* Encart payé par un club, un bar ou un DJ du coin : marqué « À la une » sur son flyer */
+.dc-media{position:relative}.dc-une{position:absolute;top:8px;left:8px;z-index:2;font-style:normal;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:#F2C53A;color:#0A0D16}
