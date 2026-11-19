@@ -3775,3 +3775,12 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 #accueil .sorties-rubriques small { font-size: 6.5px; }
 
 #accueil .ag-banniere.sorties-banniere .ag-txt { background: transparent; }
+
+#accueil .ag-banniere.sorties-banniere .ag-titre { font: 800 23px/1 'Syne',sans-serif; letter-spacing:-.01em; color:#fff; }
+#accueil .sorties-rose { color:#ed278a; }
+#accueil .sorties-rubriques { font-size:9px; gap:5px; line-height:1; }
+#accueil .sorties-rubriques>span { gap:2px; }
+#accueil .sorties-rubriques>span+span { padding-left:5px; }
+#accueil .sorties-rubriques small { font-size:6px; line-height:1; }
+#accueil .ag-banniere.sorties-banniere .ag-sous { font-size:8px; line-height:1.1; }
+#accueil .sorties-distance { font-size:7px; line-height:1.1; }
