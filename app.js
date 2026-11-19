@@ -3282,10 +3282,10 @@
   const icoPad = (k) => `<svg class="pad-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO_PAD[k] || ''}</svg>`;
   // Styles musicaux : familles reconnues dans les genres et le nom de la soirée (une soirée peut en avoir plusieurs)
   const STYLES_AG = [
-    ['electro', 'Électro et dance', /\b(?:house|techno|hardtechno|minimal|trance|psytrance|dnb|d&b|drum\s*(?:and|&|n)\s*bass|dubstep|bass music|garage|edm|big room|hardstyle|hardcore|nu[\s-]?disco|electro|electronica|dance)\b/],
+    ['electro', 'Électro et dance', /\b(?:house|techno|hardtechno|minimal|trance|psytrance|dnb|d&b|drum\s*(?:and|&|n)\s*bass|dubstep|bass music|garage|edm|big room|hardstyle|hardcore|hard\s?groove|(?:hard\s)?bounce|nu[\s-]?disco|electro|electronica|dance)\b/],
     ['urbain', 'Urbain', /\b(?:rap|hip[\s-]?hop|trap|drill|r\s*(?:&|and|n)\s*b|afrobeats?|amapiano|dancehall|reggaeton|latino urbain|baile funk|funk bresilien)\b/],
     ['groove', 'Groove et soul', /\b(?:funk|soul|disco|jazz|boogie)\b/],
-    ['festif', 'Généraliste et festif', /\b(?:generaliste|open[\s-]format|annees\s+(?:80|90|2000)|(?:80|90|2000)['’]?s|pop|variete|latino(?! urbain)|salsa|bachata|kizomba|reggae|rock|indie)\b/],
+    ['festif', 'Généraliste et festif', /\b(?:generaliste|open[\s-]format|annees\s+(?:80|90|2000)|(?:80|90|2000)['’]?s|pop|variete|hits|commercial|latino?(?! urbain)|salsa|bachata|kizomba|samba|reggae|dub|rock|indie|alternative)\b/],
     ['ambiance', 'Ambiance', /\b(?:lounge|chill(?:out)?|sunset|balearic|downtempo|ambient)\b/]
   ];
   const _stylesCache = {};

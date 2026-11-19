@@ -54,6 +54,7 @@ async function main() {
         vus.add(ev.legacyId);
         const genres = (ev.musicGenres || []).map((g) => g.name).filter(Boolean);
         const lineup = (ev.lineup || []).map((a) => a && a.name).filter(Boolean).slice(0, 12);
+        // Pas de style annoncé par l'organisateur : soirée club classée « Généraliste et festif »
         const g = norm(genres.join(' '));
         if (PAS_CLUB.test(g) && !CLUB.test(g)) continue;
         // Position du lieu : une seule demande par lieu, gardée d'une nuit à l'autre
@@ -72,7 +73,7 @@ async function main() {
         const row = {
           id: 'xceed-' + ev.legacyId, src: 'xceed', country: pays, dep: pays === 'FR' ? l.dep : pays, nom: String(ev.name || '').trim(), date, heure,
           lieu: ev.venue.name || l.nom, ville: ev.venue.city?.name || ville.name, lat: l.lat, lng: l.lng, type: ev.isFestival ? 'festival' : 'club',
-          lineup, djSet: lineup.length > 0 || CLUB.test(g), genres: genres.slice(0, 4).join(', '), scheduleNote: fin ? 'Fin annoncée ' + fin : '', prix: '',
+          lineup, djSet: lineup.length > 0 || CLUB.test(g), genres: genres.slice(0, 4).join(', ') || 'Généraliste', scheduleNote: fin ? 'Fin annoncée ' + fin : '', prix: '',
           url, ticketUrl: url, flyerUrl: /^https:\/\//.test(ev.coverUrl || '') ? ev.coverUrl : '', verifiedAt: checked,
           evidence: 'Fiche publique Xceed : date, lieu, line-up et styles publiés par l’organisateur.', sourceName: 'Xceed', sourceUpdatedAt: '', sourceLicense: '', sourceRecordUrl: url,
         };
