@@ -5956,7 +5956,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   document.head.appendChild(favorisStyle);
 
   const montentStyle = document.createElement('style');
-  montentStyle.textContent = '#accueil .montent-video{background:transparent}#accueil .montent-video>img,#accueil .montent-video>video{object-fit:fill;clip-path:none}#accueil .montent-video>.ag-txt{display:none}';
+  montentStyle.textContent = '#accueil .montent-video{background:rgba(8,12,29,.85)}#accueil .montent-video>img,#accueil .montent-video>video{object-fit:fill;clip-path:polygon(50.5% 0,100% 0,100% 100%,53% 100%,53% 13%,52.9% 10%,52.6% 7%,52.1% 4%,51.4% 1.5%)}';
   document.head.appendChild(montentStyle);
   applyLangue();
   majPortails();
