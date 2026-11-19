@@ -23,7 +23,7 @@ export function normalize(row, source, today) {
   const country = text(row.country) || 'FR';
   const dep = country !== 'FR' ? country : text(row.dep) || departmentFromPostal(row.postalCode);
   const url = safeUrl(row.url);
-  if (!['FR', 'BE', 'ES'].includes(country) || (country === 'FR' && !departments[dep]) || !url || !text(row.nom) || !text(row.lieu)) return null;
+  if (!/^[A-Z]{2}$/.test(country) || (country === 'FR' && !departments[dep]) || !url || !text(row.nom) || !text(row.lieu)) return null;
   return { id: source.id + ':' + text(row.id || url), src: source.id, nom: text(row.nom), date,
     heure: /^([01]\d|2[0-3]):[0-5]\d$/.test(row.heure || '') ? row.heure : '',
     djs: Array.isArray(row.lineup) ? row.lineup.map(text).filter(Boolean).join(', ') : text(row.djs),
@@ -33,27 +33,64 @@ export function normalize(row, source, today) {
     sourceName: text(row.sourceName), sourceUpdatedAt: text(row.sourceUpdatedAt), sourceLicense: safeUrl(row.sourceLicense), sourceRecordUrl: safeUrl(row.sourceRecordUrl),
     venue: { nom: text(row.lieu), ville: text(row.ville), country, dep, lat, lng, approx: row.positionApproximate === true } };
 }
+// Doublons entre sources (OpenAgenda, Shotgun, Xceed, sites des lieux) : même jour, même endroit (moins de 300 m)
+// et un titre proche, ou la même heure de début. On garde une seule soirée, complétée avec le line-up, le flyer et le billet des autres.
+const MOTS_VIDES = new Set('the and les des une pour avec soiree party night club live dj djs presents presente invite feat with all nuit de la le du et en au aux x'.split(' '));
+const mots = t => String(t || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, ' ').split(' ').filter(w => w.length > 2 && !MOTS_VIDES.has(w));
+// Mots du titre, sans le nom de la ville ni du lieu (sinon « DAKEEZ - Marseille » ressemblerait à « Krav Boca - Marseille »)
+export const motsTitre = e => { const lieu = new Set(mots(e.venue.nom + ' ' + e.venue.ville)); return new Set(mots(e.nom).filter(w => !lieu.has(w))); };
+const ressemblance = (a, b, min = true) => {
+  if (!a.size || !b.size) return 0;
+  let commun = 0; for (const w of a) if (b.has(w)) commun++;
+  return commun / (min ? Math.min(a.size, b.size) : Math.max(a.size, b.size));
+};
+export function memeSoiree(a, b) {
+  if (a.date !== b.date || Math.abs(a.venue.lat - b.venue.lat) > 0.0027 || Math.abs(a.venue.lng - b.venue.lng) > 0.0038) return false;
+  // Une même source n'annonce pas deux fois la même soirée sous deux titres : seuls les titres presque identiques sont fusionnés
+  if (a.src === b.src) return ressemblance(a.mots, b.mots, false) >= 0.8 || (!a.mots.size && !b.mots.size && a.heure === b.heure);
+  if (ressemblance(a.mots, b.mots) >= 0.5) return true;
+  // Titres trop différents : même lieu (même nom) et même heure de début
+  return !!a.heure && a.heure === b.heure && ressemblance(new Set(mots(a.venue.nom)), new Set(mots(b.venue.nom))) >= 0.5;
+}
 export function snapshot(rows, sources, now = new Date()) {
-  const today = now.toISOString().slice(0, 10), lieux = {}, soirees = [], seen = new Set();
+  const today = now.toISOString().slice(0, 10), lieux = {}, soirees = [], seen = new Set(), parJour = {};
   const countryCoverage = { FR: 0, BE: 0, ES: 0 };
   const coverage = Object.fromEntries(Object.keys(departments).map(d => [d, 0]));
+  let doublons = 0;
   for (const { row, source } of rows) {
     const e = normalize(row, source, today); if (!e) continue;
-    // Same title, date, time and venue across sources: one event, retain richer line-up/billet.
-    const key = [e.nom.toLowerCase().normalize('NFD').replace(/\p{M}/gu, ''), e.date, e.heure, e.venue.lat.toFixed(4), e.venue.lng.toFixed(4)].join('|');
     if (seen.has(e.id)) continue;
-    const existing = soirees.find(x => x.dedupe === key);
-    if (existing) { existing.djs ||= e.djs; existing.ticketUrl ||= e.ticketUrl; continue; }
-    seen.add(e.id); const lieu = 'radar-' + soirees.length; lieux[lieu] = e.venue;
-    const { venue, ...event } = e; soirees.push({ ...event, lieu, dedupe: key }); if (venue.country === 'FR') coverage[venue.dep]++;
-    countryCoverage[venue.country]++;
+    e.mots = motsTitre(e);
+    const jour = parJour[e.date] ||= [];
+    const existing = jour.find(x => memeSoiree(x, e));
+    if (existing) {
+      doublons++;
+      existing.djs ||= e.djs; existing.ticketUrl ||= e.ticketUrl; existing.flyerUrl ||= e.flyerUrl; existing.genres ||= e.genres;
+      existing.heure ||= e.heure; existing.scheduleNote ||= e.scheduleNote; existing.djSet ||= e.djSet;
+      if (!existing.autresSources.includes(e.sourceName || e.src)) existing.autresSources.push(e.sourceName || e.src);
+      continue;
+    }
+    seen.add(e.id); e.autresSources = []; jour.push(e); soirees.push(e);
   }
   soirees.sort((a, b) => (a.date + a.heure).localeCompare(b.date + b.heure));
-  soirees.forEach(x => delete x.dedupe);
-  return { maj: now.toISOString(), departments, coverage, countryCoverage, sources: Object.fromEntries(sources.map(s => [s.id, s.homepage])), lieux, soirees };
+  const out = soirees.map((e, i) => {
+    const { venue, mots, autresSources, ...event } = e, lieu = 'radar-' + i; lieux[lieu] = venue;
+    if (venue.country === 'FR') coverage[venue.dep]++;
+    countryCoverage[venue.country] = (countryCoverage[venue.country] || 0) + 1;
+    return autresSources.length ? { ...event, lieu, aussiSur: autresSources.filter(s => s !== event.sourceName) } : { ...event, lieu };
+  });
+  console.log(doublons + ' doublons fusionnés entre les sources.');
+  return { maj: now.toISOString(), departments, coverage, countryCoverage, sources: Object.fromEntries(sources.map(s => [s.id, s.homepage])), lieux, soirees: out };
+}
+async function lire(fichier, input) {
+  let d; try { d = JSON.parse(await readFile(fichier, 'utf8')); } catch { return []; }
+  input.sources.push(...d.sources.filter(s => !input.sources.some(x => x.id === s.id)));
+  return d.events;
 }
 async function main() {
   const input = JSON.parse(await readFile('data/radar-events.json', 'utf8'));
+  // Les sources les plus complètes (line-up) passent d'abord : en cas de doublon, c'est leur fiche qui est gardée
+  input.events.unshift(...await lire('data/radar-shotgun-direct.json', input), ...await lire('data/radar-xceed.json', input));
   for (const countryFile of ['data/radar-belgium.json', 'data/radar-spain.json']) {
     const countryData = JSON.parse(await readFile(countryFile, 'utf8'));
     input.events.push(...countryData.events);

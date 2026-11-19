@@ -1,0 +1,22 @@
+name: Test import Xceed
+on:
+  push:
+    branches: [xceed-shotgun]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/import-xceed.mjs
+      - run: node scripts/radar.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xceed
+          path: |
+            data/radar-xceed.json
+            data/xceed-lieux.json
+            agenda-radar.js

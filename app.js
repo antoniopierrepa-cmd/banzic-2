@@ -3565,7 +3565,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   function carteAgenda(x) {
     ficheSoireeJour(x);
     const dt = new Date(x.date + 'T12:00:00'), aff = radarUrl(x.flyerUrl) || afficheSoiree(x);
-    const pays = x.l.country === 'ES' ? 'Espagne' : x.l.country === 'BE' ? 'Belgique' : '';
+    const pays = x.l.country && x.l.country !== 'FR' ? paysAgenda.of(x.l.country) : '';
     // Type de lieu : discothèque (si le lieu est dans notre liste des discothèques), club libertin, karaoké, blind test…, sinon le type de la soirée
     const disco = (window.DISCOTHEQUES || []).find((c) => Math.abs(c[2] - x.l.lat) < 0.0014 && Math.abs(c[3] - x.l.lng) < 0.0019);
     const type = x.type === 'bar' && /^(Karaoké|Blind test|Afterwork|Apéro musical)$/.test(x.genres || '') ? esc(x.genres)
@@ -3599,7 +3599,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <img class="sud-affiche" src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${x.flyerUrl ? esc('Affiche — ' + x.nom) : 'Visuel BANZIC — affiche non fournie'}" style="object-fit:contain" loading="lazy" referrerpolicy="no-referrer">
         <div class="sud-info"><span class="venue">${estLibertin(x) ? '<span class="moins18" title="Interdit aux moins de 18 ans" aria-label="Interdit aux moins de 18 ans">-18</span>' : ''}${esc(x.nom)}</span>
           ${x.djs ? `<small>Line-up : ${esc(x.djs)}</small>` : `<small>${x.djSet ? 'DJ annoncé · nom non communiqué' : 'Programmation non communiquée'}</small>`}${x.scheduleNote ? `<small>${esc(x.scheduleNote)}</small>` : ''}${x.genres ? `<small class="sud-genres">${esc(x.genres)}</small>` : ''}
-          <small class="sud-lieu">${esc(x.l.nom)} · ${esc(x.l.ville)}${x.l.approx ? ' · Position approximative' : ''}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}${x.prix ? ' · ' + esc(x.prix) : ''} ${x.l.country === 'ES' ? ' · Espagne' : x.l.country === 'BE' ? ' · Belgique' : /^(\d{2,3}|2[AB])$/.test(x.l.dep) ? ' · <span class="sud-dep">' + x.l.dep + '</span>' : ''}</small>${x.sourceName ? `<small class="sud-source">Source : ${esc(x.sourceName)}${x.sourceUpdatedAt ? ' · mise à jour ' + esc(x.sourceUpdatedAt.slice(0, 10)) : ''}${radarUrl(x.sourceLicense) ? ` · <a href="${esc(radarUrl(x.sourceLicense))}" target="_blank" rel="noopener noreferrer">Licence ouverte</a>` : ''}</small>` : ''}</div>
+          <small class="sud-lieu">${esc(x.l.nom)} · ${esc(x.l.ville)}${x.l.approx ? ' · Position approximative' : ''}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}${x.prix ? ' · ' + esc(x.prix) : ''} ${x.l.country && x.l.country !== 'FR' ? ' · ' + esc(paysAgenda.of(x.l.country)) : /^(\d{2,3}|2[AB])$/.test(x.l.dep) ? ' · <span class="sud-dep">' + x.l.dep + '</span>' : ''}</small>${x.sourceName ? `<small class="sud-source">Source : ${esc(x.sourceName)}${x.sourceUpdatedAt ? ' · mise à jour ' + esc(x.sourceUpdatedAt.slice(0, 10)) : ''}${radarUrl(x.sourceLicense) ? ` · <a href="${esc(radarUrl(x.sourceLicense))}" target="_blank" rel="noopener noreferrer">Licence ouverte</a>` : ''}</small>` : ''}</div>
         ${url ? `<a class="badge b-soon" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${ticketUrl ? 'Billets' : 'Infos'}</a>` : ''}
       </div>`;
   }
