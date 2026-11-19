@@ -3730,3 +3730,16 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 #accueil .ag-banniere:is(.live-banniere,.mt-banniere,.td-banniere,.sorties-banniere) .ag-sous {
   margin: 0; font: 500 11.5px/1.25 'DM Sans', sans-serif; color: #A9B1CC;
 }
+
+/* Fond discret derrière le titre de l'agenda sur la vidéo. */
+#accueil .sorties-banniere .ag-txt {
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  width: fit-content;
+  max-width: 65%;
+  padding: 10px 13px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, .55);
+}
