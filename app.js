@@ -1989,7 +1989,7 @@
     if (on) LIKES_DJ[k] = Date.now(); else delete LIKES_DJ[k]; store.set('likesDj', LIKES_DJ);
     b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
     b.querySelector('.cl-nb').textContent = fmtLikes(nbLikes(nom)); b.querySelector('.cl-txt').textContent = on ? 'Tu bangues' : 'Je bangue';
-    if (on) { b.classList.remove('tourne'); void b.offsetWidth; b.classList.add('tourne'); sonBanger(); if (navigator.vibrate) navigator.vibrate(30); toast('Tu bangues ' + nom); }
+    if (on) { b.classList.remove('tourne'); void b.offsetWidth; b.classList.add('tourne'); sonBanger(); if (navigator.vibrate) navigator.vibrate(30); toast('Tu bangues ' + nom); BDD.envoyerInteraction(nom, 'like'); }
   });
 
   // Liens de diffusion en direct donnés par le DJ quand il se déclare (YouTube, Instagram, TikTok…)
@@ -1998,7 +1998,7 @@
 
   // ---------- Base partagée (Supabase) : ce que déclarent les DJ et les Bangers se voit sur tous les téléphones
   const BDD = (() => {
-    const C = window.BANZIC_DB; if (!C || !C.url) return { envoyerDecl() {}, envoyerLive() {}, envoyerSpot() {}, banguer() {}, charger() {} };
+    const C = window.BANZIC_DB; if (!C || !C.url) return { envoyerDecl() {}, envoyerLive() {}, envoyerInteraction() {}, chargerNotifsDj() {}, envoyerSpot() {}, banguer() {}, charger() {} };
     const H = { apikey: C.cle, Authorization: 'Bearer ' + C.cle, 'Content-Type': 'application/json' };
     const req = (chemin, o) => fetch(C.url + '/rest/v1/' + chemin, Object.assign({ headers: H }, o || {})).then((r) => r.ok ? (r.status === 204 ? null : r.json().catch(() => null)) : Promise.reject(r.status));
     const ms = (s) => s ? new Date(s).getTime() : 0, iso = (n) => new Date(n).toISOString();
@@ -2011,6 +2011,15 @@
         dj_photo: (photoProfil() || '').startsWith('data:') ? null : photoProfil(), lieu_nom: 'Live YouTube', lat: null, lng: null, style: ((MON_DJ.styles || [])[0] || '').slice(0, 30),
         debut: iso(st.depuis), fin: iso(st.depuis + 6 * 3600000 - 60000), liens_live: { youtube: st.url, titre: (st.titre || '').slice(0, 80) } }) })
         .then(() => true).catch(() => { toast('Hors connexion : ton live reste visible seulement sur ton téléphone'); }); };
+    // Notifications des DJ : un Banger bangue un DJ (casque) ou commente sa fiche → une ligne « interactions » que le DJ reçoit dans sa cloche
+    const appareil = (() => { let a = store.get('appareil', ''); if (!a) { a = 'a' + Math.random().toString(36).slice(2, 12) + Date.now().toString(36); store.set('appareil', a); } return a; })();
+    const envoyerInteraction = (djNom, type, texte) => { const cle = sansAccent(String(djNom || '')).trim().slice(0, 40); if (cle.length < 2) return;
+      if (MON_DJ && sansAccent(MON_DJ.nom) === cle) return; // pas de notification pour soi-même
+      req('interactions', { method: 'POST', headers: Object.assign({ Prefer: 'return=minimal' }, H), body: JSON.stringify({ dj_cle: cle, dj_nom: String(djNom).slice(0, 40), type,
+        par: ((state.profil && state.profil.pseudo) || '').slice(0, 30) || null, texte: texte ? String(texte).slice(0, 280) : null, appareil }) }).catch(() => {}); };
+    const chargerNotifsDj = () => { if (!MON_DJ || !MON_DJ.nom) return;
+      req('interactions?select=type,par,texte,cree_le&dj_cle=eq.' + encodeURIComponent(sansAccent(MON_DJ.nom).slice(0, 40)) + '&order=cree_le.desc&limit=50')
+        .then((rows) => { if (window.__notifsDj) window.__notifsDj(rows || []); }).catch(() => {}); };
     const envoyerSpot = (s) => req('spots', { method: 'POST', headers: Object.assign({ Prefer: 'return=minimal' }, H), body: JSON.stringify({ id: s.id, nom: (s.nom || '').slice(0, 60), type: s.type, dj: (s.dj || '').slice(0, 40), lat: s.lat, lng: s.lng,
       par: ((state.profil && state.profil.pseudo) || '').slice(0, 30), temp: s.temp, com: s.com || null }) }).catch(() => toast('Hors connexion : ton signalement reste sur ton téléphone'));
     const banguer = (table, id, temp, com) => req('rpc/banguer', { method: 'POST', body: JSON.stringify({ p_table: table, p_id: id, p_temp: temp == null ? null : temp, p_com: com || null }) }).catch(() => {});
@@ -2042,8 +2051,9 @@
       }).catch(() => {}).finally(() => { enCours = false; });
     }
     setTimeout(charger, 800); setInterval(charger, 30000);
+    setTimeout(chargerNotifsDj, 1500); setInterval(chargerNotifsDj, 30000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) charger(); });
-    return { envoyerDecl, envoyerLive, envoyerSpot, banguer, charger };
+    return { envoyerDecl, envoyerLive, envoyerInteraction, chargerNotifsDj, envoyerSpot, banguer, charger };
   })();
   // Pastille « En live » sur la fiche d'un DJ : un toucher mène là où il mixe (son live YouTube, ou sa position sur la carte)
   function badgeLiveDj(pro, live) {
@@ -4984,6 +4994,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (parent) { const p = trouverCom(k, parent); if (p) { delete c.reponses; p.reponses = (p.reponses || []).concat([c]); } }
     else COMS[k] = (COMS[k] || []).concat([c]);
     state.repondreA = null; sauverComs(); renderDj(); toast(parent ? 'Réponse publiée' : 'Commentaire publié');
+    BDD.envoyerInteraction((tousDjsPro().find((d) => sansAccent(d.nom) === k) || {}).nom || k, 'commentaire', texte);
   });
   document.addEventListener('click', (e) => {
     if (!state.djOuvert) return;
@@ -5641,10 +5652,25 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     { de: 'Équipe Banzic', txt: 'Bienvenue sur le prototype 2 ! Dis-nous ce que tu en penses.', quand: 'hier', nonlu: false }
   ];
   state.notifsVues = store.get('notifsVues', false); state.msgsVus = store.get('msgsVus', false);
+  // Notifications reçues par le DJ (base partagée) : les Bangers qui le banguent ou commentent sa fiche
+  let NOTIFS_DJ = [];
+  const ilYaNotif = (t) => { const m = Math.max(1, Math.round((Date.now() - t) / 60000)); return m < 60 ? 'il y a ' + m + ' min' : m < 1440 ? 'il y a ' + Math.floor(m / 60) + ' h' : 'il y a ' + Math.floor(m / 1440) + ' j'; };
+  window.__notifsDj = (rows) => {
+    const vuT = store.get('notifsVuesT', 0), deja = store.get('notifsAvertiT', 0);
+    NOTIFS_DJ = rows.map((r) => { const t = new Date(r.cree_le).getTime(), qui = esc(r.par || 'Un Banger');
+      return { t, nouveau: t > vuT, ico: r.type === 'like' ? '🎧' : '💬', dj: MON_DJ && MON_DJ.nom,
+        txt: r.type === 'like' ? `<b>${qui}</b> te bangue` : `<b>${qui}</b> a commenté ta fiche : « ${esc(String(r.texte || '').slice(0, 90))} »`, brut: (r.par || 'Un Banger') + (r.type === 'like' ? ' te bangue 🎧' : ' a commenté ta fiche : ' + (r.texte || '')) }; });
+    const neufs = NOTIFS_DJ.filter((x) => x.t > deja);
+    if (neufs.length && deja) { try { if ('Notification' in window && Notification.permission === 'granted') neufs.slice(0, 3).forEach((x) => new Notification('Banzic', { body: x.brut, tag: 'banzic-dj-' + x.t })); } catch (e) { /* */ } }
+    if (NOTIFS_DJ.length) store.set('notifsAvertiT', NOTIFS_DJ[0].t);
+    majCloche();
+  };
+  const toutesNotifs = () => NOTIFS_DJ.map((x) => ({ ...x, quand: ilYaNotif(x.t) })).concat(NOTIFS);
   function majCloche() {
     const n = $('#nb-notif'), m = $('#nb-msg');
     if (SANS_DEMO) { NOTIFS.length = 0; MESSAGES.length = 0; }
-    if (n) n.textContent = state.notifsVues || !NOTIFS.length ? '' : NOTIFS.length;
+    const nNeufs = NOTIFS_DJ.filter((x) => x.nouveau).length + (state.notifsVues ? 0 : NOTIFS.length);
+    if (n) n.textContent = nNeufs ? nNeufs : '';
     if (m) m.textContent = state.msgsVus || !MESSAGES.filter((x) => x.nonlu).length ? '' : MESSAGES.filter((x) => x.nonlu).length;
   }
   function ouvrirPanneau(quoi) {
@@ -5654,10 +5680,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     p.dataset.quoi = quoi; p.hidden = false;
     $(quoi === 'notif' ? '#ent-cloche' : '#ent-msg').setAttribute('aria-expanded', 'true');
     p.innerHTML = quoi === 'notif'
-      ? `<div class="ep-tete"><b>Notifications</b><small>Démo</small></div>` + NOTIFS.map((x, i) => `<button class="ep-ligne" data-notif="${i}"><span class="ep-ico">${x.ico}</span><span class="ep-txt">${x.txt}<small>${x.quand}</small></span></button>`).join('')
+      ? `<div class="ep-tete"><b>Notifications</b><small>${NOTIFS_DJ.length ? 'Ta fiche DJ' : SANS_DEMO ? '' : 'Démo'}</small></div>` + (toutesNotifs().length ? '' : '<p class="ep-note">Rien pour l’instant. Quand un Banger te bangue ou commente ta fiche DJ, tu le vois ici.</p>') + toutesNotifs().map((x, i) => `<button class="ep-ligne" data-notif="${i}"><span class="ep-ico">${x.ico}</span><span class="ep-txt">${x.txt}<small>${x.quand}</small></span></button>`).join('')
       : `<div class="ep-tete"><b>Messages</b><small>Démo</small></div>` + MESSAGES.map((x) => `<button class="ep-ligne ${x.nonlu ? 'nonlu' : ''}" data-msg-de="${esc(x.de)}"><span class="ep-av" style="--g:${accGrad(x.de)}">${esc(accInit(x.de))}</span><span class="ep-txt"><b>${esc(x.de)}</b> ${esc(x.txt)}<small>${x.quand}</small></span></button>`).join('')
         + '<p class="ep-note">Bientôt : écrire aux DJ et aux autres Bangers.</p>';
-    if (quoi === 'notif') { state.notifsVues = true; store.set('notifsVues', true); } else { state.msgsVus = true; store.set('msgsVus', true); }
+    if (quoi === 'notif') { state.notifsVues = true; store.set('notifsVues', true); store.set('notifsVuesT', Date.now()); NOTIFS_DJ.forEach((x) => { x.nouveau = false; }); } else { state.msgsVus = true; store.set('msgsVus', true); }
     majCloche();
   }
   document.addEventListener('click', (e) => {
@@ -5665,7 +5691,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (e.target.closest('#ent-msg')) { ouvrirPanneau('msg'); return; }
     const p = $('#ent-panneau');
     const n = e.target.closest('[data-notif]');
-    if (n) { const x = NOTIFS[+n.dataset.notif]; p.hidden = true;
+    if (n) { const x = toutesNotifs()[+n.dataset.notif]; p.hidden = true; if (!x) return;
       if (x.dj) ouvrirDj(x.dj); else if (x.agenda) setTab('agenda'); else if (x.dest) { state.vueAcc = 'liste'; choisirDestMonde(x.dest); setTab('live'); } return; }
     const m = e.target.closest('[data-msg-de]');
     if (m) { p.hidden = true; ouvrirDj(m.dataset.msgDe); return; }
