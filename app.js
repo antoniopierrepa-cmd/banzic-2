@@ -4471,7 +4471,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     let h = `<div class="acc-tete"><div><h2>DJ en live</h2><small>${live.length} DJ en direct partout dans le monde · touche un style, puis un DJ</small></div></div>${puces}
       ${lv.length ? `<div class="lect-grille">${lv.map((d) => carteLecteur(d)).join('')}</div>` : '<div class="empty">Aucun DJ en live dans ce style pour l\'instant.</div>'}
       ${pv.length ? `<div class="section-title">Bientôt en live <small>${pv.length} prévu${pv.length > 1 ? 's' : ''}</small></div><div class="lect-grille">${pv.map((d) => carteLecteur(d, true)).join('')}</div>` : ''}
-      <p class="conseil" style="margin:14px 2px">Touche un DJ : sa fiche s'ouvre avec son lecteur live. Chaque Banger qui l'écoute s'ajoute au compteur.</p>`;
+      <p class="conseil" style="margin:14px 2px">Appuie sur ▶ pour écouter le live ici. Touche le nom du DJ pour ouvrir sa fiche.</p>`;
     h += MON_DJ && MON_DJ.formule === 'pro'
       ? (enStream(MON_DJ) ? '' : `<button class="alerte" data-djlive-moi="1">Je suis en live : partager mon lien</button>`)
       : `<div class="jour upsell"><b>Tu es DJ ? Affiche-toi ici en live</b><p class="conseil" style="margin:6px 0 10px">Réservé aux ${FORMULES_DJ.pro.nom} (${FORMULES_DJ.pro.prix}), où que tu sois dans le monde : tu lances ton live sur YouTube, tu colles le lien dans ton Espace DJ, et tu décolles ici.</p>
@@ -5091,6 +5091,15 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const coulGenre = (g) => COUL_GENRE[g] || '#3D8BFF';
   function carteLecteur(d, prevu) {
     const g = genreDe(d), c = coulGenre(g), st = d.stream || {};
+    // Un vrai live YouTube : le petit lecteur s'affiche directement dans « DJ en live » ; le nom du DJ ouvre sa fiche
+    const idYt = !prevu && !d.demo && enStream(d) && ytId(st.url);
+    if (idYt) return `<div class="lecteur lect-direct" style="--gc:${c}">
+      <span class="lect-image lect-video"><iframe src="https://www.youtube-nocookie.com/embed/${esc(idYt)}?playsinline=1" title="Live YouTube de ${esc(d.nom)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+        <span class="lect-live"><i></i>Live</span></span>
+      <span class="lect-genre">${esc(g)}</span>
+      <button type="button" class="lect-nom lect-lien" data-dj-pro="${esc(d.nom)}">${esc(d.nom)}</button>
+      <small class="lect-titre">${esc(d.pays || '')} ${esc(st.titre || d.ville || '')}</small>
+    </div>`;
     return `<button class="lecteur" data-dj-pro="${esc(d.nom)}" style="--gc:${c}">
       <span class="lect-image${d.photo ? ' photo' : ''}"${d.photo ? ` style="--photo:url('${d.photo}')"` : ''}>
         ${prevu ? `<span class="lect-live prevu">À ${hm(st.depuis)}</span>` : '<span class="lect-live"><i></i>Live<span class="lect-eq"><b></b><b></b><b></b></span></span>'}
