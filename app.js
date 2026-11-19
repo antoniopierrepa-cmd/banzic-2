@@ -2969,8 +2969,7 @@
       state.ckTotalCount = visibles.length;
       const counter = document.getElementById('nav-checkin-count');
       if (counter) { counter.textContent = state.ckTotalCount; counter.closest('button').setAttribute('aria-label', 'Check-in : ' + state.ckTotalCount + ' départs aujourd’hui, demain et après-demain à ' + r + ' km'); }
-      const mapCounter = document.getElementById('nav-map-count');
-      if (mapCounter) { mapCounter.textContent = state.ckTodayCount; mapCounter.closest('button').setAttribute('aria-label', 'Carte : ' + state.ckTodayCount + ' soirées en cours ou à venir aujourd’hui à ' + r + ' km'); }
+      majCompteurCarte();
     }
     const barreFiltres = touchesFamilles('ck');
     box.innerHTML = `<div class="ck-tete"><div><h2>Check-in</h2><small>Départs autour de ${esc(nomPos)} · <b>${r} km</b> · ${L.length} départ${L.length > 1 ? 's' : ''}</small></div><span class="ck-horloge">${flap(hm(now), 5)}</span></div>
@@ -3192,6 +3191,18 @@
     const local = store.get('bangSoirees', {});
     return Math.max(0, Number(local['s:' + x.id] || 0));
   }
+  // Nombre de soirées qui tournent en ce moment (celles que la carte montre) : c'est le compteur de l'onglet Carte
+  function nbEnCoursCarte() {
+    return (state.ckTodayRows || []).filter(row => { const f = CK_FICHES[row.fiche] || {}; return soireeEnCoursCarte({ ...row.ev, nom: row.nom, date: f.date, heure: f.heure, heureFin: f.heureFin, l: row.gp }); }).length;
+  }
+  function majCompteurCarte() {
+    const c = document.getElementById('nav-map-count'); if (!c) return;
+    const n = nbEnCoursCarte();
+    c.textContent = n; c.setAttribute('font-size', n > 99 ? '6' : '8');
+    c.closest('button').classList.toggle('nav-has-live', n > 0);
+    c.closest('button').setAttribute('aria-label', 'Carte : ' + n + ' soirée' + (n > 1 ? 's' : '') + ' en cours autour de toi');
+  }
+  setInterval(() => { try { majCompteurCarte(); } catch (e) { /* */ } }, 60000);
   function soireeEnCoursCarte(x) {
     const h = horairesCheckin(x);
     return h.debut != null && Date.now() >= h.debut && Date.now() < h.fin;
@@ -5375,7 +5386,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const liveNearby = soireesAvecKm().some(x => { if (x.km > rCk || estLibertin(x) || !x.heure || !x.heureFin) return false; const t = horairesCheckin(x); return Date.now() >= t.debut && Date.now() < t.fin; });
     const mapCount = document.getElementById('nav-map-count');
     const checkinCount = document.getElementById('nav-checkin-count');
-    if (mapCount) { mapCount.closest('button').classList.toggle('nav-has-live', liveNearby); mapCount.textContent = state.ckTodayCount || 0; mapCount.setAttribute('font-size', auj100 > 99 ? '6' : '8'); mapCount.closest('button').setAttribute('aria-label', 'Carte : ' + (state.ckTodayCount || 0) + ' soirées en cours ou à venir aujourd’hui autour de toi'); }
+    if (mapCount) majCompteurCarte();
     if (checkinCount) { checkinCount.textContent = nbDeparts; checkinCount.setAttribute('font-size', nbDeparts > 99 ? '6' : '8'); checkinCount.closest('button').setAttribute('aria-label', 'Check-in : ' + nbDeparts + ' départs aujourd’hui, demain et après-demain autour de toi'); }
     const accesPivotants = `<section class="home-flip" aria-label="Direct et départs autour de moi"><div class="home-flip-rotor">
       <button class="ligne-acc la-direct home-flip-face" data-tab="map"><span class="la-ico" aria-hidden="true"><span class="ico-diffusion"><i></i><b></b><b></b></span></span><span class="la-txt"><b>Direct autour de moi</b><small><em>${auj100}</em> soirée${auj100 > 1 ? 's' : ''} ce soir · <em>${clubs100}</em> clubs à ${rCk} km</small></span><span class="la-btn">Carte →</span></button>
