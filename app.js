@@ -2076,7 +2076,10 @@
       if (enCours || document.hidden) return; enCours = true;
       req('djs?select=cle,nom,profil,maj').then((rows) => { DJS_ANNUAIRE.length = 0; (rows || []).forEach((r) => { const p = r.profil || {};
         DJS_ANNUAIRE.push({ id: 'a:' + r.cle, nom: r.nom, styles: p.styles || [], ville: p.ville || '', formule: p.formule === 'pro' ? 'pro' : 'live', liens: p.liens || {}, annonces: p.annonces || [], photo: p.photo || '',
-          residence: p.residence || null, confirmes: p.confirmes || 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 } }); }); INDEX_DJ = null; }).catch(() => {});
+          residence: p.residence || null, confirmes: p.confirmes || 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 } }); }); INDEX_DJ = null;
+        const essai = DJS_ANNUAIRE.find(estFicheTestPierro);
+        if (essai && !charger.pierroOuvert) { charger.pierroOuvert = true; ouvrirDj(essai.nom); }
+      }).catch(() => {});
       Promise.all([req('declarations?select=*'), req('spots?select=*'), req('soirees?select=*&order=date')]).then(([ds, ss, so]) => {
         ds = ds || []; ss = ss || []; so = so || [];
         // DJ en live
@@ -2173,6 +2176,53 @@
     if (b) toast('Démo : la demande de booking partira directement au DJ ou à son agent');
   });
 
+  // Essai explicite, limité à la fiche réelle « Dj pierro ». Aucun autre profil ne change.
+  const testPierro = () => new URLSearchParams(location.search).get('fiche-test') === 'dj-pierro';
+  const estFicheTestPierro = (d) => testPierro() && !!d && sansAccent(d.nom) === 'dj pierro';
+  let ongletPierro = 'univers';
+  function renderFicheTestPierro(d) {
+    if (!document.getElementById('pierro-test-style')) {
+      const css = document.createElement('link'); css.id = 'pierro-test-style'; css.rel = 'stylesheet'; css.href = 'pierro-test.css?v=1'; document.head.appendChild(css);
+    }
+    const nom = d.nom, liens = d.liens || {}, certifie = d.formule === 'pro' && d.officiel === true;
+    const contact = urlPropre(liens.instagram || liens.soundcloud || liens.youtube || '');
+    const live = DECLS.filter((x) => x.dj === d.id && declActive(x));
+    const stats = STATS_DJ[sansAccent(nom).slice(0, 40)];
+    const suivi = state.favs.includes(nom), alerte = !!ALERTES_DJ[sansAccent(nom)];
+    const reseaux = RESEAUX.filter((r) => urlPropre(liens[r.id]));
+    const lien = (r) => `<a class="pt-reseau r-${r.id}" href="${esc(urlPropre(liens[r.id]))}" target="_blank" rel="noopener">${ICO_RESEAU[r.id]}<span>${r.nom}</span></a>`;
+    const univers = `${d.bio ? `<p class="pt-bio">${esc(d.bio)}</p>` : '<p class="pt-vide">Sa présentation arrive bientôt.</p>'}${(d.styles || []).length ? `<div class="pt-styles">${d.styles.map((s) => `<span>${esc(s)}</span>`).join('')}</div>` : ''}${d.residence && d.residence.nom ? `<button class="fp-residence" data-carte-ll="${d.residence.lat},${d.residence.lng}"><span>Résident · ${esc(d.residence.nom)}</span><em>Voir sur la carte ›</em></button>` : ''}`;
+    const agenda = blocAgendaDj(nom) + blocAnnonces(d, false) || '<p class="pt-vide">Aucune date annoncée pour le moment.</p>';
+    const mixes = reseaux.filter((r) => ['youtube', 'soundcloud', 'mixcloud'].includes(r.id));
+    const contenu = ongletPierro === 'agenda' ? agenda : ongletPierro === 'mixes' ? `<p class="pt-vide">Les sélections de ${esc(nom)}</p><div class="pt-mixes">${mixes.map(lien).join('') || '<p class="pt-vide">Aucun mix ajouté pour le moment.</p>'}</div>` : univers;
+    let direct = lecteurStream(d);
+    if (!direct && live.length) direct = live.map((x) => `<div class="pt-live-actif"><b>Mixe en ce moment</b><p>${esc(lieuDe(x).nom || 'Spot')} · depuis ${hm(x.debut)}</p>${badgeLiveDj(d, [x])}${liensLiveHtml(x)}</div>`).join('');
+    if (!direct) direct = '<p class="pt-vide"><i class="pt-point"></i>Pas de live en cours.</p>';
+    $('#dj-body').innerHTML = `<article class="pierro-test" aria-label="Fiche test de ${esc(nom)}">
+      <div class="pt-cover"><img src="mesdj-banniere-poster.jpg" alt="" decoding="async"><span class="pt-marque">BANZIC</span></div>
+      <header class="pt-identite"><div class="pt-avatar">${avatarDj(nom)}</div><div class="pt-nom"><h2>${esc(nom)}</h2><p>${esc(d.ville || '')}</p>${certifie ? '<span class="pt-certifie" title="Validé par la communauté Bangers">✓ Pro certifié</span>' : ''}</div>${boutonCasque(nom)}</header>
+      <div class="pt-actions">${contact ? `<a class="pt-contact" href="${esc(contact)}" target="_blank" rel="noopener" aria-label="Contacter ${esc(nom)} sur ${liens.instagram ? 'Instagram' : liens.soundcloud ? 'SoundCloud' : 'YouTube'}">Contacter <span aria-hidden="true">↗</span></a>` : '<button class="pt-contact" disabled>Contact non renseigné</button>'}${certifie && contact ? `<a class="pt-booking" href="${esc(contact)}" target="_blank" rel="noopener">Booking ↗</a>` : ''}</div>
+      <div class="pt-suivi"><button data-fav="${esc(nom)}">${suivi ? 'Suivi ✓' : 'Suivre +'}</button><button data-alerte-dj="${esc(nom)}">${alerte ? 'Alerte activée' : "M’alerter"}</button><span class="fp-stat"><b>${stats ? stats.abonnes : d.abonnes || 0}</b> <small>abonnés</small></span><span>${setsConfirmes(d)} sets confirmés</span></div>
+      <div class="pt-onglets" role="tablist" aria-label="Découvrir ${esc(nom)}">${[['univers','Univers'],['agenda','Agenda'],['mixes','Mixes']].map(([id,txt]) => `<button type="button" role="tab" id="pt-tab-${id}" data-pierro-tab="${id}" aria-controls="pt-contenu" aria-selected="${ongletPierro === id}" tabindex="${ongletPierro === id ? 0 : -1}">${txt}</button>`).join('')}</div>
+      <section class="pt-contenu" id="pt-contenu" role="tabpanel" tabindex="0" aria-labelledby="pt-tab-${ongletPierro}">${contenu}</section>
+      <section class="pt-live" aria-labelledby="pt-live-titre"><h3 id="pt-live-titre">Live</h3>${direct}</section>
+      <nav class="pt-reseaux" aria-label="Les réseaux de ${esc(nom)}">${reseaux.map(lien).join('')}</nav>
+      <section class="pt-commentaires" aria-label="Commentaires de la fiche">${blocCommentaires(nom)}</section>
+    </article>`;
+    // L'avatar reste celui de la fiche (initiales si aucune photo), sans recherche d'homonyme.
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pierro-tab]');
+    if (!b || !estFicheTestPierro(djProParNom(state.djOuvert || ''))) return;
+    ongletPierro = b.dataset.pierroTab; renderDj();
+    document.getElementById('pt-tab-' + ongletPierro).focus({ preventScroll: true });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (!e.target.matches('[data-pierro-tab]') || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault(); const tabs = [...document.querySelectorAll('[data-pierro-tab]')], i = tabs.indexOf(e.target);
+    tabs[e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length].click();
+  });
+
   function renderDj() {
     const nom = state.djOuvert; if (!nom) return;
     const k = sansAccent(nom), t = state.t;
@@ -2181,6 +2231,7 @@
     const saison = SAISON.lignes.filter((r) => joue(r.djs)).sort((a, b) => a.date.localeCompare(b.date));
 
     const pro = djProParNom(nom);
+    if (estFicheTestPierro(pro)) { renderFicheTestPierro(pro); return; }
     let h = ficheTeteDj(nom, pro, ceSoir.length, saison.length) + `${photoLibre(nom) && !fondAvatarDj(nom) ? `<p class="credit-photo">Photo : ${esc(photoLibre(nom).auteur || 'Wikimedia Commons')} · ${esc(photoLibre(nom).licence)} · <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(photoLibre(nom).page.replace(/ /g, '_'))}" target="_blank" rel="noopener">Wikimedia Commons</a></p>` : `<p class="credit-photo" data-credit-photo="${esc(nom)}" hidden></p>`}`;
     h += blocAgendaDj(nom);
     if (!pro) {

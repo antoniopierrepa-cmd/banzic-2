@@ -1,0 +1,57 @@
+/* Tous les styles restent dans la fiche de test explicitement demandée. */
+.pierro-test { background: #0d0a21; color: #f6f3ff; border-radius: 18px; overflow: hidden; max-width: 460px; margin: 0 auto; border: 1px solid #302544; }
+.pierro-test button, .pierro-test a { -webkit-tap-highlight-color: transparent; }
+.pierro-test a { color: inherit; text-decoration: none; }
+.pierro-test .pt-cover { height: 155px; position: relative; background: #211336; }
+.pierro-test .pt-cover img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 40% center; }
+.pierro-test .pt-cover::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(15,8,37,.2), transparent 40%, #0d0a21); }
+.pierro-test .pt-marque { position: absolute; top: 12px; left: 16px; font: 800 15px 'Syne', sans-serif; letter-spacing: .14em; text-shadow: 0 2px 8px #080515; }
+.pierro-test .pt-identite { position: relative; display: flex; gap: 12px; align-items: center; margin: -32px 16px 12px; }
+.pierro-test .pt-avatar { flex: none; width: 78px; height: 78px; border-radius: 50%; border: 3px solid #faf6ff; box-shadow: 0 0 0 3px #0d0a21; overflow: hidden; background: #312048; }
+.pierro-test .pt-avatar .avatar { width: 100%; height: 100%; border: 0; margin: 0; object-fit: cover; display: grid; place-items: center; font-size: 25px; background: linear-gradient(145deg, #53277b, #d85f43); }
+.pierro-test .pt-nom { min-width: 0; flex: 1; padding-top: 22px; }
+.pierro-test .pt-nom h2 { margin: 0; font: 800 23px/1.1 'Syne', sans-serif; overflow-wrap: anywhere; }
+.pierro-test .pt-nom p { margin: 5px 0 0; font-size: 13px; color: #bfb3d8; }
+.pierro-test .casque-like { flex: none; transform: scale(.85); transform-origin: right center; margin: 16px 0 0; }
+.pierro-test .pt-certifie { display: inline-block; font-size: 10px; color: #ff9b56; margin-top: 5px; }
+.pierro-test .pt-actions { display: flex; gap: 8px; margin: 0 16px; }
+.pierro-test .pt-contact, .pierro-test .pt-booking { flex: 1; min-height: 42px; display: flex; justify-content: center; align-items: center; gap: 10px; border: 0; border-radius: 11px; font-weight: 700; background: #ff8035; color: #fff; }
+.pierro-test .pt-booking { background: transparent; border: 1px solid #ff8035; color: #ffa66f; }
+.pierro-test .pt-suivi { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 12px; margin: 10px 14px 8px; font-size: 10px; color: #ada0c3; align-items: center; }
+.pierro-test .pt-suivi button { border: 0; background: transparent; padding: 4px 0; color: #e4d9f6; font-size: 12px; }
+.pierro-test .pt-suivi .fp-stat { padding: 0; background: none; border: 0; flex: none; }
+.pierro-test .pt-suivi .fp-stat b, .pierro-test .pt-suivi .fp-stat small { display: inline; font: inherit; }
+.pierro-test .pt-onglets { display: flex; margin: 0 16px; border-bottom: 1px solid #443255; }
+.pierro-test .pt-onglets button { position: relative; flex: 1; background: none; border: 0; padding: 13px 3px 12px; font-weight: 700; color: #bcb0d6; }
+.pierro-test .pt-onglets [aria-selected=true] { color: #ff8a3d; }
+.pierro-test .pt-onglets [aria-selected=true]::after { content: ''; height: 3px; background: #ff8a3d; position: absolute; bottom: -1px; left: 12%; right: 12%; border-radius: 3px 3px 0 0; }
+.pierro-test .pt-contenu { padding: 15px 16px; min-height: 62px; }
+.pierro-test .pt-vide, .pierro-test .pt-bio { margin: 0; color: #bfb3d2; font-size: 12px; line-height: 1.5; }
+.pierro-test .pt-bio { white-space: pre-line; }
+.pierro-test .pt-styles { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; font-size: 11px; color: #ffb17d; }
+.pierro-test .pt-styles span { background: #2b1c36; border-radius: 20px; padding: 4px 8px; }
+.pierro-test .pt-live { margin: 0 16px; padding: 12px; border: 1px solid #322541; border-radius: 12px; background: #171129; }
+.pierro-test h3 { font: 700 15px/1.2 'DM Sans', sans-serif; margin: 0 0 7px; }
+.pierro-test .pt-point { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #847994; margin-right: 7px; }
+.pierro-test .pt-reseaux, .pierro-test .pt-mixes { display: flex; gap: 8px; flex-wrap: wrap; }
+.pierro-test .pt-reseaux { padding: 15px 16px; justify-content: space-between; }
+.pierro-test .pt-reseau { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; min-height: 32px; color: #d6c8ef; }
+.pierro-test .pt-reseau svg { width: 18px; height: 18px; flex: none; }
+.pierro-test .pt-mixes .pt-reseau { padding: 5px 10px; background: #241831; border-radius: 8px; font-size: 12px; }
+.pierro-test .pt-commentaires { padding: 0 16px 12px; border-top: 1px solid #30233e; }
+.pierro-test .section-title { font: 700 16px/1.3 'DM Sans', sans-serif; margin: 14px 0 10px; }
+.pierro-test .section-title small { font: 400 11px 'DM Sans', sans-serif; }
+.pierro-test .com-connexion { padding: 10px; font-size: 11px; }
+.pierro-test .com { padding: 10px 0; }
+.pierro-test .com-tete { flex-wrap: wrap; }
+.pierro-test .com-texte { font-size: 13px; }
+.pierro-test .aide { font-size: 10px; }
+.pierro-test .pt-live .section-title { font-size: 12px; margin: 0 0 8px; }
+.pierro-test .pt-live-actif p { font-size: 12px; }
+.pierro-test :focus-visible { outline: 2px solid #ffa264; outline-offset: 3px; }
+@media (max-width: 360px) {
+  .pierro-test .pt-identite { gap: 8px; margin-left: 12px; margin-right: 12px; }
+  .pierro-test .pt-avatar { width: 66px; height: 66px; }
+  .pierro-test .pt-nom h2 { font-size: 20px; }
+  .pierro-test .pt-reseaux { gap: 4px; }
+}
