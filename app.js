@@ -1867,7 +1867,15 @@
     if (state.lieuOuvert) { const sp = $('#dj-back span'); if (sp) sp.textContent = 'Retour'; }
     if (state.djLiveOuvert) { const sp = $('#dj-back span'); if (sp) sp.textContent = 'Retour aux départs'; }
     renderDj();
-    BDD.chargerStatsDj(nom).then((r) => { if (r && state.djOuvert === nom && !document.querySelector('#dj-body iframe')) renderDj(); });
+    BDD.chargerStatsDj(nom).then((r) => {
+      if (!r || state.djOuvert !== nom) return;
+      if (estFicheTestPierro(djProParNom(nom))) {
+        // Les commentaires et compteurs arrivent après le lecteur : les actualiser sans couper le live.
+        window.__majStatsFiche(nom);
+        const commentaires = document.querySelector('#dj-body .pt-commentaires');
+        if (commentaires && !commentaires.querySelector('textarea:focus')) commentaires.innerHTML = blocCommentaires(nom);
+      } else if (!document.querySelector('#dj-body iframe')) renderDj();
+    });
     $('#sheet-dj').classList.add('open');
     $('#sheet-dj').setAttribute('aria-hidden', 'false');
   }
@@ -2207,7 +2215,7 @@
     $('#dj-body').innerHTML = `<article class="pierro-test" aria-label="Fiche test de ${esc(nom)}">
       <div class="pt-cover"><img src="mesdj-banniere-poster.jpg" alt="" decoding="async"><span class="pt-marque">BANZIC</span></div>
       <header class="pt-identite"><div class="pt-avatar">${avatarDj(nom)}</div><div class="pt-nom"><h2>${esc(nom)}</h2><p>${esc(d.ville || '')}</p>${certifie ? '<span class="pt-certifie" title="Validé par la communauté Bangers">✓ Pro certifié</span>' : ''}</div>${boutonCasque(nom)}</header>
-      <div class="pt-actions">${contact ? `<a class="pt-contact" href="${esc(contact)}" target="_blank" rel="noopener" aria-label="Contacter ${esc(nom)} sur ${liens.instagram ? 'Instagram' : liens.soundcloud ? 'SoundCloud' : 'YouTube'}">Contacter <span aria-hidden="true">↗</span></a>` : '<button class="pt-contact" disabled>Contact non renseigné</button>'}${certifie && contact ? `<a class="pt-booking" href="${esc(contact)}" target="_blank" rel="noopener">Booking ↗</a>` : ''}</div>
+      <div class="pt-actions">${contact ? `<a class="pt-contact" href="${esc(contact)}" target="_blank" rel="noopener" aria-label="Contacter ${esc(nom)} sur ${liens.instagram ? 'Instagram' : liens.soundcloud ? 'SoundCloud' : 'YouTube'}">Contacter</a>` : '<button class="pt-contact" disabled>Contact non renseigné</button>'}${certifie && contact ? `<a class="pt-booking" href="${esc(contact)}" target="_blank" rel="noopener">Booking</a>` : ''}</div>
       <div class="pt-suivi"><button data-fav="${esc(nom)}">${suivi ? 'Suivi ✓' : 'Suivre +'}</button><button data-alerte-dj="${esc(nom)}">${alerte ? 'Alerte activée' : "M’alerter"}</button><span class="fp-stat"><b>${stats ? stats.abonnes : d.abonnes || 0}</b> <small>abonnés</small></span><span>${setsConfirmes(d)} sets confirmés</span></div>
       <div class="pt-onglets" role="tablist" aria-label="Découvrir ${esc(nom)}">${[['univers','Univers'],['agenda','Agenda'],['mixes','Mixes']].map(([id,txt]) => `<button type="button" role="tab" id="pt-tab-${id}" data-pierro-tab="${id}" aria-controls="pt-contenu" aria-selected="${ongletPierro === id}" tabindex="${ongletPierro === id ? 0 : -1}">${txt}</button>`).join('')}</div>
       <section class="pt-contenu" id="pt-contenu" role="tabpanel" tabindex="0" aria-labelledby="pt-tab-${ongletPierro}">${contenu}</section>
