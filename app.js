@@ -2018,7 +2018,7 @@
     const envoyerInteraction = (djNom, type, texte) => { const cle = sansAccent(String(djNom || '')).trim().slice(0, 40); if (cle.length < 2) return;
       if (MON_DJ && sansAccent(MON_DJ.nom) === cle) return; // pas de notification pour soi-même
       req('interactions', { method: 'POST', headers: Object.assign({ Prefer: 'return=minimal' }, H), body: JSON.stringify({ dj_cle: cle, dj_nom: String(djNom).slice(0, 40), type,
-        par: ((state.profil && state.profil.pseudo) || '').slice(0, 30) || null, texte: texte ? String(texte).slice(0, 280) : null, appareil }) }).catch(() => {}); };
+        par: ((state.profil && state.profil.pseudo) || '').slice(0, 30) || null, texte: texte ? String(texte).slice(0, 280) : null, appareil }) }).then(() => rafraichirFiche(djNom)).catch(() => rafraichirFiche(djNom)); };
     // Les chiffres d'un DJ d'après la base : Bangers (un par téléphone), abonnés (dernier choix de chaque téléphone), commentaires
     const statsDe = (rows) => { const likes = new Set(), abo = {}, coms = [];
       rows.slice().sort((x, y) => new Date(x.cree_le) - new Date(y.cree_le)).forEach((r) => {
@@ -2027,6 +2027,8 @@
       return { likes: likes.size, moiLike: likes.has(appareil), abonnes: Object.values(abo).filter(Boolean).length, coms }; };
     const chargerStatsDj = (nom) => { const cle = sansAccent(String(nom || '')).slice(0, 40); if (cle.length < 2) return Promise.resolve(null);
       return req('interactions?select=type,par,texte,appareil,cree_le&dj_cle=eq.' + encodeURIComponent(cle) + '&order=cree_le.desc&limit=500').then((rows) => { STATS_DJ[cle] = statsDe(rows || []); return rows || []; }).catch(() => null); };
+    // Après un geste sur une fiche (casque, suivre), on recharge ses chiffres et on met à jour la fiche ouverte sans la redessiner (le lecteur continue)
+    const rafraichirFiche = (djNom) => setTimeout(() => chargerStatsDj(djNom).then(() => { try { if (window.__majStatsFiche) window.__majStatsFiche(djNom); } catch (e) { /* */ } }), 700);
     const chargerNotifsDj = () => { if (!MON_DJ || !MON_DJ.nom) return;
       chargerStatsDj(MON_DJ.nom).then((rows) => { if (rows && window.__notifsDj) window.__notifsDj(rows.filter((r) => r.type !== 'desabonne')); }); };
     // Publier ma fiche DJ (seul ce téléphone peut la modifier, grâce à sa clé secrète)
@@ -2089,6 +2091,14 @@
     if (state.djOuvert) fermerDj();
     setTab('map'); setTimeout(() => { if (map) { map.setView([la, lo], 16); renderMap(); } }, 80);
   });
+  // Met à jour les chiffres (abonnés, Bangers du casque) de la fiche ouverte sans tout redessiner
+  window.__majStatsFiche = (nom) => {
+    if (!state.djOuvert || sansAccent(state.djOuvert) !== sansAccent(nom)) return;
+    const s = STATS_DJ[sansAccent(nom).slice(0, 40)]; if (!s) return;
+    const fmt = (n) => n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',').replace(',0', '') + 'k' : n;
+    document.querySelectorAll('#dj-body .fp-stat').forEach((el) => { const t = el.querySelector('small'); if (t && /abonn/.test(t.textContent)) el.querySelector('b').textContent = fmt(s.abonnes); });
+    document.querySelectorAll('#dj-body [data-casque] .cl-nb').forEach((el) => { el.textContent = fmtLikes(nbLikes(nom)); });
+  };
   function ficheTeteDj(nom, pro, ceSoirN, nbSaison) {
     const tier = pro ? (pro.formule === 'pro' ? 'pro' : 'live') : 'std';
     const live = pro ? DECLS.filter((x) => x.dj === pro.id && declActive(x)) : [];
