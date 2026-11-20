@@ -2109,6 +2109,7 @@
         SUD.soirees = SUD.soirees.filter((x) => x.src !== 'bdd').concat(so.map((r) => { const k = 'bdd-' + r.id; SUD.lieux[k] = { nom: r.lieu_nom || 'Lieu', ville: r.ville || '', dep: '', lat: r.lat, lng: r.lng };
           return { type: r.type || 'club', date: r.date, heure: r.heure || '', nom: r.nom, djs: r.djs || '', lieu: k, url: r.url || '', src: 'bdd' }; }));
         INDEX_DJ = null;
+        actualiserLiveTestPierro();
         try { if (state.tab === 'checkin') renderCheckin(); else if (state.tab === 'map') renderMap(); else if (state.tab === 'live' || state.tab === 'accueil') render(); } catch (e) { /* */ }
       }).catch(() => {}).finally(() => { enCours = false; });
     }
@@ -2197,6 +2198,22 @@
     const mixes = reseaux.filter((r) => ['youtube', 'soundcloud', 'mixcloud'].includes(r.id));
     return ongletPierro === 'agenda' ? agenda : ongletPierro === 'mixes' ? `<p class="pt-vide">Les sélections de ${esc(nom)}</p><div class="pt-mixes">${mixes.map(lien).join('') || '<p class="pt-vide">Aucun mix ajouté pour le moment.</p>'}</div>` : univers;
   }
+  function contenuLiveTestPierro(d) {
+    const live = DECLS.filter((x) => x.dj === d.id && declActive(x));
+    let direct = lecteurStream(d);
+    if (!direct && live.length) direct = live.map((x) => `<div class="pt-live-actif"><b>Mixe en ce moment</b><p>${esc(lieuDe(x).nom || 'Spot')} · depuis ${hm(x.debut)}</p>${badgeLiveDj(d, [x])}${liensLiveHtml(x)}</div>`).join('');
+    if (!direct) direct = '<p class="pt-vide"><i class="pt-point"></i>Pas de live en cours.</p>';
+    return direct;
+  }
+  function actualiserLiveTestPierro() {
+    const d = djProParNom(state.djOuvert || '');
+    if (!estFicheTestPierro(d)) return;
+    const el = document.querySelector('#dj-body .pierro-live'); if (!el) return;
+    const cle = JSON.stringify([d.stream || null, enStream(d), streamPrevu(d), DECLS.filter((x) => x.dj === d.id && declActive(x)).map((x) => [x.id, x.fin, x.conf])]);
+    if (!el.dataset.etatLive) { el.dataset.etatLive = cle; return; }
+    if (el.dataset.etatLive === cle) return;
+    el.innerHTML = '<h3 id="pt-live-titre">Live</h3>' + contenuLiveTestPierro(d); el.dataset.etatLive = cle;
+  }
   function renderFicheTestPierro(d) {
     if (!document.getElementById('pierro-test-style')) {
       const css = document.createElement('link'); css.id = 'pierro-test-style'; css.rel = 'stylesheet'; css.href = 'pierro-test.css?v=2'; document.head.appendChild(css);
@@ -2209,9 +2226,7 @@
     const reseaux = RESEAUX.filter((r) => urlPropre(liens[r.id]));
     const lien = (r) => `<a class="pt-reseau r-${r.id}" href="${esc(urlPropre(liens[r.id]))}" target="_blank" rel="noopener">${ICO_RESEAU[r.id]}<span>${r.nom}</span></a>`;
     const contenu = contenuFicheTestPierro(d);
-    let direct = lecteurStream(d);
-    if (!direct && live.length) direct = live.map((x) => `<div class="pt-live-actif"><b>Mixe en ce moment</b><p>${esc(lieuDe(x).nom || 'Spot')} · depuis ${hm(x.debut)}</p>${badgeLiveDj(d, [x])}${liensLiveHtml(x)}</div>`).join('');
-    if (!direct) direct = '<p class="pt-vide"><i class="pt-point"></i>Pas de live en cours.</p>';
+    const direct = contenuLiveTestPierro(d);
     $('#dj-body').innerHTML = `<article class="pierro-test" aria-label="Fiche test de ${esc(nom)}">
       <div class="pt-cover"><img src="mesdj-banniere-poster.jpg" alt="" decoding="async"><span class="pt-marque">BANZIC</span></div>
       <header class="pt-identite"><div class="pt-avatar">${avatarDj(nom)}</div><div class="pt-nom"><h2>${esc(nom)}</h2><p>${esc(d.ville || '')}</p>${certifie ? '<span class="pt-certifie" title="Validé par la communauté Bangers">✓ Pro certifié</span>' : ''}</div>${boutonCasque(nom)}</header>
@@ -2223,6 +2238,7 @@
       <nav class="pt-reseaux" aria-label="Les réseaux de ${esc(nom)}">${reseaux.map(lien).join('')}</nav>
       <section class="pt-commentaires" aria-label="Commentaires de la fiche">${blocCommentaires(nom)}</section>
     </article>`;
+    actualiserLiveTestPierro();
     // L'avatar reste celui de la fiche (initiales si aucune photo), sans recherche d'homonyme.
   }
   document.addEventListener('click', (e) => {
