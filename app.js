@@ -1707,16 +1707,22 @@
   function renderSuggestions() {
     const q = $('#recherche-dj').value, box = $('#suggestions-dj');
     if (q.trim().length < 2) { box.hidden = true; $('#recherche-dj').setAttribute('aria-expanded', 'false'); return; }
-    const f = state.rechFiltre || 'tout';
-    const tousLieux = lieuxCherches(q);
-    const ls = f === 'tout' ? tousLieux : f === 'club' || f === 'plage' ? tousLieux.filter((l) => l.type === f) : [];
-    const djs = f === 'tout' || f === 'dj' ? suggestions(q).slice(0, f === 'dj' ? 10 : ls.length > 4 ? 4 : 6) : [];
-    const vs = f === 'tout' || f === 'ville' ? villesCherchees(q) : [];
+    // Une seule recherche dans tout Banzic : DJ, soirées (partout, pas seulement près de toi), clubs, bars et discothèques, villes et pays
+    const f = ['tout', 'soiree', 'lieu', 'dj', 'ville'].includes(state.rechFiltre) ? state.rechFiltre : 'tout';
     const k0 = sansAccent(q.trim());
-    const evs = (f === 'tout' || f === 'festival' || f === 'club') ? soireesAvecKm().filter((x) => dansRayonAg(x, RAYONS[state.rayonIdx]) && (f === 'tout' || (x.type || 'club') === f)
-      && [x.nom, x.djs, (SUD.lieux[x.lieu] || {}).nom, (SUD.lieux[x.lieu] || {}).ville].some((t) => t && sansAccent(t).includes(k0))).slice(0, 5) : [];
-    const fests = (f === 'tout' || f === 'festival') ? DESTS.flatMap((d) => d.evenements.filter((e) => e.url && sansAccent(e.nom).includes(k0)).map((e) => ({ e, d }))).slice(0, 4) : [];
-    let h = `<div class="rech-filtres">${[['tout', 'Tout'], ['club', '🪩 Clubs'], ['plage', '🏖️ Plages'], ['festival', '🎪 Festivals'], ['dj', '🎧 DJ'], ['ville', '📍 Villes']]
+    const ls = f === 'tout' || f === 'lieu' ? lieuxCherches(q) : [];
+    const discos = (f === 'tout' || f === 'lieu') && k0.length >= 3 ? DISCOS.filter((c) => sansAccent(c.nom).includes(k0) || sansAccent(c.ville || '').startsWith(k0))
+      .sort((a, b) => (sansAccent(b.nom).startsWith(k0) ? 1 : 0) - (sansAccent(a.nom).startsWith(k0) ? 1 : 0) || distKm(centreGeographique(), [a.lat, a.lng]) - distKm(centreGeographique(), [b.lat, b.lng])).slice(0, f === 'lieu' ? 12 : 5) : [];
+    const djs = f === 'tout' || f === 'dj' ? suggestions(q).slice(0, f === 'dj' ? 10 : 5) : [];
+    const vs = f === 'tout' || f === 'ville' ? villesCherchees(q) : [];
+    const pays = (f === 'tout' || f === 'ville') && k0.length >= 3 ? codesPaysAgenda.filter((c) => sansAccent(paysAgenda.of(c) || '').startsWith(k0)).slice(0, 3) : [];
+    const libertin = k0.includes('libert') || k0.includes('echangis');
+    const auj0r = iso(new Date());
+    const evs = (f === 'tout' || f === 'soiree') && k0.length >= 2 ? SUD.soirees.filter((x) => x.date >= auj0r && SUD.lieux[x.lieu] && (libertin || !estLibertin({ ...x, l: SUD.lieux[x.lieu] }))
+      && [x.nom, x.djs, SUD.lieux[x.lieu].nom, SUD.lieux[x.lieu].ville].some((t) => t && sansAccent(t).includes(k0)))
+      .sort((a, b) => a.date.localeCompare(b.date)).slice(0, f === 'soiree' ? 15 : 6) : [];
+    const fests = (f === 'tout' || f === 'soiree') ? DESTS.flatMap((d) => d.evenements.filter((e) => e.url && sansAccent(e.nom).includes(k0)).map((e) => ({ e, d }))).slice(0, 4) : [];
+    let h = `<div class="rech-filtres">${[['tout', 'Tout'], ['soiree', '🎉 Soirées'], ['lieu', '🪩 Clubs & bars'], ['dj', '🎧 DJ'], ['ville', '📍 Villes & pays']]
       .map(([k, l]) => `<button type="button" class="chip ${f === k ? 'on' : ''}" data-rech-filtre="${k}">${l}</button>`).join('')}</div>`;
     const vide = h;
     const blocVilles = vs.length ? `<div class="sugg-titre">Villes · ${vs.length}</div>` + vs.map((i) => {
@@ -1725,7 +1731,9 @@
       const info = pr && pr.km < 80 ? 'Destination ' + esc(pr.d.nom) + ' · saison, lieux, tendance' : 'DJ déclarés et spots autour';
       return `<button class="sugg sugg-ville" role="option" data-ville="${i}"><b>📍 ${esc(v[0])}</b><small>${esc(v[1])} · ${info}</small></button>`;
     }).join('') : '';
+    const blocPays = pays.length ? `<div class="sugg-titre">Pays · ${pays.length}</div>` + pays.map((c) => `<button class="sugg sugg-ville" role="option" data-sugg-pays="${c}"><b>🌍 ${esc(paysAgenda.of(c))}</b><small>Toutes les soirées du pays dans l'Agenda</small></button>`).join('') : '';
     const villeDAbord = vs.length && sansAccent(VILLES[vs[0]][0]).startsWith(sansAccent(q.trim()));
+    h += blocPays;
     if (villeDAbord) h += blocVilles;
     if (ls.length) {
       h += `<div class="sugg-titre">Lieux · ${ls.length}</div>` + ls.slice(0, 8).map((l) => {
@@ -1735,6 +1743,9 @@
           <span><b>${esc(l.nom)}</b><small>${l.type === 'plage' ? T('plage') : T('club')} · ${esc(l.zone)} · ${info}</small></span></button>`;
       }).join('');
     }
+    if (discos.length) h += `<div class="sugg-titre">Clubs, bars et discothèques · ${discos.length}</div>` + discos.map((c) => {
+      const km = Math.round(distKm(centreGeographique(), [c.lat, c.lng]));
+      return `<button class="sugg" role="option" data-sugg-disco="${esc(c.id)}"><b>🪩 ${esc(c.nom)}</b><small>${esc(c.ville || '')}${c.ville ? ' · ' : ''}${km} km</small></button>`; }).join('');
     if (djs.length) {
       h += `<div class="sugg-titre">DJ · ${djs.length}</div>` + djs.map((nom) => {
         const ce = passages.filter((p) => decouperDjs(p.dj).some((d) => sansAccent(d) === sansAccent(nom)));
@@ -1743,9 +1754,9 @@
       }).join('');
     }
     if (!villeDAbord) h += blocVilles;
-    if (evs.length) h += `<div class="sugg-titre">Soirées près de toi · ${evs.length}</div>` + evs.map((x) => {
+    if (evs.length) h += `<div class="sugg-titre">Soirées · ${evs.length}</div>` + evs.map((x) => {
       const l = SUD.lieux[x.lieu] || {}, dt = new Date(x.date + 'T12:00:00');
-      return `<a class="sugg" role="option" href="${x.url || SUD.sources[x.src] || '#'}" target="_blank" rel="noopener"><b>${x.type === 'festival' ? '🎪 ' : ''}${esc(x.nom)}</b><small>${dt.getDate()} ${MOIS[dt.getMonth()]} · ${esc(l.nom || '')} · ${esc(l.ville || '')}</small></a>`;
+      return `<button class="sugg" role="option" data-sugg-soiree="${esc(x.id)}"><b>${x.type === 'festival' ? '🎪 ' : '🎉 '}${esc(x.nom)}</b><small>${['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'][dt.getDay()]} ${dt.getDate()} ${MOIS[dt.getMonth()]} · ${esc(l.nom || '')}${l.ville ? ' · ' + esc(l.ville) : ''}</small></button>`;
     }).join('');
     if (fests.length) h += `<div class="sugg-titre">Festivals · ${fests.length}</div>` + fests.map(({ e, d }) =>
       `<a class="sugg" role="option" href="${e.url}" target="_blank" rel="noopener"><b>🎪 ${esc(e.nom)}</b><small>${esc(d.nom)} · ${esc(e.quand)}</small></a>`).join('');
@@ -1805,7 +1816,12 @@
   }
   function allerVille(i) {
     const v = VILLES[i]; if (!v) return;
-    $('#suggestions-dj').hidden = true; $('#recherche-dj').value = ''; $('#recherche-dj').blur();
+    $('#suggestions-dj').hidden = true; $('#recherche-dj').value = ''; $('#recherche-dj').blur(); fermerBarre();
+    // Depuis l'Agenda : seul l'Agenda se place sur la ville (la carte et le Check-in restent où ils sont)
+    const paysV = v[5] || codesPaysAgenda.find(code => sansAccent(paysAgenda.of(code)) === sansAccent(v[1] || ''));
+    state.agVille = { nom: v[0], c: [v[2], v[3]] }; state.agDate = null; state.radarDep = '';
+    if (paysV && codesPaysAgenda.includes(paysV)) state.paysAgenda = paysV;
+    if (state.tab === 'agenda') { if (state.djOuvert) fermerDj(); state.rayonIdx = RAYONS.indexOf(100); renderAgendaSud(); toast('📍 Agenda · ' + v[0] + ' · 100 km'); return; }
     if (state.djOuvert) fermerDj();
     if (map) map.closePopup();
     state.villeChoisie = true;
@@ -1821,6 +1837,19 @@
     toast('📍 ' + v[0] + ' · soirées à 100 km maximum');
   }
 
+  // Résultats de la recherche : une soirée ou un club s'ouvre dans sa fiche, un pays place l'Agenda dessus
+  const fermerBarre = () => { const top = document.querySelector('.top'), t = $('#tab-cherche'); if (top) top.classList.remove('cherche'); if (t) { t.classList.remove('on'); t.setAttribute('aria-expanded', 'false'); } };
+  const fermerRecherche = () => { $('#suggestions-dj').hidden = true; $('#recherche-dj').value = ''; $('#recherche-dj').blur(); fermerBarre(); if (state.djOuvert) fermerDj(); if (map) map.closePopup(); };
+  document.addEventListener('click', (e) => {
+    const s = e.target.closest('[data-sugg-soiree]');
+    if (s) { const x = SUD.soirees.find((y) => String(y.id) === s.dataset.suggSoiree); if (!x) return; fermerRecherche(); ficheSoireeJour({ ...x, l: SUD.lieux[x.lieu] }); ouvrirFicheSoiree('s:' + x.id); return; }
+    const d = e.target.closest('[data-sugg-disco]');
+    if (d) { const c = DISCOS.find((y) => String(y.id) === d.dataset.suggDisco); if (!c) return; fermerRecherche(); ficheDisco(c); ouvrirFicheSoiree('c:' + c.id); return; }
+    const p = e.target.closest('[data-sugg-pays]');
+    if (p) { fermerRecherche(); state.paysAgenda = p.dataset.suggPays; state.rayonIdx = RAYONS.length - 1; state.radarDep = ''; state.agVille = null; state.agDate = null;
+      setTab('agenda'); toast('🌍 ' + paysAgenda.of(state.paysAgenda) + ' · toutes les soirées du pays'); return; }
+    if (e.target.closest('[data-ag-ville-reset]')) { state.agVille = null; state.paysAgenda = 'FR'; state.rayonIdx = RAYONS.indexOf(50) >= 0 ? RAYONS.indexOf(50) : state.rayonIdx; renderAgendaSud(); }
+  });
   function ouvrirLieuRecherche(id) {
     $('#suggestions-dj').hidden = true; $('#recherche-dj').value = ''; $('#recherche-dj').blur();
     if (state.djOuvert) fermerDj();
@@ -3430,7 +3459,7 @@
   };
   state.rayonIdx = Math.max(0, Math.min(RAYONS.length - 1, Number(store.get('rayonIdx', 2)) || 0));
   // L'Agenda ne suit que ta vraie position (GPS), jamais la ville choisie sur la carte ou dans le Check-in, et ne la change pas non plus
-  function centreAgenda() { return state.maPos ? [state.maPos.lat, state.maPos.lng] : DEST.local.centre; }
+  function centreAgenda() { return state.agVille ? state.agVille.c : state.maPos ? [state.maPos.lat, state.maPos.lng] : DEST.local.centre; }
   function soireesAvecKm(centre = centreGeographique()) {
     const auj = iso(new Date());
     return SUD.soirees.filter((x) => x.date >= auj && SUD.lieux[x.lieu])
@@ -3440,8 +3469,8 @@
   function renderAgendaSud() {
     const r = RAYONS[state.rayonIdx];
     $('#screen-agenda').innerHTML = `<div class="fader-module">
-        <div class="acc-tete fd-tete"><div><h2>Agenda autour de moi</h2></div></div>
-        ${state.paysAgenda === 'FR' ? `<label class="radar-dep">Département <select id="radar-departement"><option value="">Autour de moi</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>` : ''}
+        <div class="acc-tete fd-tete"><div><h2>${state.agVille ? 'Agenda · ' + esc(state.agVille.nom) : RAYONS[state.rayonIdx] >= FRANCE_KM && state.paysAgenda !== 'FR' ? 'Agenda · ' + esc(paysAgenda.of(state.paysAgenda)) : 'Agenda autour de moi'}</h2></div>${state.agVille || state.paysAgenda !== 'FR' ? '<button type="button" class="ag-retour-moi" data-ag-ville-reset="1">📍 Autour de moi</button>' : ''}</div>
+        ${state.paysAgenda === 'FR' ? `<label class="radar-dep">Département <select id="radar-departement"><option value="">${state.agVille ? 'Autour de ' + esc(state.agVille.nom) : 'Autour de moi'}</option>${Object.entries(RADAR.departments).sort(([a], [b]) => Number(a.replace('2A', '20.1').replace('2B', '20.2')) - Number(b.replace('2A', '20.1').replace('2B', '20.2'))).map(([code, nom]) => `<option value="${esc(code)}" ${state.radarDep === code ? 'selected' : ''}>${esc(code)} · ${esc(nom)}</option>`).join('')}</select></label>` : ''}
         <div class="fd-rail">
           <input type="range" id="fader-rayon" min="0" max="${RAYONS.length - 1}" step="1" value="${state.rayonIdx}" aria-label="Rayon de recherche" aria-valuetext="${esc(kmTxt(r))}">
           <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k >= FRANCE_KM ? 'Pays' : k}</span>`).join('')}</div>
