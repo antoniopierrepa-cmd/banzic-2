@@ -30,7 +30,7 @@
 .pierro-test .pt-bio { white-space: pre-line; }
 .pierro-test .pt-styles { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; font-size: 11px; color: #ffb17d; }
 .pierro-test .pt-styles span { background: #2b1c36; border-radius: 20px; padding: 4px 8px; }
-.pierro-test .pt-live { margin: 0 16px; padding: 12px; border: 1px solid #322541; border-radius: 12px; background: #171129; }
+.pierro-test .pierro-live { width: auto; height: auto; animation: none; margin: 0 16px; padding: 12px; border: 1px solid #322541; border-radius: 12px; background: #171129; }
 .pierro-test h3 { font: 700 15px/1.2 'DM Sans', sans-serif; margin: 0 0 7px; }
 .pierro-test .pt-point { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #847994; margin-right: 7px; }
 .pierro-test .pt-reseaux, .pierro-test .pt-mixes { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -46,7 +46,7 @@
 .pierro-test .com-tete { flex-wrap: wrap; }
 .pierro-test .com-texte { font-size: 13px; }
 .pierro-test .aide { font-size: 10px; }
-.pierro-test .pt-live .section-title { font-size: 12px; margin: 0 0 8px; }
+.pierro-test .pierro-live .section-title { font-size: 12px; margin: 0 0 8px; }
 .pierro-test .pt-live-actif p { font-size: 12px; }
 .pierro-test :focus-visible { outline: 2px solid #ffa264; outline-offset: 3px; }
 @media (max-width: 360px) {
@@ -55,3 +55,8 @@
   .pierro-test .pt-nom h2 { font-size: 20px; }
   .pierro-test .pt-reseaux { gap: 4px; }
 }
+
+.pierro-test .pierro-live .lecteur { width: 100%; }
+.pierro-test .pierro-live .lecteur-haut { flex-wrap: wrap; gap: 5px; font-size: 10px; }
+.pierro-test .pt-reseau { background: none; }
+.pierro-test .pt-contact { font-family: "DM Sans", sans-serif; }

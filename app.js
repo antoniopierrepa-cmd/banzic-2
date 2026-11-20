@@ -2180,9 +2180,18 @@
   const testPierro = () => new URLSearchParams(location.search).get('fiche-test') === 'dj-pierro';
   const estFicheTestPierro = (d) => testPierro() && !!d && sansAccent(d.nom) === 'dj pierro';
   let ongletPierro = 'univers';
+  function contenuFicheTestPierro(d) {
+    const nom = d.nom, liens = d.liens || {};
+    const reseaux = RESEAUX.filter((r) => urlPropre(liens[r.id]));
+    const lien = (r) => `<a class="pt-reseau r-${r.id}" href="${esc(urlPropre(liens[r.id]))}" target="_blank" rel="noopener">${ICO_RESEAU[r.id]}<span>${r.nom}</span></a>`;
+    const univers = `${d.bio ? `<p class="pt-bio">${esc(d.bio)}</p>` : '<p class="pt-vide">Sa présentation arrive bientôt.</p>'}${(d.styles || []).length ? `<div class="pt-styles">${d.styles.map((s) => `<span>${esc(s)}</span>`).join('')}</div>` : ''}${d.residence && d.residence.nom ? `<button class="fp-residence" data-carte-ll="${d.residence.lat},${d.residence.lng}"><span>Résident · ${esc(d.residence.nom)}</span><em>Voir sur la carte ›</em></button>` : ''}`;
+    const agenda = blocAgendaDj(nom) + blocAnnonces(d, false) || '<p class="pt-vide">Aucune date annoncée pour le moment.</p>';
+    const mixes = reseaux.filter((r) => ['youtube', 'soundcloud', 'mixcloud'].includes(r.id));
+    return ongletPierro === 'agenda' ? agenda : ongletPierro === 'mixes' ? `<p class="pt-vide">Les sélections de ${esc(nom)}</p><div class="pt-mixes">${mixes.map(lien).join('') || '<p class="pt-vide">Aucun mix ajouté pour le moment.</p>'}</div>` : univers;
+  }
   function renderFicheTestPierro(d) {
     if (!document.getElementById('pierro-test-style')) {
-      const css = document.createElement('link'); css.id = 'pierro-test-style'; css.rel = 'stylesheet'; css.href = 'pierro-test.css?v=1'; document.head.appendChild(css);
+      const css = document.createElement('link'); css.id = 'pierro-test-style'; css.rel = 'stylesheet'; css.href = 'pierro-test.css?v=2'; document.head.appendChild(css);
     }
     const nom = d.nom, liens = d.liens || {}, certifie = d.formule === 'pro' && d.officiel === true;
     const contact = urlPropre(liens.instagram || liens.soundcloud || liens.youtube || '');
@@ -2191,10 +2200,7 @@
     const suivi = state.favs.includes(nom), alerte = !!ALERTES_DJ[sansAccent(nom)];
     const reseaux = RESEAUX.filter((r) => urlPropre(liens[r.id]));
     const lien = (r) => `<a class="pt-reseau r-${r.id}" href="${esc(urlPropre(liens[r.id]))}" target="_blank" rel="noopener">${ICO_RESEAU[r.id]}<span>${r.nom}</span></a>`;
-    const univers = `${d.bio ? `<p class="pt-bio">${esc(d.bio)}</p>` : '<p class="pt-vide">Sa présentation arrive bientôt.</p>'}${(d.styles || []).length ? `<div class="pt-styles">${d.styles.map((s) => `<span>${esc(s)}</span>`).join('')}</div>` : ''}${d.residence && d.residence.nom ? `<button class="fp-residence" data-carte-ll="${d.residence.lat},${d.residence.lng}"><span>Résident · ${esc(d.residence.nom)}</span><em>Voir sur la carte ›</em></button>` : ''}`;
-    const agenda = blocAgendaDj(nom) + blocAnnonces(d, false) || '<p class="pt-vide">Aucune date annoncée pour le moment.</p>';
-    const mixes = reseaux.filter((r) => ['youtube', 'soundcloud', 'mixcloud'].includes(r.id));
-    const contenu = ongletPierro === 'agenda' ? agenda : ongletPierro === 'mixes' ? `<p class="pt-vide">Les sélections de ${esc(nom)}</p><div class="pt-mixes">${mixes.map(lien).join('') || '<p class="pt-vide">Aucun mix ajouté pour le moment.</p>'}</div>` : univers;
+    const contenu = contenuFicheTestPierro(d);
     let direct = lecteurStream(d);
     if (!direct && live.length) direct = live.map((x) => `<div class="pt-live-actif"><b>Mixe en ce moment</b><p>${esc(lieuDe(x).nom || 'Spot')} · depuis ${hm(x.debut)}</p>${badgeLiveDj(d, [x])}${liensLiveHtml(x)}</div>`).join('');
     if (!direct) direct = '<p class="pt-vide"><i class="pt-point"></i>Pas de live en cours.</p>';
@@ -2205,7 +2211,7 @@
       <div class="pt-suivi"><button data-fav="${esc(nom)}">${suivi ? 'Suivi ✓' : 'Suivre +'}</button><button data-alerte-dj="${esc(nom)}">${alerte ? 'Alerte activée' : "M’alerter"}</button><span class="fp-stat"><b>${stats ? stats.abonnes : d.abonnes || 0}</b> <small>abonnés</small></span><span>${setsConfirmes(d)} sets confirmés</span></div>
       <div class="pt-onglets" role="tablist" aria-label="Découvrir ${esc(nom)}">${[['univers','Univers'],['agenda','Agenda'],['mixes','Mixes']].map(([id,txt]) => `<button type="button" role="tab" id="pt-tab-${id}" data-pierro-tab="${id}" aria-controls="pt-contenu" aria-selected="${ongletPierro === id}" tabindex="${ongletPierro === id ? 0 : -1}">${txt}</button>`).join('')}</div>
       <section class="pt-contenu" id="pt-contenu" role="tabpanel" tabindex="0" aria-labelledby="pt-tab-${ongletPierro}">${contenu}</section>
-      <section class="pt-live" aria-labelledby="pt-live-titre"><h3 id="pt-live-titre">Live</h3>${direct}</section>
+      <section class="pierro-live" aria-labelledby="pt-live-titre"><h3 id="pt-live-titre">Live</h3>${direct}</section>
       <nav class="pt-reseaux" aria-label="Les réseaux de ${esc(nom)}">${reseaux.map(lien).join('')}</nav>
       <section class="pt-commentaires" aria-label="Commentaires de la fiche">${blocCommentaires(nom)}</section>
     </article>`;
@@ -2214,7 +2220,14 @@
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-pierro-tab]');
     if (!b || !estFicheTestPierro(djProParNom(state.djOuvert || ''))) return;
-    ongletPierro = b.dataset.pierroTab; renderDj();
+    ongletPierro = b.dataset.pierroTab;
+    const panel = document.getElementById('pt-contenu');
+    panel.innerHTML = contenuFicheTestPierro(djProParNom(state.djOuvert));
+    panel.setAttribute('aria-labelledby', 'pt-tab-' + ongletPierro);
+    document.querySelectorAll('[data-pierro-tab]').forEach((t) => {
+      const choisi = t.dataset.pierroTab === ongletPierro;
+      t.setAttribute('aria-selected', String(choisi)); t.tabIndex = choisi ? 0 : -1;
+    });
     document.getElementById('pt-tab-' + ongletPierro).focus({ preventScroll: true });
   });
   document.addEventListener('keydown', (e) => {
