@@ -60,8 +60,10 @@
 
   // 4. Position simulée : le compte est « chez lui » (sauf si on choisit sa vraie position)
   var vraiePos = lire('vraiePos', false);
+  // Option « tous au même endroit » : tous les comptes sont placés au centre de Hyères (pour confirmer à plusieurs la même soirée)
+  var memeLieu = lire('memeLieu', false), ici = memeLieu ? { lat: 43.1204, lng: 6.1286 } : compte;
   if (!vraiePos && navigator.geolocation) {
-    var pos = function () { return { coords: { latitude: compte.lat + (Math.random() - 0.5) * 0.0004, longitude: compte.lng + (Math.random() - 0.5) * 0.0004, accuracy: 15 }, timestamp: Date.now() }; };
+    var pos = function () { return { coords: { latitude: ici.lat + (Math.random() - 0.5) * 0.0004, longitude: ici.lng + (Math.random() - 0.5) * 0.0004, accuracy: 15 }, timestamp: Date.now() }; };
     try {
       Object.defineProperty(navigator, 'geolocation', { configurable: true, value: {
         getCurrentPosition: function (ok) { setTimeout(function () { ok(pos()); }, 200); },
@@ -114,6 +116,7 @@
     if (onglet === 'comptes') {
       h += '<p class="bzt-sous">Je joue en tant que… (chaque compte garde ses propres données)</p>' + COMPTES.map(function (c) {
         return '<button class="bzt-l ' + (c.id === compte.id ? 'on' : '') + '" data-bzt-compte="' + c.id + '"><img src="avatars-banzic/' + c.avatar + '.jpg" alt=""><span><b>' + esc(c.nom) + '</b><br><small>' + (c.type === 'dj' ? (c.formule === 'pro' ? 'DJ Pro' : 'DJ') : 'Banger') + ' · ' + esc(c.ville) + '</small></span></button>'; }).join('')
+        + '<label class="bzt-l"><input type="checkbox" data-bzt-memelieu ' + (memeLieu ? 'checked' : '') + '> Tous les comptes au même endroit (Hyères centre), pour confirmer à plusieurs</label>'
         + '<label class="bzt-l"><input type="checkbox" data-bzt-vraiepos ' + (vraiePos ? 'checked' : '') + '> Utiliser ma vraie position (sinon : la ville du compte)</label>';
     } else if (onglet === 'tests') {
       h += TESTS.map(function (t, i) { var r = res[t[0]] || {};
@@ -163,7 +166,8 @@
         Object.keys(LS).filter(function (k) { return k.indexOf('banzictest.') === 0; }).forEach(function (k) { del0.call(LS, k); }); location.reload(); }
     });
     document.addEventListener('input', function (e) { var id = e.target.dataset && e.target.dataset.bztNote; if (!id) return; (res[id] = res[id] || {}).note = e.target.value.slice(0, 500); ecrire('resultats', res); });
-    document.addEventListener('change', function (e) { if (e.target.dataset && e.target.dataset.bztVraiepos != null) { ecrire('vraiePos', e.target.checked); location.reload(); } });
+    document.addEventListener('change', function (e) { if (e.target.dataset && e.target.dataset.bztMemelieu != null) { ecrire('memeLieu', e.target.checked); location.reload(); return; }
+      if (e.target.dataset && e.target.dataset.bztVraiepos != null) { ecrire('vraiePos', e.target.checked); location.reload(); } });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', demarrer); else demarrer();
 })();
