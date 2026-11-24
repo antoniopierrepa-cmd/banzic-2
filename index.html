@@ -253,9 +253,10 @@
   </section>
 
 </div>
+<script src="supabase-config.js?v=2"></script>
+<script src="mode-test.js?v=1"></script>
 <script>/* Nouveau départ du 11/11/2026 : au premier passage, tout le monde repart de l'inscription. ?reinit=1 dans l'adresse : efface toutes les données Banzic de ce téléphone (pour retester l'inscription) */
 try { if (/[?&]reinit=1/.test(location.search) || localStorage.getItem('setly.depart') !== '2026-11-11') { Object.keys(localStorage).filter(function (k) { return k.indexOf('setly.') === 0; }).forEach(function (k) { localStorage.removeItem(k); }); localStorage.setItem('setly.depart', '2026-11-11'); if (/[?&]reinit=1/.test(location.search)) history.replaceState(null, '', location.pathname); } } catch (e) {}</script>
-<script src="supabase-config.js?v=1"></script>
 <script src="erreurs.js?v=1"></script>
 <script src="leaflet.js"></script>
 <script src="i18n.js?v=1792910000"></script>
@@ -285,7 +286,7 @@ try { if (/[?&]reinit=1/.test(location.search) || localStorage.getItem('setly.de
 <script src="home-flip.js?v=1"></script>
 <script src="flyer-layout.js?v=10"></script>
 <script src="agenda-dossier-2026.js?v=1"></script>
-<script src="app.js?v=20261120-pierro-test4"></script>
+<script src="app.js?v=20261124-mode-test1"></script>
 <script src="agenda-dossier-ui.js?v=1"></script>
 <!-- Prototype 2 : pop-up « Deviens membre » désactivée -->
 </body>

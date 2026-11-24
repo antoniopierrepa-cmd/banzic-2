@@ -2059,6 +2059,7 @@
     // Les chiffres d'un DJ d'après la base : Bangers (un par téléphone), abonnés (dernier choix de chaque téléphone), commentaires
     const statsDe = (rows) => { const likes = new Set(), abo = {}, coms = [];
       rows.slice().sort((x, y) => new Date(x.cree_le) - new Date(y.cree_le)).forEach((r) => {
+        if (!(window.BANZIC_TEST || {}).actif && String(r.appareil).startsWith('test-')) return;
         if (r.type === 'like') likes.add(r.appareil); else if (r.type === 'abonne') abo[r.appareil] = true; else if (r.type === 'desabonne') abo[r.appareil] = false;
         else if (r.type === 'commentaire' && r.appareil !== appareil) coms.push({ id: 'b' + new Date(r.cree_le).getTime() + r.appareil.slice(-4), auteur: r.par || 'Un Banger', texte: r.texte || '', t: new Date(r.cree_le).getTime(), likes: 0, reponses: [] }); });
       return { likes: likes.size, moiLike: likes.has(appareil), abonnes: Object.values(abo).filter(Boolean).length, coms }; };
@@ -2079,10 +2080,12 @@
     const envoyerSpot = (s) => req('spots', { method: 'POST', headers: Object.assign({ Prefer: 'return=minimal' }, H), body: JSON.stringify({ id: s.id, nom: (s.nom || '').slice(0, 60), type: s.type, dj: (s.dj || '').slice(0, 40), lat: s.lat, lng: s.lng,
       par: ((state.profil && state.profil.pseudo) || '').slice(0, 30), temp: s.temp, com: s.com || null }) }).catch(() => toast('Hors connexion : ton signalement reste sur ton téléphone'));
     const banguer = (table, id, temp, com) => req('rpc/banguer', { method: 'POST', body: JSON.stringify({ p_table: table, p_id: id, p_temp: temp == null ? null : temp, p_com: com || null }) }).catch(() => {});
+    // Mode test : ce que publient les faux comptes (mode-test.js) reste invisible pour les vrais utilisateurs
+    const T0 = window.BANZIC_TEST || { actif: false, noms: [] }, cacheTest = (nom) => !T0.actif && T0.noms.indexOf(nom) >= 0;
     let enCours = false;
     function charger() {
       if (enCours || document.hidden) return; enCours = true;
-      req('djs?select=cle,nom,profil,maj').then((rows) => { DJS_ANNUAIRE.length = 0; (rows || []).forEach((r) => { const p = r.profil || {};
+      req('djs?select=cle,nom,profil,maj').then((rows) => { DJS_ANNUAIRE.length = 0; (rows || []).filter((r) => !cacheTest(r.nom)).forEach((r) => { const p = r.profil || {};
         DJS_ANNUAIRE.push({ id: 'a:' + r.cle, nom: r.nom, styles: p.styles || [], ville: p.ville || '', formule: p.formule === 'pro' ? 'pro' : 'live', liens: p.liens || {}, annonces: p.annonces || [], photo: p.photo || '',
           residence: p.residence || null, confirmes: p.confirmes || 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 } }); }); INDEX_DJ = null;
         const essai = DJS_ANNUAIRE.find(estFicheTestPierro);
@@ -2090,6 +2093,7 @@
       }).catch(() => {});
       Promise.all([req('declarations?select=*'), req('spots?select=*'), req('soirees?select=*&order=date')]).then(([ds, ss, so]) => {
         ds = ds || []; ss = ss || []; so = so || [];
+        ds = ds.filter((r) => !cacheTest(r.dj_nom)); ss = ss.filter((r) => !cacheTest(r.par));
         // DJ en live
         DJS_DISTANTS.length = 0;
         const estLive = (r) => r.lat == null && r.liens_live && r.liens_live.youtube;
