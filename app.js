@@ -2738,7 +2738,7 @@
     return CK_FICHES['s:' + x.id] = { titre: x.nom, sous: [x.genres, x.prix, x.scheduleNote].filter(Boolean).join(' · '), tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert', bar: 'Bar', restaurant: 'Resto' })[x.type] || 'Soirée', st, heure: x.heure || '',
       quand: !auj ? jourTxt + (x.heure ? ' à ' + x.heure.replace(':', 'h') : '') : avant != null && avant > 0 ? 'commence dans ' + durTxt(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
       affiche: radarUrl(x.flyerUrl) || '', billets: ticket, source: x.sourceName || '',
-      lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: kmDeMoi(l.lat, l.lng), djs: djsDe(x.djs), djBanzic: x.djBanzic || [], auj, url: ticket || info, test: x.test };
+      lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: kmDeMoi(l.lat, l.lng), djs: (() => { const n = x.djBanzic || liensDjs().parId[cleSoiree(x)] || [], deja = djsDe(x.djs).map(sansAccent); return djsDe(x.djs).concat(n.filter((d) => !deja.includes(sansAccent(d)))); })(), djBanzic: x.djBanzic || liensDjs().parId[cleSoiree(x)] || [], auj, url: ticket || info, test: x.test };
   }
   function ficheDeclCarte(xs) {
     const x = xs[0], l = lieuDe(x) || {}, ok = xs.some(declConfirmee), now = Date.now(), avant = (x.debut - now) / 60000, reste = (x.fin - now) / 60000;
@@ -4897,7 +4897,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       ${choixLieuHtml('resid', 'Ton club attitré', '(si tu es résident) il s\'affiche sur ta fiche', MON_DJ.residence || null)}
       <p class="conseil" style="margin-top:0">Tes liens s'affichent sur ta fiche DJ. Colle l'adresse de ta page ou de ta chaîne.</p>
       ${RESEAUX.map((r) => `<label class="champ"><span>${r.nom}</span><input class="search" name="${r.id}" inputmode="url" autocomplete="off" placeholder="${r.ex}" value="${esc((MON_DJ.liens || {})[r.id] || '')}"></label>`).join('')}
-      <button type="submit" class="btn-plein">Enregistrer mes liens</button>
+      <button type="submit" class="btn-plein">Enregistrer ma fiche</button>
       <button type="button" class="alerte" data-djpro-annuler="1">Annuler</button>
     </form>`;
   }
