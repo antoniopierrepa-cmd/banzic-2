@@ -11,7 +11,7 @@ test('présence sur place : Bangers et DJ limités à 30 m, bateau à 500 m', ()
 
 function context(state, soirees = [], lieux = {}) {
   const bounds = { south: 42, north: 43, west: 2, east: 3, getCenter() { return { lng: (this.west + this.east) / 2 }; }, contains([lat, lng]) { return lat >= this.south && lat <= this.north && lng >= this.west && lng <= this.east; } };
-  const c = vm.createContext({ state, bounds, map: { getBounds: () => bounds }, DEST: { local: { centre: [43.1242, 5.928] } }, SUD: { soirees, lieux }, iso: () => '2026-11-12' });
+  const c = vm.createContext({ window: {}, setInterval: () => 0, document: { hidden: true }, state, bounds, map: { getBounds: () => bounds }, DEST: { local: { centre: [43.1242, 5.928] } }, SUD: { soirees, lieux }, iso: () => '2026-11-12' });
   const distance = app.match(/const distKm = .*?;\n/)[0];
   const geo = app.slice(app.indexOf('  function centreGeographique()'), app.indexOf('  function marqueursRadar()'));
   vm.runInContext(distance + geo, c);

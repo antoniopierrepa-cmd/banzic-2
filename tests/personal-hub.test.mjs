@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');
 function harness(saved,events,panel='soirees') {
  const elements=Object.fromEntries(['fav-hub-tabs','fav-list'].map(id=>[id,{innerHTML:'',hidden:true,attrs:{},setAttribute(k,v){this.attrs[k]=v;}}]));
- const context=vm.createContext({Set,Date,state:{favPanel:panel,favs:[]},mesSoirees:()=>saved,soireesAvecKm:()=>events,$:selector=>elements[selector.slice(1)],document:{querySelectorAll:()=>[]},renderFavDjs(){elements['fav-list'].innerHTML='DJ collection';},ficheSoireeJour(){},esc:x=>String(x),radarUrl:()=>'',afficheSoiree:()=>'/test.png',MOIS_CRT:['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'],ICO_BANG:'◎'});
+ const context=vm.createContext({window:{},Set,Date,state:{favPanel:panel,favs:[]},mesSoirees:()=>saved,soireesAvecKm:()=>events,$:selector=>elements[selector.slice(1)],document:{querySelectorAll:()=>[]},renderFavDjs(){elements['fav-list'].innerHTML='DJ collection';},ficheSoireeJour(){},esc:x=>String(x),radarUrl:()=>'',afficheSoiree:()=>'/test.png',MOIS_CRT:['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'],ICO_BANG:'◎'});
  vm.runInContext(app.slice(app.indexOf('  function soireesGardees()'),app.indexOf('  function ouvrirFavoris(')),context);
  context.renderFavs();return{context,elements};
 }

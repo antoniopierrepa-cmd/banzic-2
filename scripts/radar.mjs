@@ -23,7 +23,8 @@ export function normalize(row, source, today) {
   const country = text(row.country) || 'FR';
   const dep = country !== 'FR' ? country : text(row.dep) || departmentFromPostal(row.postalCode);
   const url = safeUrl(row.url);
-  if (!/^[A-Z]{2}$/.test(country) || (country === 'FR' && !departments[dep]) || !url || !text(row.nom) || !text(row.lieu)) return null;
+  // Code pays à 2 lettres, et pas un code réservé qui ne désigne aucun pays (AA, QM à QZ, XA à XZ, ZZ)
+  if (!/^[A-Z]{2}$/.test(country) || /^(AA|Q[M-Z]|X[A-Z]|ZZ)$/.test(country) || (country === 'FR' && !departments[dep]) || !url || !text(row.nom) || !text(row.lieu)) return null;
   return { id: source.id + ':' + text(row.id || url), src: source.id, nom: text(row.nom), date,
     heure: /^([01]\d|2[0-3]):[0-5]\d$/.test(row.heure || '') ? row.heure : '',
     djs: Array.isArray(row.lineup) ? row.lineup.map(text).filter(Boolean).join(', ') : text(row.djs),

@@ -2701,6 +2701,7 @@
   // Rayon réglable par une barre de 5 à 100 km (100 km par défaut), gardé sur le téléphone
   const CK_RAYONS = [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100];
   state.ckRayon = CK_RAYONS.includes(store.get('ckRayon', 100)) ? store.get('ckRayon', 100) : 100;
+  store.set('ckRayon', state.ckRayon); // une ancienne préférence (500 ou 1 000 km) est corrigée une fois pour toutes
   // La barre de progression avance toute seule : le Check-in se redessine chaque minute quand il est affiché
   setInterval(() => { if (state.tab === 'checkin' && !document.hidden) { try { renderCheckin(); } catch (e) { /* */ } } }, 60000);
   // ---- Fiche d'une soirée (Check-in) : tout le bandeau ouvre une page avec le lieu et le line-up en grand
@@ -3009,7 +3010,7 @@
   // Les jours du Check-in changent à 9 h du matin, pas à minuit : jusqu'à 9 h, « Aujourd'hui » reste la nuit en cours,
   // et les départs de demain et d'après-demain ne glissent d'un jour qu'à 9 h.
   function joursCheckin(now = Date.now()) {
-    const base = new Date(now - 9 * 3600000); base.setHours(0, 0, 0, 0);
+    const base = new Date(now); base.setHours(0, 0, 0, 0);
     return [0, 1, 2].map((n) => { const d = new Date(base); d.setDate(d.getDate() + n); return iso(d); });
   }
   function horairesCheckin(x) {
