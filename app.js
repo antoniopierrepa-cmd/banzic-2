@@ -3674,7 +3674,7 @@
     const liste = toutes.filter(passeFiltres);
     { const z = $('#ag-cal-zone'); if (z) z.innerHTML = state.agGardees ? `<div class="ag-cal-barre"><span class="ag-cal-btn choisi">${ICO_BANG}<span>Mes soirées gardées (${toutesG.length})</span></span><button type="button" class="ag-cal-x" data-ag-toutes="1">Tout l’agenda</button></div>` : calendrierAgenda(toutesLoin.filter(passeFiltres)); }
     const filtres = $('#ag-filtres');
-    if (filtres) filtres.innerHTML = touchesFamilles('ag') + `<button type="button" class="sous-chip${state.agDjBanzic ? ' on' : ''}" data-ag-djbanzic="1" aria-pressed="${!!state.agDjBanzic}">🎧 Dates des DJ Banzic</button>`;
+    if (filtres) filtres.innerHTML = touchesFamilles('ag') + `<button type="button" class="sous-chip${state.agDjBanzic ? ' on' : ''}" style="--pc:#FF8035" data-ag-djbanzic="1" aria-pressed="${!!state.agDjBanzic}">🎧 Dates des DJ Banzic</button>`;
     document.querySelectorAll('.fd-graduations span').forEach((s, i) => s.classList.toggle('on', i === state.rayonIdx));
     const fr = $('#fader-rayon'); if (fr) fr.style.setProperty('--pct', (state.rayonIdx / (RAYONS.length - 1) * 100) + '%');
     let h = '';
