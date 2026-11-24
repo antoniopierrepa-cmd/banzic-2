@@ -369,19 +369,33 @@
     const decl = DECLS.find(x => x.dj === pro.id && Number(x.debut) <= Date.now() && declActive(x));
     return decl ? 'En live · ' + ((lieuDe(decl) || {}).nom || 'Aux platines') : '';
   }
+  // Annuaire des DJ Banzic (fiches créées dans l'appli), rangé par région
+  function annuaireRegions() {
+    const tous = DJS_ANNUAIRE.slice(); try { if (MON_DJ && !tous.some((d) => sansAccent(d.nom) === sansAccent(MON_DJ.nom))) tous.push(MON_DJ); } catch (e) { /* */ }
+    if (!tous.length) return '';
+    const parR = {}; tous.forEach((d) => { const r = regionDj(d); (parR[r] = parR[r] || []).push(d); });
+    const regions = Object.keys(parR).sort((a, b) => parR[b].length - parR[a].length || a.localeCompare(b));
+    const choix = state.annuaireRegion && parR[state.annuaireRegion] ? state.annuaireRegion : null;
+    const liste = (choix ? parR[choix] : tous).slice().sort((a, b) => a.nom.localeCompare(b.nom));
+    return `<div class="section-title" id="annuaire-dj">Annuaire des DJ <small>${tous.length} DJ sur Banzic · par région</small></div>
+      <div class="chips annuaire-regions"><button type="button" class="chip ${choix ? '' : 'on'}" data-annuaire-region="">Toutes</button>${regions.map((r) => `<button type="button" class="chip ${choix === r ? 'on' : ''}" data-annuaire-region="${esc(r)}">${esc(r)} <small>${parR[r].length}</small></button>`).join('')}</div>
+      <div class="fav-dj-liste">${liste.map((d) => `<div class="fav-dj-bandeau"><button type="button" class="fav-dj-ouvrir" data-dj-pro="${esc(d.nom)}"><span class="fav-vinyle">${avatarDj(d.nom)}</span><span class="fav-dj-identite"><b>${esc(d.nom)}</b><small>${esc([d.ville, regionDj(d)].filter(Boolean).join(' · '))}${(d.styles || []).length ? ' · ' + esc(d.styles.slice(0, 2).join(', ')) : ''}${(d.materiel || []).length ? ' · ' + esc(d.materiel.slice(0, 2).join(', ')) : ''}</small></span></button></div>`).join('')}</div>
+      <p class="aide">Pour un cours, une résidence ou une soirée privée, contacte le DJ depuis sa fiche. Banzic ne prend aucune commission.</p>`;
+  }
+  document.addEventListener('click', (e) => { const b = e.target.closest('[data-annuaire-region]'); if (!b) return; state.annuaireRegion = b.dataset.annuaireRegion || null; renderFavDjs(); const t = $('#annuaire-dj'); if (t) t.scrollIntoView({ block: 'start' }); });
   function renderFavDjs() {
     const ibiza = state.dest === 'ibiza';
     document.querySelectorAll('#screen-fav > :not(#fav-list):not(#fav-hub-tabs)').forEach((el) => { el.hidden = !ibiza; });
-    if (!ibiza && !state.favs.length) { $('#fav-list').innerHTML = `<div class="empty">${esc(T('lineups_bientot', { d: DEST[state.dest].nom }))}</div>`; return; }
+    if (!ibiza && !state.favs.length) { $('#fav-list').innerHTML = `<div class="empty">${esc(T('lineups_bientot', { d: DEST[state.dest].nom }))}</div>` + annuaireRegions(); remplirAvatars($('#fav-list')); return; }
     const t = state.t;
     if (!state.favs.length) {
-      $('#fav-list').innerHTML = `<div class="empty">Ajoute tes DJ préférés : l'appli te dit où et à quelle heure ils jouent ce soir.</div>`;
+      $('#fav-list').innerHTML = `<div class="empty">Ajoute tes DJ préférés : l'appli te dit où et à quelle heure ils jouent ce soir.</div>` + annuaireRegions();
     } else {
       const rows = state.favs.slice().sort((a, b) => Number(!!liveFavori(b)) - Number(!!liveFavori(a))).map(nom => {
         const live = liveFavori(nom);
         return `<div class="fav-dj-bandeau"><button type="button" class="fav-dj-ouvrir" data-dj-pro="${esc(nom)}"><span class="fav-vinyle${live ? ' tourne' : ''}">${avatarDj(nom)}</span><span class="fav-dj-identite"><b>${esc(nom)}</b><small>${live ? esc(live) : 'DJ favori'}</small></span>${live ? '<span class="fav-live"><i></i>LIVE</span>' : ''}<span aria-hidden="true">›</span></button>${heart(nom)}</div>`;
       });
-      $('#fav-list').innerHTML = `<div class="section-title">Mes DJ <small>${state.favs.length} suivis</small></div><div class="fav-dj-liste">${rows.join('')}</div>`;
+      $('#fav-list').innerHTML = `<div class="section-title">Mes DJ <small>${state.favs.length} suivis</small></div><div class="fav-dj-liste">${rows.join('')}</div>` + annuaireRegions();
       remplirAvatars($('#fav-list'));
     }
     // Annuaire : une fiche pour chaque DJ passé à Ibiza (line-up de ce soir + toute la saison 2025)
@@ -2074,7 +2088,7 @@
       let jeton = store.get('djJeton', ''); if (!jeton) { jeton = Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => b.toString(16).padStart(2, '0')).join(''); store.set('djJeton', jeton); }
       const ph = photoProfil() || '';
       const profil = { styles: MON_DJ.styles || [], ville: MON_DJ.ville || '', formule: MON_DJ.formule || 'live', liens: MON_DJ.liens || {}, annonces: (MON_DJ.annonces || []).slice(-30),
-        photo: ph.startsWith('data:') ? '' : ph, residence: MON_DJ.residence || null, confirmes: setsConfirmes(MON_DJ) };
+        photo: ph.startsWith('data:') ? '' : ph, residence: MON_DJ.residence || null, confirmes: setsConfirmes(MON_DJ), region: MON_DJ.region || '', materiel: MON_DJ.materiel || [], materielAutre: MON_DJ.materielAutre || '' };
       req('rpc/publier_dj', { method: 'POST', body: JSON.stringify({ p_cle: sansAccent(MON_DJ.nom).slice(0, 40), p_nom: MON_DJ.nom.slice(0, 40), p_jeton: jeton, p_profil: profil }) })
         .then((ok) => { if (ok === false) toast('Ce nom de DJ est déjà pris par un autre téléphone : choisis-en un autre pour être visible de tous'); }).catch(() => {}); };
     const envoyerSpot = (s) => req('spots', { method: 'POST', headers: Object.assign({ Prefer: 'return=minimal' }, H), body: JSON.stringify({ id: s.id, nom: (s.nom || '').slice(0, 60), type: s.type, dj: (s.dj || '').slice(0, 40), lat: s.lat, lng: s.lng,
@@ -2087,7 +2101,7 @@
       if (enCours || document.hidden) return; enCours = true;
       req('djs?select=cle,nom,profil,maj').then((rows) => { DJS_ANNUAIRE.length = 0; (rows || []).filter((r) => !cacheTest(r.nom)).forEach((r) => { const p = r.profil || {};
         DJS_ANNUAIRE.push({ id: 'a:' + r.cle, nom: r.nom, styles: p.styles || [], ville: p.ville || '', formule: p.formule === 'pro' ? 'pro' : 'live', liens: p.liens || {}, annonces: p.annonces || [], photo: p.photo || '',
-          residence: p.residence || null, confirmes: p.confirmes || 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 } }); }); INDEX_DJ = null;
+          residence: p.residence || null, confirmes: p.confirmes || 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 }, region: p.region || '', materiel: p.materiel || [], materielAutre: p.materielAutre || '' }); }); INDEX_DJ = null;
         const essai = DJS_ANNUAIRE.find(estFicheTestPierro);
         if (essai && !charger.pierroOuvert) { charger.pierroOuvert = true; ouvrirDj(essai.nom); }
       }).catch(() => {});
@@ -2283,6 +2297,7 @@
       if (pro.formule === 'pro') h += blocLiens(pro);
       h += lecteurStream(pro);
       if (pro.formule === 'pro') h += blocAnnonces(pro, false);
+      h += blocMateriel(pro);
       // Crédibilité retirée de la fiche (11/11/2026)
       if (pro.mien && pro.formule !== 'pro') h += `<div class="fp-verrou"><b>Fiche DJ Pro</b> : dates annoncées à l'avance, pays de tournée, lecteur de sets, liens YouTube, SoundCloud, Instagram, TikTok et bouton Booking.</div>`;
       if (!ceSoir.length && !saison.length) { $('#dj-body').innerHTML = h + blocTournee(nom) + blocCommentaires(nom); remplirAvatars($('#dj-body')); return; }
@@ -2723,7 +2738,7 @@
     return CK_FICHES['s:' + x.id] = { titre: x.nom, sous: [x.genres, x.prix, x.scheduleNote].filter(Boolean).join(' · '), tag: ({ club: 'Club', festival: 'Festival', concert: 'Concert', bar: 'Bar', restaurant: 'Resto' })[x.type] || 'Soirée', st, heure: x.heure || '',
       quand: !auj ? jourTxt + (x.heure ? ' à ' + x.heure.replace(':', 'h') : '') : avant != null && avant > 0 ? 'commence dans ' + durTxt(Math.round(avant)) : x.heure ? 'depuis ' + x.heure : 'ce soir',
       affiche: radarUrl(x.flyerUrl) || '', billets: ticket, source: x.sourceName || '',
-      lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: kmDeMoi(l.lat, l.lng), djs: djsDe(x.djs), url: ticket || info, test: x.test };
+      lieu: { nom: l.nom, adresse: l.adresse || l.ville || '', lat: l.lat, lng: l.lng, gid: l.gid }, km: kmDeMoi(l.lat, l.lng), djs: djsDe(x.djs), djBanzic: x.djBanzic || [], auj, url: ticket || info, test: x.test };
   }
   function ficheDeclCarte(xs) {
     const x = xs[0], l = lieuDe(x) || {}, ok = xs.some(declConfirmee), now = Date.now(), avant = (x.debut - now) / 60000, reste = (x.fin - now) / 60000;
@@ -2957,7 +2972,7 @@
           ${f.lieuCle ? `<button type="button" class="sf-btn plein" data-linked-venue="${esc(f.lieuCle)}">${esc(l.nom || 'Lieu')} ›</button>` : `<b>${esc(l.nom || 'Lieu')}</b>`}${l.adresse ? `<small>${esc(l.adresse)}</small>` : ''}${f.km != null ? `<small>À ${fK(f.km)} de toi</small>` : ''}
           <div class="sf-actions"><button type="button" class="sf-btn plein" data-soiree-carte="${cle}">Voir sur la carte</button><button type="button" class="sf-btn" data-sf-route-toggle="1" aria-expanded="false">Itinéraire ▾</button></div><div class="sf-route-options" hidden style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"><a class="sf-btn" data-sf-gm="1" href="${gm}" target="_blank" rel="noopener">Google Maps</a><a class="sf-btn" href="${waze}" target="_blank" rel="noopener">Waze</a><a class="sf-btn" href="${apple}" target="_blank" rel="noopener">Plans Apple</a></div></div></div>
       <div class="sf-bloc"><div class="sf-titre">${f.club ? 'Soirées' : 'Line-up'}</div>
-        ${f.djs && f.djs.length ? `<div class="sf-lineup">${f.djs.map((n) => { const linked = !!djProParNom(n); return `<button type="button" class="sf-dj"${linked ? ` data-dj-pro="${esc(n)}"` : ' disabled'}><span class="sf-av">${avatarDj(n)}</span><b>${esc(n)}</b><span class="sf-fleche">${linked ? '›' : 'Profil non relié'}</span></button>`; }).join('')}</div>`
+        ${f.djs && f.djs.length ? `<div class="sf-lineup">${f.djs.map((n) => { const linked = !!djProParNom(n); return `<button type="button" class="sf-dj"${linked ? ` data-dj-pro="${esc(n)}"` : ' disabled'}><span class="sf-av">${avatarDj(n)}</span><b>${esc(n)}</b><span class="sf-fleche">${(f.djBanzic || []).some((d) => sansAccent(d) === sansAccent(n)) ? 'Annoncé par le DJ ›' : linked ? '›' : 'Profil non relié'}</span></button>`; }).join('')}</div>${f.auj ? '<button type="button" class="sf-btn plein sf-confirmer-dj" data-sf-banger="1">Je suis sur place : confirmer qui joue</button>' : ''}`
           : `<p class="aide">${f.club ? 'Aucune soirée annoncée pour l\'instant.' : 'Line-up non communiqué pour l\'instant.'}</p>`}</div>
       ${f.url ? `<a class="btn-plein sf-billets" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${f.club ? 'Site du club' : f.billets ? 'Billets' : 'Infos sur la soirée'}</a>` : ''}${f.club && f.officiel ? `<div class="sf-officiel">${f.logo ? `<img src="${f.logo}" alt="">` : ''}<span><b>Club officiel</b><small>Fiche tenue par le club : horaires et soirées à jour.</small></span></div>` : f.club ? `<div class="sf-revendiquer"><b>C'est votre club ?</b><p>Revendiquez cette fiche pour annoncer vos soirées et les proposer aux Bangers de votre région.</p><button type="button" class="sf-btn" data-club-revendiquer="${cle}">C'est mon club</button></div>` : ''}${f.source ? `<p class="aide sf-source">Source : ${esc(f.source)}</p>` : ''}`;
     if (f.reviewDetails) {
@@ -3552,10 +3567,41 @@
   state.rayonIdx = Math.max(0, Math.min(RAYONS.length - 1, Number(store.get('rayonIdx', 2)) || 0));
   // L'Agenda ne suit que ta vraie position (GPS), jamais la ville choisie sur la carte ou dans le Check-in, et ne la change pas non plus
   function centreAgenda() { return state.agVille ? state.agVille.c : state.maPos ? [state.maPos.lat, state.maPos.lng] : DEST.local.centre; }
+  // ---------- Dates annoncées par les DJ Banzic
+  // Une date sur une soirée qui existe déjà (même jour, même lieu) est reliée à cette soirée : le DJ s'ajoute à son line-up, sans doublon.
+  // Sinon, si le lieu est connu, la date devient une soirée de l'Agenda. Dans tous les cas elle reste sur la fiche du DJ.
+  const normNom = (t) => sansAccent(String(t || '')).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const memeLieu = (a, b) => { const x = normNom(a), y = normNom(b); return x.length > 1 && y.length > 1 && (x === y || x.includes(y) || y.includes(x)); };
+  const cleSoiree = (x) => x.id != null ? String(x.id) : x.date + '|' + x.lieu + '|' + x.nom;
+  function soireeExistante(date, lieu) {
+    return SUD.soirees.find((x) => x.date === date && x.src !== 'dj' && SUD.lieux[x.lieu] && memeLieu(SUD.lieux[x.lieu].nom, lieu)) || null;
+  }
+  function lieuConnu(nom) { const k = Object.keys(SUD.lieux || {}).find((id) => memeLieu(SUD.lieux[id].nom, nom) && SUD.lieux[id].lat != null); return k || null; }
+  function datesDjsBanzic() {
+    const out = [], vus = new Set(), auj = iso(new Date());
+    const ajoute = (d) => (d && d.annonces || []).forEach((a) => { if (!a || !a.date || a.date < auj) return; const k = sansAccent(d.nom) + '|' + a.date + '|' + normNom(a.lieu); if (vus.has(k)) return; vus.add(k); out.push({ ...a, dj: d.nom }); });
+    try { ajoute(MON_DJ); } catch (e) { /* */ }
+    DJS_ANNUAIRE.forEach(ajoute);
+    return out;
+  }
+  let _liensDj = { cle: '', parId: {}, extra: [] };
+  function liensDjs() {
+    const ds = datesDjsBanzic(), cle = ds.map((a) => a.dj + a.date + a.lieu).join('|') + '#' + SUD.soirees.length;
+    if (cle === _liensDj.cle) return _liensDj;
+    const parId = {}, extra = {};
+    ds.forEach((a) => { const x = soireeExistante(a.date, a.lieu);
+      if (x) { const k = cleSoiree(x); (parId[k] = parId[k] || []).push(a.dj); return; }
+      const l = lieuConnu(a.lieu); if (!l) return;
+      const id = 'dj-' + sansAccent(a.dj).replace(/[^a-z0-9]+/g, '-') + '-' + a.date + '-' + l;
+      if (extra[id]) return;
+      extra[id] = { id, date: a.date, heure: a.heure || '', nom: a.texte || 'Soirée avec ' + a.dj, djs: a.dj, lieu: l, type: 'club', src: 'dj', url: a.billet || '', djBanzic: [a.dj] }; });
+    return (_liensDj = { cle, parId, extra: Object.values(extra) });
+  }
   function soireesAvecKm(centre = centreGeographique()) {
-    const auj = iso(new Date());
-    return SUD.soirees.filter((x) => x.date >= auj && SUD.lieux[x.lieu])
-      .map((x) => ({ ...x, l: SUD.lieux[x.lieu], km: distKm(centre, [SUD.lieux[x.lieu].lat, SUD.lieux[x.lieu].lng]) }))
+    const auj = iso(new Date()), lk = liensDjs();
+    return SUD.soirees.concat(lk.extra).filter((x) => x.date >= auj && SUD.lieux[x.lieu])
+      .map((x) => { const n = lk.parId[cleSoiree(x)]; if (n) { const deja = djsDe(x.djs).map(sansAccent); x = { ...x, djs: djsDe(x.djs).concat(n.filter((d) => !deja.includes(sansAccent(d)))).join(', '), djBanzic: n }; }
+        return { ...x, l: SUD.lieux[x.lieu], km: distKm(centre, [SUD.lieux[x.lieu].lat, SUD.lieux[x.lieu].lng]) }; })
       .sort((a, b) => a.date.localeCompare(b.date) || a.km - b.km);
   }
   function renderAgendaSud() {
@@ -3599,6 +3645,10 @@
       <div class="agcal-grille">${cases}</div>
       <p class="agcal-aide">Le chiffre = soirées ce jour-là avec tes filtres (styles, type, distance).</p></div>`;
   }
+  // Depuis la page d'une soirée : ouvrir le panneau BANGER (« Qui est aux platines ? »)
+  document.addEventListener('click', (e) => { if (!e.target.closest('[data-sf-banger]')) return; const b = document.getElementById('btn-spot'); if (b) b.click(); });
+  // Filtre de l'Agenda : seulement les dates annoncées par des DJ Banzic
+  document.addEventListener('click', (e) => { if (!e.target.closest('[data-ag-djbanzic]')) return; state.agDjBanzic = !state.agDjBanzic; listeAgendaSud(); });
   document.addEventListener('click', (e) => { if (!e.target.closest('[data-ag-toutes]')) return; state.agGardees = false; state.agJours = 7; listeAgendaSud(); });
   document.addEventListener('click', (e) => {
     const j = e.target.closest('[data-agcal-j]');
@@ -3620,11 +3670,11 @@
     const garde = mesSoirees(), toutesG = soireesAvecKm(centreAgenda()).filter((x) => garde.includes(x.id));
     const toutes = state.agGardees ? toutesG : state.agDate ? toutesLoin.filter((x) => x.date === state.agDate) : toutesLoin.filter((x) => x.date <= j7);
     const types = state.sudTypes || [];
-    const passeFiltres = x => passeFamilles(x, 'ag') && (!types.length || types.some(k => PAD_TEST['type|' + k]?.(x)));
+    const passeFiltres = x => passeFamilles(x, 'ag') && (!types.length || types.some(k => PAD_TEST['type|' + k]?.(x))) && (!state.agDjBanzic || !!(x.djBanzic && x.djBanzic.length));
     const liste = toutes.filter(passeFiltres);
     { const z = $('#ag-cal-zone'); if (z) z.innerHTML = state.agGardees ? `<div class="ag-cal-barre"><span class="ag-cal-btn choisi">${ICO_BANG}<span>Mes soirées gardées (${toutesG.length})</span></span><button type="button" class="ag-cal-x" data-ag-toutes="1">Tout l’agenda</button></div>` : calendrierAgenda(toutesLoin.filter(passeFiltres)); }
     const filtres = $('#ag-filtres');
-    if (filtres) filtres.innerHTML = touchesFamilles('ag');
+    if (filtres) filtres.innerHTML = touchesFamilles('ag') + `<button type="button" class="sous-chip${state.agDjBanzic ? ' on' : ''}" data-ag-djbanzic="1" aria-pressed="${!!state.agDjBanzic}">🎧 Dates des DJ Banzic</button>`;
     document.querySelectorAll('.fd-graduations span').forEach((s, i) => s.classList.toggle('on', i === state.rayonIdx));
     const fr = $('#fader-rayon'); if (fr) fr.style.setProperty('--pct', (state.rayonIdx / (RAYONS.length - 1) * 100) + '%');
     let h = '';
@@ -4306,11 +4356,33 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   }
   const annoncesAVenir = (d) => (d.annonces || []).filter((a) => new Date(a.date + 'T23:59') >= new Date()).sort((a, b) => (a.date + a.heure).localeCompare(b.date + b.heure));
   const fmtJour = (iso) => { const x = new Date(iso + 'T12:00'); return `${['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'][x.getDay()]} ${x.getDate()} ${moisNom(x.getMonth())}`; };
+  // ---------- Matériel du DJ et région (annuaire par région)
+  const MATERIEL_DJ = ['Platines vinyle', 'CDJ / XDJ', 'Contrôleur', 'Table de mixage', 'Sono / enceintes', 'Micro', 'Éclairage'];
+  const REGIONS_FR = [['Auvergne-Rhône-Alpes', 45.5, 4.5], ['Bourgogne-Franche-Comté', 47.2, 4.8], ['Bretagne', 48.2, -2.9], ['Centre-Val de Loire', 47.5, 1.7], ['Corse', 42.15, 9.1],
+    ['Grand Est', 48.7, 5.6], ['Hauts-de-France', 50.0, 2.8], ['Île-de-France', 48.75, 2.45], ['Normandie', 49.1, 0.1], ['Nouvelle-Aquitaine', 45.2, 0.2], ['Occitanie', 43.7, 2.1],
+    ['Pays de la Loire', 47.4, -0.8], ['Provence-Alpes-Côte d\'Azur', 43.9, 6.1]];
+  // Région d'un DJ : celle qu'il a choisie, sinon déduite de sa ville (ville française la plus proche d'un centre de région ; à l'étranger : le pays)
+  function regionDj(d) {
+    if (d && d.region) return d.region;
+    const v = (window.VILLES || []).find((x) => sansAccent(x[0]).toLowerCase() === sansAccent(String((d && d.ville) || '')).toLowerCase().trim());
+    if (!v) return 'Autre';
+    if (v[1] !== 'France') return v[1];
+    return REGIONS_FR.reduce((a, r) => (distKm([v[2], v[3]], [r[1], r[2]]) < a[1] ? [r[0], distKm([v[2], v[3]], [r[1], r[2]])] : a), ['Autre', 1e9])[0];
+  }
+  const choixRegionHtml = (val) => `<label class="champ"><span>Ta région <small class="aide">(pour l'annuaire des DJ)</small></span><select class="search" name="region"><option value="">Déduite de ta ville</option>${REGIONS_FR.map((r) => `<option ${val === r[0] ? 'selected' : ''}>${esc(r[0])}</option>`).join('')}<option ${val === 'Belgique' ? 'selected' : ''}>Belgique</option><option ${val === 'Espagne' ? 'selected' : ''}>Espagne</option><option ${val === 'Suisse' ? 'selected' : ''}>Suisse</option></select></label>`;
+  const choixMaterielHtml = (d) => `<div class="champ"><span>Ton matériel <small class="aide">(ce que tu apportes, coche tout ce qui va)</small></span><div class="chips">${MATERIEL_DJ.map((m) => { const on = ((d && d.materiel) || []).includes(m); return `<label class="chip ${on ? 'on' : ''}"><input type="checkbox" name="materiel" value="${esc(m)}" ${on ? 'checked' : ''} hidden>${esc(m)}</label>`; }).join('')}</div>
+      <input class="search" name="materielAutre" maxlength="80" placeholder="Autre matériel (facultatif)" value="${esc((d && d.materielAutre) || '')}" style="margin-top:8px"></div>`;
+  function blocMateriel(d) {
+    const m = ((d && d.materiel) || []).concat(d && d.materielAutre ? [d.materielAutre] : []);
+    return m.length ? `<div class="section-title">Matériel <small>ce que le DJ apporte</small></div><div class="chips">${m.map((x) => `<span class="chip on">${esc(x)}</span>`).join('')}</div>` : '';
+  }
+  document.addEventListener('change', (e) => { const c = e.target.closest && e.target.closest('input[name="materiel"]'); if (c) c.closest('label').classList.toggle('on', c.checked); });
+
   function blocAnnonces(d, edit) {
     const as = annoncesAVenir(d);
     if (!as.length && !edit) return '';
     return `<div class="section-title">Prochaines dates <small>annoncées par le DJ</small></div>
-      ${as.map((a, i) => `<div class="mini annonce"><span><span class="venue">${fmtJour(a.date)}${a.heure ? ' · ' + esc(a.heure) : ''}</span><br><small>${esc(a.lieu)}${a.texte ? ' · ' + esc(a.texte) : ''}</small></span>
+      ${as.map((a, i) => `<div class="mini annonce"><span><span class="venue">${fmtJour(a.date)}${a.heure ? ' · ' + esc(a.heure) : ''}</span><br><small>${esc(a.lieu)}${a.texte ? ' · ' + esc(a.texte) : ''}</small>${a.soiree ? `<br><small class="annonce-reliee">Reliée à la soirée « ${esc(a.soiree.nom)} »</small>` : ''}</span>
         ${a.billet ? `<a class="badge b-soon" href="${esc(a.billet)}" target="_blank" rel="noopener">Billets</a>` : '<span class="badge b-decl">Annoncé</span>'}
         ${edit ? `<button class="ps-x" data-annonce-suppr="${i}" aria-label="Supprimer cette date">×</button>` : ''}</div>`).join('') || '<p class="conseil">Aucune date annoncée pour l\'instant.</p>'}
       <p class="aide" style="margin-top:4px">Annoncé par le DJ, pas encore confirmé par le lieu.</p>`;
@@ -4573,13 +4645,13 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <span class="ech-txt"><small>Ma fiche DJ</small><b>${esc(MON_DJ.nom)} ${badgeOfficiel(MON_DJ)}</b><span>${MON_DJ.styles.map(esc).join(' · ')} · ${esc(MON_DJ.ville)}</span><em class="mfd-voir">Voir ma fiche publique</em></span><svg class="ech-fl" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       ${actif ? carteDecl(actif) : `<button class="btn-plein btn-mixe" data-djpro-mixe="1">Je mixe maintenant</button>`}
       ${pro ? `${blocLiens(MON_DJ) || '<p class="conseil">Ajoute tes liens pour montrer ce que tu fais : YouTube, SoundCloud, Mixcloud, Twitch, Instagram, TikTok.</p>'}
-          <button class="alerte" data-djpro-liens="1">Modifier mes liens</button>
+          ${blocMateriel(MON_DJ)}<button class="alerte" data-djpro-liens="1">Modifier ma fiche : liens, matériel, région</button>
           ${blocAnnonces(MON_DJ, true)}
           <button class="alerte" data-djpro-annonce="1">Annoncer une date</button>
           <div class="section-title">Mon live YouTube <small>visible dans « DJ en live »</small></div>
           ${enStream(MON_DJ) ? carteStream(MON_DJ, true) + '<button class="alerte" data-stream-fin="1">Arrêter mon live</button>'
             : '<button class="btn-plein btn-stream" data-djpro-stream="1"><span class="pt-rouge" aria-hidden="true"></span>Je suis en live sur YouTube</button>'}`
-        : `<div class="jour upsell"><b>Passer en ${FORMULES_DJ.pro.nom} · ${FORMULES_DJ.pro.prix}</b><p class="conseil" style="margin:6px 0 10px">${FORMULES_DJ.pro.aide}</p>
+        : `${blocMateriel(MON_DJ)}<button class="alerte" data-djpro-liens="1">Modifier ma fiche : matériel, région</button><div class="jour upsell"><b>Passer en ${FORMULES_DJ.pro.nom} · ${FORMULES_DJ.pro.prix}</b><p class="conseil" style="margin:6px 0 10px">${FORMULES_DJ.pro.aide}</p>
           <button class="btn-plein" data-djpro-upgrade="1">Passer en DJ Pro</button></div>`}
       ${MON_DJ.officiel ? blocVerif(MON_DJ) : banniereProfil('officiel', 'Devenir profil officiel', 'Badge ✓ Officiel', 'Validé par les Bangers : ' + Math.min(etatVerif(MON_DJ).sets, VERIF.sets) + '/' + VERIF.sets + ' sets confirmés', '✓')}
       <p class="demo-note">Démo : aucun paiement. Dans l'appli, l'abonnement passera par l'App Store, Google Play ou le site.</p>`;
@@ -4805,6 +4877,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
         <button type="button" class="ville-gps" data-ville-gps="1" aria-label="Utiliser ma position"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7.2 2.3L12.5 20z" fill="currentColor"/></svg>Ma position</button></span>
         <datalist id="liste-villes-dj">${(window.VILLES || []).map((v) => `<option value="${esc(v[0])}">`).join('')}</datalist></label>
       <p class="erreur" id="err-ville-dj" hidden>Indique la ville où tu mixes</p>
+      ${choixRegionHtml('')}
+      ${choixMaterielHtml(null)}
       ${choixLieuHtml('resid', 'Résident d\'un club ?', '(facultatif) ta boîte, ton club ou ton bar attitré', null)}
       <div class="champ"><span>Ton profil sur la carte <small class="aide">c'est ta photo de profil, elle s'affiche dans ta bulle, ta fiche et le bandeau</small></span>
         <div class="tete-dj-apercu"><span class="tda-rond"><img src="${photoProfil() || 'avatars-banzic/h01.jpg'}" alt=""></span><small>Pour la changer, modifie ta photo dans ton profil Banger.</small></div></div>
@@ -4817,7 +4891,9 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   }
   function formLiens() {
     return `<form id="form-liens" class="profil-form" novalidate>
-      <div class="section-title">Mes liens</div>
+      <div class="section-title">Ma fiche DJ</div>
+      ${choixRegionHtml(MON_DJ.region || '')}
+      ${choixMaterielHtml(MON_DJ)}
       ${choixLieuHtml('resid', 'Ton club attitré', '(si tu es résident) il s\'affiche sur ta fiche', MON_DJ.residence || null)}
       <p class="conseil" style="margin-top:0">Tes liens s'affichent sur ta fiche DJ. Colle l'adresse de ta page ou de ta chaîne.</p>
       ${RESEAUX.map((r) => `<label class="champ"><span>${r.nom}</span><input class="search" name="${r.id}" inputmode="url" autocomplete="off" placeholder="${r.ex}" value="${esc((MON_DJ.liens || {})[r.id] || '')}"></label>`).join('')}
@@ -4831,7 +4907,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       <div class="section-title">Annoncer une date</div>
       <label class="champ"><span>Date</span><input class="search" type="date" name="date" value="${demain}" min="${new Date().toISOString().slice(0, 10)}"></label>
       <label class="champ"><span>Heure</span><input class="search" type="time" name="heure" value="23:00"></label>
-      <label class="champ"><span>Lieu</span><input class="search" name="lieu" maxlength="50" placeholder="Club, bar, ville…"></label>
+      <label class="champ"><span>Lieu</span><input class="search" name="lieu" maxlength="50" list="liste-lieux-annonce" autocomplete="off" placeholder="Club, bar, ville…"></label>
+      <datalist id="liste-lieux-annonce">${(() => { const c = centreGeographique(), vus = new Set(); return Object.values(SUD.lieux || {}).filter((l) => l.lat != null && l.nom).map((l) => [l.nom, distKm(c, [l.lat, l.lng])]).sort((a, b) => a[1] - b[1]).filter(([n]) => !vus.has(n) && vus.add(n)).slice(0, 300).map(([n]) => `<option value="${esc(n)}">`).join(''); })()}</datalist>
       <p class="erreur" id="err-lieu" hidden>Indique le lieu</p>
       <label class="champ"><span>Infos (facultatif)</span><input class="search" name="texte" maxlength="60" placeholder="Nom de la soirée, style, invités…"></label>
       <label class="champ"><span>Lien billetterie (facultatif)</span><input class="search" name="billet" inputmode="url" placeholder="https://…"></label>
@@ -4872,7 +4949,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       const f = new FormData(e.target), nom = String(f.get('nom') || '').trim();
       if (nom.length < 2) { $('#err-djnom').hidden = false; return; }
       if (String(f.get('ville') || '').trim().length < 2) { $('#err-ville-dj').hidden = false; $('#champ-ville-dj').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
-      MON_DJ = { id: 'moi', formule: f.get('formule') || 'live', liens: {}, annonces: [], nom, styles: f.getAll('styles'), ville: String(f.get('ville') || '').trim(), residence: lieuDe_json(f.get('residLieu')), confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 }, mien: true }; INDEX_DJ = null;
+      MON_DJ = { id: 'moi', formule: f.get('formule') || 'live', liens: {}, annonces: [], nom, styles: f.getAll('styles'), ville: String(f.get('ville') || '').trim(), residence: lieuDe_json(f.get('residLieu')), confirmes: 0, contestes: 0, expires: 0, avis: { top: 0, bien: 0, bof: 0 }, mien: true,
+        region: String(f.get('region') || ''), materiel: f.getAll('materiel'), materielAutre: String(f.get('materielAutre') || '').trim().slice(0, 80) }; INDEX_DJ = null;
       sauverMonDj(); state.vueDj = null; state.nomRevendique = null; renderProfil(); toast('Profil DJ créé · formule ' + formuleDe(MON_DJ).nom + ' (démo)');
     }
     if (e.target.id === 'form-liens') {
@@ -4880,7 +4958,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       const f = new FormData(e.target); MON_DJ.liens = {};
       RESEAUX.forEach((r) => { const u = urlPropre(f.get(r.id)); if (u) MON_DJ.liens[r.id] = u; });
       MON_DJ.residence = lieuDe_json(f.get('residLieu'));
-      sauverMonDj(); state.vueDj = null; renderProfil(); toast('Liens et club attitré enregistrés');
+      MON_DJ.region = String(f.get('region') || ''); MON_DJ.materiel = f.getAll('materiel'); MON_DJ.materielAutre = String(f.get('materielAutre') || '').trim().slice(0, 80);
+      sauverMonDj(); state.vueDj = null; renderProfil(); toast('Fiche DJ enregistrée : liens, matériel, région');
       return;
     }
     if (e.target.id === 'form-stream') {
@@ -4895,8 +4974,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       e.preventDefault();
       const f = new FormData(e.target), lieu = String(f.get('lieu') || '').trim();
       if (lieu.length < 2) { $('#err-lieu').hidden = false; return; }
-      MON_DJ.annonces = (MON_DJ.annonces || []).concat([{ date: f.get('date'), heure: f.get('heure') || '', lieu, texte: String(f.get('texte') || '').trim(), billet: urlPropre(f.get('billet')) }]);
-      sauverMonDj(); state.vueDj = null; renderProfil(); toast('Date publiée sur ta fiche');
+      const date = f.get('date'), existe = soireeExistante(date, lieu);
+      MON_DJ.annonces = (MON_DJ.annonces || []).concat([{ date, heure: f.get('heure') || (existe && existe.heure) || '', lieu: existe ? SUD.lieux[existe.lieu].nom : lieu, texte: String(f.get('texte') || '').trim(), billet: urlPropre(f.get('billet')),
+        soiree: existe ? { id: cleSoiree(existe), nom: existe.nom } : null }]);
+      sauverMonDj(); state.vueDj = null; renderProfil();
+      toast(existe ? 'Date reliée à la soirée « ' + existe.nom + ' » : tu es ajouté à son line-up' : lieuConnu(lieu) ? 'Date publiée sur ta fiche et dans l\'Agenda' : 'Date publiée sur ta fiche');
       return;
     }
     if (e.target.id === 'form-mixe') {
