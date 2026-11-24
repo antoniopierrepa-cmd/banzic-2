@@ -3956,7 +3956,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     D.lieux.forEach((l) => l.lat != null && xs.push({ id: l.id, nom: l.nom, lat: l.lat, lng: l.lng, type: l.type, zone: l.zone, src: 'ibiza', dest: 'ibiza' }));
     Object.values(LIEUX_DEST).forEach((l) => l.lat != null && xs.push({ id: l.id, nom: l.nom, lat: l.lat, lng: l.lng, type: l.type, zone: l.zone || '', style: l.style, src: 'dest', dest: l.dest }));
     Object.entries(SUD.lieux || {}).forEach(([id, l]) => l.lat != null && xs.push({ id, nom: l.nom, lat: l.lat, lng: l.lng, type: 'club', zone: l.ville || '', src: 'sud', dest: 'local' }));
-    const vus = new Set(); return xs.filter((l) => { const k = sansAccent(l.nom).toLowerCase() + Math.round(l.lat * 1000); if (dejaPub.has(k)) return false; dejaPub.add(k); return true; });
+    const vus = new Set(); return xs.filter((l) => { const k = sansAccent(l.nom).toLowerCase() + Math.round(l.lat * 1000); if (vus.has(k)) return false; vus.add(k); return true; });
   }
   // Rayon : 100 m autour de la vraie position GPS ; 1,5 km en démo (sans GPS, position = centre de la carte)
   const rayonSpot = () => 1.5; // test : 1,5 km pour pouvoir choisir le bar (à remettre à 100 m plus tard)

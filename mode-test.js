@@ -22,12 +22,13 @@
     ['chloe', 'Chloé V.', 'banger', 'Le Pradet', 43.1060, 6.0230, 'f04', ['Latino', 'EDM']],
     ['yanis', 'Yanis T.', 'banger', 'La Garde', 43.1247, 6.0108, 'h04', ['Tech house', 'Afro house']],
     ['manon', 'Manon G.', 'banger', 'Bormes-les-Mimosas', 43.1508, 6.3417, 'f05', ['Melodic', 'Trance']],
-    ['nova', 'DJ Nova', 'dj', 'Toulon', 43.1180, 5.9350, 'f06', ['Techno', 'Melodic'], 'pro'],
-    ['kalypso', 'DJ Kalypso', 'dj', 'Le Lavandou', 43.1374, 6.3681, 'h05', ['Afro house', 'House'], 'live'],
-    ['mistral', 'DJ Mistral', 'dj', 'Hyères', 43.1190, 6.1310, 'h01', ['Tech house', 'Disco & funk'], 'live']
+    ['tnova', 'TEST Nova', 'dj', 'Toulon', 43.1180, 5.9350, 'f06', ['Techno', 'Melodic'], 'pro'],
+    ['tkalypso', 'TEST Kalypso', 'dj', 'Le Lavandou', 43.1374, 6.3681, 'h05', ['Afro house', 'House'], 'live'],
+    ['tmistral', 'TEST Mistral', 'dj', 'Hyères', 43.1190, 6.1310, 'h01', ['Tech house', 'Disco & funk'], 'live']
   ].map(function (c) { return { id: c[0], nom: c[1], type: c[2], ville: c[3], lat: c[4], lng: c[5], avatar: c[6], styles: c[7], formule: c[8] }; });
 
-  window.BANZIC_TEST = { actif: actif, noms: COMPTES.map(function (c) { return c.nom; }) };
+  // « DJ Nova » : ancien nom d'un faux DJ (test du 24/11), gardé caché pour les vrais utilisateurs
+  window.BANZIC_TEST = { actif: actif, noms: COMPTES.map(function (c) { return c.nom; }).concat(['DJ Nova']) };
   if (!actif) return;
 
   var cle = function (k) { return 'banzictest.' + k; };
@@ -44,6 +45,8 @@
 
   // Premier passage sur un compte : son profil est déjà rempli (pas d'inscription à refaire)
   var s = function (k, v) { LS.setItem('setly.' + k, JSON.stringify(v)); };
+  // Chaque faux compte a déjà son compte créé (connexion simulée, aucun mail envoyé)
+  if (!LS.getItem('setly.compte')) s('compte', { fournisseur: 'email', email: compte.id + '@test.banzic.app', date: new Date().toISOString().slice(0, 10) });
   if (!LS.getItem('setly.profil')) {
     LS.setItem('setly.depart', '2026-11-11');
     s('appareil', 'test-' + compte.id + '-0000');
