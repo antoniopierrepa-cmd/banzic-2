@@ -3647,7 +3647,7 @@
       <p class="agcal-aide">Le chiffre = soirées ce jour-là avec tes filtres (styles, type, distance).</p></div>`;
   }
   // Depuis la page d'une soirée : ouvrir le panneau BANGER (« Qui est aux platines ? »)
-  document.addEventListener('click', (e) => { if (!e.target.closest('[data-sf-banger]')) return; const b = document.getElementById('btn-spot'); if (b) b.click(); });
+  document.addEventListener('click', (e) => { if (!e.target.closest('[data-sf-banger]')) return; const r = document.querySelector('#screen-soiree [data-soiree-fermer]'); if (r) r.click(); setTimeout(() => { const b = document.getElementById('btn-spot'); if (b) b.click(); }, 50); });
   // Filtre de l'Agenda : seulement les dates annoncées par des DJ Banzic
   document.addEventListener('click', (e) => { if (!e.target.closest('[data-ag-djbanzic]')) return; state.agDjBanzic = !state.agDjBanzic; listeAgendaSud(); });
   document.addEventListener('click', (e) => { if (!e.target.closest('[data-ag-toutes]')) return; state.agGardees = false; state.agJours = 7; listeAgendaSud(); });
