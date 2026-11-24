@@ -3914,7 +3914,10 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const sauverSpots = () => store.set('spots', SPOTS.filter((s) => !s.demo));
   const spotActif = (s) => Date.now() - s.maj < DUREE_SPOT;
   const spotPublic = (s) => s.conf >= SEUIL_SPOT;
-  const spotsVisibles = () => SPOTS.filter((s) => s.dest === state.dest && spotActif(s) && (spotPublic(s) || s.mien));
+  // Un signalement pas encore validé se voit aussi par les Bangers à moins de 2 km : ce sont eux qui peuvent le confirmer sur place
+  const spotProche = (s) => !!(state.maPos && Date.now() - state.maPos.t < 600000 && distKm([state.maPos.lat, state.maPos.lng], [s.lat, s.lng]) <= 2);
+  const spotsConfirmes = () => store.get('spotsConfirmes', {});
+  const spotsVisibles = () => SPOTS.filter((s) => s.dest === state.dest && spotActif(s) && (spotPublic(s) || s.mien || spotProche(s)));
   const ilYa = (ms) => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'à l\'instant' : m < 60 ? `il y a ${m} min` : m < 1440 ? `il y a ${Math.floor(m / 60)} h` : `il y a ${Math.floor(m / 1440)} j`; };
   const iconeSpot = (s) => djInconnu(s) ? L.divIcon({ className: 'pin-dj pin-inconnu', iconSize: [44, 48], iconAnchor: [22, 47], html: `<img src="${PIN_INCONNU}" alt="">` }) : L.divIcon({ className: 'pin-lieu pin-spot', iconSize: [44, 48], iconAnchor: [22, 47], html: `<img src="${pinSpot(s)}" alt="">` }) || L.divIcon({ className: 'spot-pin' + (s.type === 'bateau' ? ' bateau' : '') + (spotPublic(s) ? '' : ' attente'), iconSize: [30, 30], iconAnchor: [15, 15],
     html: s.type === 'bateau'
@@ -3925,11 +3928,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const n = s.note || 0, c = s.conf || 0, v = n >= 4 && c >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || c >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
     return entreeBulle({ k: 'spot', lieu: esc(s.nom || TYPES_SPOT[s.type]), etat: 'Spot', tete: `<span class="pb-ico spot">${TYPES_SPOT[s.type].slice(0, 1)}</span>`, t: s.dj || 'DJ inconnu',
       heure: `Signalé à ${hm(s.t)} par @${esc(s.par || 'un Banger')}`,
-      bang: spotPublic(s) ? `${tetesBangers(c, s.id)}<span><b>${c} Bangers</b> y sont${n ? ' · ' + '★'.repeat(n) : ''}</span><span class="pb-vaut ${v[1]}">${v[0]}</span>` : `<span><b>Ton signalement</b> · en attente ${Math.min(c, SEUIL_SPOT)}/${SEUIL_SPOT}</span>`,
+      bang: spotPublic(s) ? `${tetesBangers(c, s.id)}<span><b>${c} Bangers</b> y sont${n ? ' · ' + '★'.repeat(n) : ''}</span><span class="pb-vaut ${v[1]}">${v[0]}</span>` : `<span><b>${s.mien ? 'Ton signalement' : 'À confirmer'}</b> · en attente ${Math.min(c, SEUIL_SPOT)}/${SEUIL_SPOT}${s.mien ? '' : ' · tu y es ? confirme'}</span>`,
       actions: `${s.gid ? `<div class="g-bulle" data-gphoto="${esc(s.gid)}"></div>` : ''}<div class="pb-actions"><button class="pb-btn plein" data-spot-ok="${s.id}">${s.type === 'bateau' ? 'Je suis à bord' : 'J\'y suis : il joue'}</button></div>${s.mien && !spotPublic(s) ? `<button class="lien-demo" data-spot-autre="${s.id}">Démo : un autre utilisateur confirme</button>` : ''}` });
   }
   function marqueursSpots() {
-    SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien) && dansZoneCarte(s.lat, s.lng)).forEach((s) => {
+    SPOTS.filter((s) => spotActif(s) && (spotPublic(s) || s.mien || spotProche(s)) && dansZoneCarte(s.lat, s.lng)).forEach((s) => {
       if (s.type === 'bateau' && s.trace && s.trace.length) {
         L.polyline(s.trace.concat([[s.lat, s.lng]]), { color: '#B58CFF', weight: 2, dashArray: '4 6', opacity: .8 }).addTo(layer);
       }
@@ -4142,6 +4145,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     }, repli, { timeout: 5000, maximumAge: 60000 });
   }
   // Un DJ déjà déclaré à ce lieu (à moins de 80 m) ? Il est reconnu : on confirme simplement, sans « Je connais / DJ inconnu »
+  const spotIci = (l) => !l || l.lat == null ? null : SPOTS.find((s) => !s.mien && spotActif(s) && s.type !== 'bateau' && (distKm([+l.lat, +l.lng], [s.lat, s.lng]) < 0.08 || (posSpot && posSpot.src === 'gps' && distKm([posSpot.lat, posSpot.lng], [s.lat, s.lng]) < 0.08))) || null;
   const declIci = (l) => !l ? null : DECLS.find((x) => declActive(x) && (() => { const ll = lieuDe(x); return ll && ll.lat != null && distKm([l.lat, l.lng], [ll.lat, ll.lng]) < 0.08; })()) || null;
   // Une soirée annoncée en ce moment dans ce lieu (même endroit, à 150 m près) : on la montre, avec son line-up à toucher
   const soireeIci = (l) => !l || l.lat == null ? null : SUD.soirees.find((ev) => { const ll = SUD.lieux[ev.lieu];
@@ -4161,6 +4165,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const x = declIci(posSpot.connu), d = x && djDe(x), z = f.querySelector('.ps-dj-ici'), c = f.querySelector('.ps-dj-cartes'), ch = f.querySelector('.ps-dj-champ');
     if (x && d) { z.hidden = false; z.innerHTML = `<span class="pdi-av">${avatarDj(d.nom)}</span><span><small>Déjà annoncé ici</small><b>${esc(d.nom)} joue ici</b></span>`; c.hidden = true; ch.hidden = true; f.querySelector('[type=submit]').textContent = 'Confirmer ma présence'; }
     else { z.hidden = true; c.hidden = false; f.querySelector('[type=submit]').textContent = 'Confirmer ma présence'; }
+    const sp = !x && spotIci(posSpot.connu);
+    if (sp) { z.hidden = false; z.innerHTML = `<span class="pdi-av">${avatarDj(sp.dj || '?')}</span><span><small>Déjà signalé ici par @${esc(sp.par || 'un Banger')} · ${spotPublic(sp) ? 'validé' : 'en attente ' + Math.min(sp.conf || 0, SEUIL_SPOT) + '/' + SEUIL_SPOT}</small><b>${esc(sp.dj || 'DJ inconnu')} joue ici</b></span>`; c.hidden = true; ch.hidden = true; f.querySelector('[type=submit]').textContent = 'Je confirme, j\'y suis'; }
   }
   let photoSpot = '';
   document.addEventListener('change', (e) => {
@@ -4186,6 +4192,13 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     { const x = declIci(connu); if (x) { x.conf = (x.conf || 0) + 1; const com = String(f.get('com') || '').trim().slice(0, 80), tp = f.get('temp') != null ? +f.get('temp') : 1;
       (x.avisSoir = x.avisSoir || []).push({ temp: tp, com, t: Date.now() }); x.temp = tp; if (com) x.com = com; sauverDecls(); BDD.banguer('declarations', x.id, tp, com);
       BANG_LIEU[connu.id] = (BANG_LIEU[connu.id] || 0) + 1; store.set('bangLieu', BANG_LIEU); renderMap(); toast('Banguérisé : tu confirmes que ' + ((djDe(x) || {}).nom || 'le DJ') + ' joue ici'); return; } }
+    // Quelqu'un a déjà signalé ce lieu : on confirme son signalement (une seule fois par téléphone), sans en créer un deuxième
+    { const sp = spotIci(connu); if (sp) { const deja = spotsConfirmes();
+      if (deja[sp.id]) { toast('Tu as déjà confirmé ce signalement'); return; }
+      deja[sp.id] = Date.now(); store.set('spotsConfirmes', deja);
+      const tp = f.get('temp') != null ? +f.get('temp') : null, com = String(f.get('com') || '').trim().slice(0, 80);
+      sp.conf = (sp.conf || 0) + 1; sp.maj = Date.now(); sauverSpots(); BDD.banguer('spots', sp.id, tp, com || null);
+      renderMap(); toast(spotPublic(sp) ? 'Banguérisé : soirée validée, elle est visible par tous' : 'Merci : confirmation ' + Math.min(sp.conf, SEUIL_SPOT) + '/' + SEUIL_SPOT + ', encore ' + (SEUIL_SPOT - sp.conf) + ' pour la valider'); return; } }
     // Un bang sur une soirée déjà annoncée alimente son compteur, sans créer
     // une nouvelle ligne « Spot » dans le Check-in.
     const soireeDuLieu = soireeIci(connu);
@@ -4230,7 +4243,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       surPlace({ nom: s.nomLieu || (s.type === 'bateau' ? 'ce bateau' : 'ce spot'), lat: s.lat, lng: s.lng }, (pos) => {
         const lat = pos ? pos.lat : s.lat, lng = pos ? pos.lng : s.lng, src = pos ? pos.src : 'lieu';
         if (s.type === 'bateau' && src === 'gps') { s.trace = (s.trace || []).concat([[s.lat, s.lng]]).slice(-8); s.lat = lat; s.lng = lng; }
-        if (!s.mien) { s.conf += 1; BDD.banguer('spots', s.id); }
+        if (!s.mien) { const deja = spotsConfirmes(); if (deja[s.id]) { toast('Tu as déjà confirmé ce signalement'); return; } deja[s.id] = Date.now(); store.set('spotsConfirmes', deja); s.conf += 1; BDD.banguer('spots', s.id); }
         s.maj = Date.now(); sauverSpots(); map.closePopup(); renderMap();
         toast(s.type === 'bateau' ? 'Merci ! Position du bateau mise à jour' : 'Merci, ta confirmation est enregistrée');
       }, { rayon: s.type === 'bateau' ? RAYON_BATEAU_M : RAYON_M });
