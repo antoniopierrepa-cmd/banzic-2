@@ -3878,7 +3878,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     return { dest: 'local', nom: nomVille || 'près de toi', approx };
   }
   // Destinations du monde sous le logo : Ibiza en premier, puis les autres. Le point dit si c'est la saison ce mois-ci.
-  const DRAPEAUX = { ibiza: '🇪🇸', mykonos: '🇬🇷', tulum: '🇲🇽', miami: '🇺🇸', dubai: '🇦🇪' };
+  const DRAPEAUX = { ibiza: '🇪🇸', mykonos: '🇬🇷', tulum: '🇲🇽', miami: '🇺🇸', dubai: '🇦🇪', phuket: '🇹🇭', 'santa-catarina': '🇧🇷' };
   // Menu « … saison » : Ibiza en tête, un toucher déroule les autres saisons de DJ
   function majDestLigne() {
     const z = $('#dest-ligne'); if (!z) return;
@@ -5322,7 +5322,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const ACC_ANNEAUX = '<svg class="acc-anneaux" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="50" fill="none" stroke="#fff" stroke-width="8" stroke-dasharray="220 45"/><circle cx="60" cy="60" r="30" fill="none" stroke="#fff" stroke-width="8" stroke-dasharray="130 34"/><circle cx="60" cy="60" r="11" fill="#fff"/></svg>';
   const accInit = (n) => String(n).replace(/[^A-Za-zÀ-ÿ0-9 &]/g, '').split(/\s+/).filter(Boolean).slice(0, 2).map((m) => m[0]).join('').toUpperCase();
   const ACC_NIV = [['vert', T('pop0')], ['or', T('pop1')], ['rouge', T('pop2')], ['noir', T('pop3')]];
-  const COUL_DEST = { ibiza: ['#FF8A3D', '#6A1838'], mykonos: ['#3D8BFF', '#0B1E52'], tulum: ['#3DF28A', '#0B3A3A'], miami: ['#FF4FA3', '#3B0A4A'], dubai: ['#F2C53A', '#5A2A06'], phuket: ['#FF8A3D', '#4A0F3A'] };
+  const COUL_DEST = { ibiza: ['#FF8A3D', '#6A1838'], mykonos: ['#3D8BFF', '#0B1E52'], tulum: ['#3DF28A', '#0B3A3A'], miami: ['#FF4FA3', '#3B0A4A'], dubai: ['#F2C53A', '#5A2A06'], phuket: ['#FF8A3D', '#4A0F3A'], 'santa-catarina': ['#F2C53A', '#123C9A'] };
   // Compte à rebours jusqu'aux openings de la prochaine saison (dates estimées d'après les saisons précédentes)
   const OPENINGS = {
     ibiza: [['2026-04-24', '2026-10-12'], ['2027-04-23', '2027-10-11']],
@@ -5690,11 +5690,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     // 2. Les saisons
     // En saison d'abord, puis les autres dans l'ordre du compte à rebours (la plus proche en premier)
     const rangOpening = (id) => { const e = etatOpening(id); return !e ? 9e15 : e.avant ? e.ms : -1; };
-    h += accRubrique('Les saisons', 'En saison d\'abord, puis les prochaines openings', DESTS.filter((d) => !d.local).sort((a, b) => rangOpening(a.id) - rangOpening(b.id)).map((d) => { const n = d.mois[MOIS_NOW], c = COUL_DEST[d.id] || ['#3D8BFF', '#0A1F4A'];
+    h += accRubrique('Les saisons', 'En saison d\'abord, puis les prochaines openings', DESTS.filter((d) => !d.local).sort((a, b) => ['miami','dubai','phuket','tulum','ibiza','mykonos','santa-catarina'].indexOf(a.id) - ['miami','dubai','phuket','tulum','ibiza','mykonos','santa-catarina'].indexOf(b.id)).map((d) => { const n = d.mois[MOIS_NOW], c = COUL_DEST[d.id] || ['#3D8BFF', '#0A1F4A'];
       // Une image de fond par destination quand on en a une (Ibiza : visuel fourni par Antonio, démo)
       const fond = ({ ibiza: 'ibiza-carte.jpg?v=4', mykonos: 'mykonos-carte.jpg?v=4', tulum: 'tulum-carte.jpg?v=4', miami: 'miami-carte.jpg?v=4', dubai: 'dubai-carte.jpg?v=4', phuket: 'phuket-carte.jpg?v=4' })[d.id];
       return accCarte({ cls: 'large' + (fond ? ' avec-photo' : ''), titre: d.nom + ' saison', sous: d.saison, grand: fond ? '' : (DRAPEAUX[d.id] || '') + ' ' + esc(d.nom), g: fond ? `url('${fond}') left center / cover no-repeat, linear-gradient(145deg, ${c[0]}, ${c[1]})` : `linear-gradient(145deg, ${c[0]}, ${c[1]})`, attr: `data-dest-puce="${d.id}"`,
-        badge: compteurOpening(d.id, n < 0 ? `<span class="acc-badge hors">${T('hors')}</span>` : `<span class="acc-badge ${ACC_NIV[n][0]}">${ACC_NIV[n][1]}</span>`) }); }), '', 6);
+        badge: compteurOpening(d.id, n < 0 ? `<span class="acc-badge hors">${T('hors')}</span>` : `<span class="acc-badge ${ACC_NIV[n][0]}">${ACC_NIV[n][1]}</span>`) }); }), '', 7);
     // 3. DJ live dans le monde
     const lives = streamsActifs(), genres = [...new Set(lives.map(genreDe))];
     if (state.genreLive && !genres.includes(state.genreLive)) state.genreLive = null;
