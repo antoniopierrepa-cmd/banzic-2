@@ -100,12 +100,6 @@ window.DESTS = [
     lieux: []
   },
   {
-    id: 'santa-catarina', tz: 'America/Sao_Paulo', nom: 'Santa Catarina', pays: 'Brésil', centre: [-27.0, -48.63], zoom: 10,
-    saison: 'décembre à mars',
-    mois: [2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-    notes: {}, evenements: [], billetterie: [], lieux: []
-  },
-  {
     // Partout ailleurs (Toulon, Marseille, Lyon…) : pas de saison ni de line-ups officiels,
     // seulement les DJ qui se déclarent et les spots signalés autour de la position de l'utilisateur.
     id: 'local', local: true, nom: 'Autour de moi', pays: 'ta ville', centre: [43.1242, 5.9280], zoom: 13,
