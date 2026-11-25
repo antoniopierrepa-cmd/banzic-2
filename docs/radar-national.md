@@ -80,3 +80,26 @@ locale ou radar lors d'un rapprochement.
 Supabase reste une source lue par le navigateur. Le générateur et le collecteur
 de sites n'y écrivent rien. La tâche ChatGPT reste externe au dépôt. Aucun
 connecteur n8n ni point d'exécution d'agent IA n'a été identifié dans la branche.
+
+## Chargement géographique dans BANZIC
+
+`node scripts/radar.mjs` produit le fichier historique `agenda-radar.js` et son
+découpage équivalent dans `radar-zones/`. Pour dériver les zones d'un catalogue
+déjà livré sans relancer les imports, utiliser `node scripts/radar-zones.mjs`.
+Versionner le catalogue et ses zones dans le même commit.
+
+L'accueil ne télécharge pas le catalogue. L'agenda demande les zones du rayon,
+du département ou du pays sélectionné. Le Check-in demande les zones
+susceptibles de contenir des soirées de sa fenêtre de dates. La carte demande
+les zones visibles, puis ajuste la sélection au déplacement ou au zoom. Les
+pages de destination demandent les zones proches de leur centre. La recherche
+mondiale et les favoris résolvent les zones nécessaires via un index distinct.
+Pour le rappel des soirées déjà gardées, cet index est consulté après l'affichage
+uniquement quand un identifiant sauvegardé manque dans les données chargées.
+
+L'index géographique est revalidé à la première utilisation dans l'onglet.
+Chaque lot a une version issue du hash de son contenu. Le navigateur réutilise
+ses lots en mémoire et dans Cache Storage lorsque celui-ci est disponible. En
+accès direct par fichier local, le catalogue historique est chargé à la première
+action qui l'exige. L'application conserve un seul moteur de fusion et les
+mêmes règles de distance, quels que soient la zone ou le pays.

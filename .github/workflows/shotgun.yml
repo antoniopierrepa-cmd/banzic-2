@@ -27,5 +27,5 @@ jobs:
       - run: |
           git config user.name "banzic-radar"
           git config user.email "noreply@anthropic.com"
-          git add data agenda-radar.js index.html
+          git add data agenda-radar.js index.html radar-zones
           git diff --cached --quiet || (git commit -m "Radar : soirées Shotgun et Xceed mises à jour" && git pull --rebase -q && git push)

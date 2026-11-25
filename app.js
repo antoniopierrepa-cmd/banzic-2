@@ -2,6 +2,17 @@
   'use strict';
 
   const D = window.DEMO;
+  const fichierRadarLocal = document.currentScript?.dataset.radarSrc;
+  function chargerRessource(url, style = false) {
+    return new Promise((resolve, reject) => {
+      const node = document.createElement(style ? 'link' : 'script');
+      if (style) { node.rel = 'stylesheet'; node.href = url; }
+      else node.src = url;
+      node.onload = resolve;
+      node.onerror = () => { node.remove(); reject(new Error(url)); };
+      document.head.appendChild(node);
+    });
+  }
 
   // Heure réelle (le programme de démo du jeudi est rejoué à l'heure du jour).
   // Pour une démo à une heure précise : index.html?heure=01:40
@@ -451,6 +462,16 @@
     const vs = (window.VILLES || []).map((v) => ({ n: v[0], km: distKm([lat, lng], [v[2], v[3]]) })).sort((x, y) => x.km - y.km);
     return vs[0] && vs[0].km < 25 ? vs[0].n : null;
   }
+  let chargementCarte, styleCarte;
+  function chargerCarte() {
+    if (!chargementCarte) {
+      styleCarte ||= chargerRessource('leaflet.css', true).catch(error => { styleCarte = null; throw error; });
+      chargementCarte = Promise.all([window.L || chargerRessource('leaflet.js'), styleCarte])
+        .then(() => personnaliserLeaflet())
+        .catch(error => { chargementCarte = null; throw error; });
+    }
+    return chargementCarte;
+  }
   function initMap() {
     if (map || typeof L === 'undefined') return;
     map = L.map('map', { zoomControl: false, attributionControl: true }).setView(DEST[state.dest].centre, DEST[state.dest].zoom);
@@ -495,7 +516,8 @@
       '<p class="demo-note">Photos : Ibiza Spotlight, pour la démo. Pour l\'appli publique, il faudra les photos des lieux partenaires ou celles de Google, avec leur crédit.</p>';
   }
   function renderMap() {
-    renderCheckin();
+    radarPourCarte();
+    renderCheckin(false, false, true);
     try { renderCartesMap(); } catch (e) { console.warn(e); }
     const leg = [['#B58CFF', 'Signalé en live'], ['#F2C94C', 'DJ déclaré aujourd’hui'], ['#3DD6C6', 'Soirée du jour']];
     $('.map-legend').innerHTML = leg.map(([c, t]) => `<span><i style="background:${c}"></i>${t}</span>`).join('');
@@ -1724,6 +1746,12 @@
     // Une seule recherche dans tout Banzic : DJ, soirées (partout, pas seulement près de toi), clubs, bars et discothèques, villes et pays
     const f = ['tout', 'soiree', 'lieu', 'dj', 'ville'].includes(state.rechFiltre) ? state.rechFiltre : 'tout';
     const k0 = sansAccent(q.trim());
+    if ((f === 'tout' || f === 'soiree') && rechercheRadar !== k0) {
+      rechercheRadar = k0;
+      radarParRecherche(k0).then(changement => {
+        if (changement && sansAccent($('#recherche-dj').value.trim()) === k0) renderSuggestions();
+      }).catch(() => { if (rechercheRadar === k0) rechercheRadar = null; });
+    }
     const ls = f === 'tout' || f === 'lieu' ? lieuxCherches(q) : [];
     const discos = (f === 'tout' || f === 'lieu') && k0.length >= 3 ? DISCOS.filter((c) => sansAccent(c.nom).includes(k0) || sansAccent(c.ville || '').startsWith(k0))
       .sort((a, b) => (sansAccent(b.nom).startsWith(k0) ? 1 : 0) - (sansAccent(a.nom).startsWith(k0) ? 1 : 0) || distKm(centreGeographique(), [a.lat, a.lng]) - distKm(centreGeographique(), [b.lat, b.lng])).slice(0, f === 'lieu' ? 12 : 5) : [];
@@ -2124,12 +2152,9 @@
         SPOTS = SPOTS.filter((s) => s.mien || s.demo).concat(ss.filter((r) => !sMiens.has(r.id)).map((r) => ({ id: r.id, dest: 'local', type: r.type || 'bar', nom: r.nom, dj: r.dj, lat: r.lat, lng: r.lng, t: ms(r.t), maj: ms(r.maj), conf: r.conf || 0, par: r.par, temp: r.temp, com: r.com, trace: [], distant: true })));
         SPOTS.forEach((s) => { const r = ss.find((y) => y.id === s.id); if (r && s.mien) { s.conf = Math.max(s.conf || 0, r.conf || 0); if (r.temp != null) s.temp = r.temp; if (r.com) s.com = r.com; } });
         // Soirées
-        const base = SUD.soirees.map(x => soireesAvantSupabase.get(x) || x).filter(x => x.src !== 'bdd');
-        const distantes = so.map((r) => { const k = 'bdd-' + r.id; SUD.lieux[k] = { nom: r.lieu_nom || 'Lieu', ville: r.ville || '', dep: '', lat: r.lat, lng: r.lng };
+        soireesDistantes = so.map((r) => { const k = 'bdd-' + r.id; SUD.lieux[k] = { nom: r.lieu_nom || 'Lieu', ville: r.ville || '', dep: '', lat: r.lat, lng: r.lng };
           return { type: r.type || 'club', date: r.date, heure: r.heure || '', nom: r.nom, djs: r.djs || '', lieu: k, url: r.url || '', src: 'bdd' }; });
-        const fusion = window.BANZIC_AGENDA_MATCH.mergeFeeds(base, distantes, SUD.lieux);
-        SUD.soirees = fusion.events;
-        soireesAvantSupabase = fusion.originals;
+        fusionnerSoirees([]);
         INDEX_DJ = null;
         actualiserLiveTestPierro();
         try { if (state.tab === 'agenda') listeAgendaSud(); else if (state.tab === 'checkin') renderCheckin(); else if (state.tab === 'map') renderMap(); else if (state.tab === 'live' || state.tab === 'accueil') render(); } catch (e) { /* */ }
@@ -2152,7 +2177,7 @@
     const b = e.target.closest('[data-live-carte]'); if (!b) return;
     const [la, lo] = b.dataset.liveCarte.split(',').map(Number); if (isNaN(la)) return;
     if (state.djOuvert) fermerDj();
-    setTab('map'); setTimeout(() => { if (map) { map.setView([la, lo], 16); renderMap(); } }, 80);
+    setTab('map').then(ouvert => { if (ouvert) { map.setView([la, lo], 16); renderMap(); } });
   });
   // Met à jour les chiffres (abonnés, Bangers du casque) de la fiche ouverte sans tout redessiner
   window.__majStatsFiche = (nom) => {
@@ -3005,7 +3030,7 @@
     if (e.target.closest('[data-soiree-fermer]')) { setTab(state.tab); return; }
     const linkedVenue = e.target.closest('[data-linked-venue]'); if (linkedVenue) { ouvrirFicheSoiree(linkedVenue.dataset.linkedVenue); return; }
     const vc = e.target.closest('[data-soiree-carte]');
-    if (vc) { const f = CK_FICHES[vc.dataset.soireeCarte]; if (!f || f.lieu.lat == null) return; setTab('map'); setTimeout(() => map && map.setView([f.lieu.lat, f.lieu.lng], 16), 120); return; }
+    if (vc) { const f = CK_FICHES[vc.dataset.soireeCarte]; if (!f || f.lieu.lat == null) return; setTab('map').then(ouvert => { if (ouvert) map.setView([f.lieu.lat, f.lieu.lng], 16); }); return; }
     const z = e.target.closest('[data-ck-fiche]'); if (!z || !z.closest('#screen-checkin')) return;
     if (e.target.closest('[data-dj-pro], [data-decl-ok], .ck-dj')) return; // une case du line-up ouvre la fiche du DJ
     e.preventDefault(); ouvrirFicheSoiree(z.dataset.ckFiche);
@@ -3056,7 +3081,7 @@
     return 'soiree';
   };
   const nomsFiltresCheckin = { tous: 'Toutes', club: 'Discothèques / clubs', bar: 'Bars festifs', libertin: '18+ Libertins', festival: 'Festivals', concert: 'Concerts', soiree: 'Autres soirées' };
-  function renderCheckin(lignesSeules, zoneCarte = false) {
+  function renderCheckin(lignesSeules, zoneCarte = false, compteursSeuls = false) {
     const box = $('#screen-checkin'); if (!box && !lignesSeules) return;
     // Position : le GPS du téléphone ; pour tester ailleurs, ?position=dubai (ou ibiza, miami, mykonos, tulum) dans l'adresse
     const posTest = (location.search.match(/[?&]position=([a-z]+)/) || [])[1], destTest = posTest && DEST[posTest];
@@ -3065,6 +3090,9 @@
     const km = (la, lo) => la == null ? 0 : distKm(c, [la, lo]), fK = (x) => x < 1 ? '< 1 km' : Math.round(x) + ' km';
     const dur = (m) => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min';
     const jours = joursCheckin(now), [auj, dem, apres] = jours;
+    if (state.tab === 'checkin' && !lignesSeules && !zoneCarte && !compteursSeuls) {
+      actualiserRadar(radarAutour(c, r, [iso(new Date(now - 86400000)), ...jours]), 'checkin');
+    }
     const nomJour = (date) => date === dem ? 'Demain' : date === apres ? 'Après-demain' : 'Aujourd’hui';
     const titreJour = (date) => date === dem ? 'Départs de demain' : date === apres ? 'Départs d’après-demain' : 'Départs d’aujourd’hui';
     const clJour = (date) => date === dem ? 'j-demain' : date === apres ? 'j-apres' : 'j-auj';
@@ -3165,6 +3193,7 @@
       if (counter) { counter.textContent = state.ckTotalCount; counter.closest('button').setAttribute('aria-label', 'Check-in : ' + state.ckTotalCount + ' départs aujourd’hui, demain et après-demain à ' + r + ' km'); }
       majCompteurCarte();
     }
+    if (compteursSeuls) return;
     const barreFiltres = touchesFamilles('ck');
     box.innerHTML = `<div class="ck-tete"><div><h2>Check-in</h2><small>Départs autour de ${esc(nomPos)} · <b>${r} km</b> · ${L.length} départ${L.length > 1 ? 's' : ''}</small></div><span class="ck-horloge">${flap(hm(now), 5)}</span></div>
 
@@ -3192,6 +3221,7 @@
 
   function renderDestLive() {
     const d = DEST[state.dest], m = MOIS_NOW, n = d.mois[m];
+    if (!d.local) actualiserRadar(radarAutour(d.centre, 100), 'live');
     if (d.local) {
       const coin = Object.values(LIEUX_DEST).filter((l) => l.dest === 'local').map((l) => ({ l, km: distKm(DEST.local.centre, [l.lat, l.lng]) })).filter((x) => x.km <= 60).sort((x, y) => x.km - y.km);
       const xs = blocDecls() + blocSpots() + (coin.length ? `<div class="section-title">Clubs du coin <small>${coin.length} · DJ à confirmer</small></div>` + rangCartes(coin.map(({ l, km }) =>
@@ -3293,10 +3323,84 @@
   }
   // ---------- Agenda « Autour de moi » : soirées relevées dans le Var, les Alpes-Maritimes et les Bouches-du-Rhône
   const SUD = window.AGENDA_SUD || { lieux: {}, sources: {}, soirees: [] };
-  const RADAR = window.AGENDA_RADAR || { departments: {}, coverage: {}, lieux: {}, sources: {}, soirees: [] };
-  Object.assign(SUD.lieux, RADAR.lieux); Object.assign(SUD.sources, RADAR.sources);
-  SUD.soirees = window.BANZIC_AGENDA_MATCH.mergeFeeds(SUD.soirees, RADAR.soirees, SUD.lieux).events;
-  let soireesAvantSupabase = new Map();
+  const RADAR = { departments: {}, coverage: {} };
+  const zonesRadar = window.BANZIC_RADAR_ZONES, zonesIntegrees = new Set();
+  let soireesAvantSupabase = new Map(), soireesDistantes = [], radarLocal;
+  function fusionnerSoirees(annonces) {
+    const base = SUD.soirees.flatMap(x => x.src === 'bdd' ? [] : [soireesAvantSupabase.get(x) || x]);
+    const locales = annonces.length ? window.BANZIC_AGENDA_MATCH.mergeFeeds(base, annonces, SUD.lieux).events : base;
+    const fusion = window.BANZIC_AGENDA_MATCH.mergeFeeds(locales, soireesDistantes, SUD.lieux);
+    SUD.soirees = fusion.events;
+    soireesAvantSupabase = fusion.originals;
+  }
+  async function chargerRadar(critere) {
+    if (location.protocol === 'file:') {
+      if (radarLocal) { await radarLocal; return false; }
+      radarLocal = chargerRessource(fichierRadarLocal).catch(error => { radarLocal = null; throw error; });
+      await radarLocal;
+      const data = window.AGENDA_RADAR;
+      Object.assign(RADAR, data);
+      Object.assign(SUD.lieux, data.lieux);
+      Object.assign(SUD.sources, data.sources);
+      fusionnerSoirees(data.soirees);
+      return true;
+    }
+    const data = await zonesRadar.index();
+    const premiere = !RADAR.maj;
+    if (premiere) {
+      Object.assign(RADAR, data);
+      Object.assign(SUD.sources, data.sources);
+    }
+    const zones = zonesRadar.select(data.index, critere).filter(zone => !zonesIntegrees.has(zone.id));
+    const resultats = await zonesRadar.load(zones);
+    const annonces = [];
+    let changement = premiere;
+    for (const { zone, data: lot } of resultats) {
+      if (!lot || zonesIntegrees.has(zone.id)) continue;
+      zonesIntegrees.add(zone.id);
+      Object.assign(SUD.lieux, lot.lieux);
+      annonces.push(...lot.soirees);
+      changement = true;
+    }
+    if (annonces.length) fusionnerSoirees(annonces);
+    if (resultats.some(result => !result.data) && !changement) throw new Error('Zone radar indisponible');
+    return changement;
+  }
+  function actualiserRadar(critere, tab, contextualiser) {
+    chargerRadar(critere).then(changement => {
+      if (changement && state.tab === tab && (!contextualiser || contextualiser())) {
+        if (tab === 'map' && map) renderMap();
+        else if (tab === 'agenda') {
+          const departements = $('#radar-departement');
+          if (!$('#agenda-liste') || $('#agenda-etat-radar')?.dataset.maj !== (RADAR.maj || '') || (departements && departements.options.length === 1)) renderAgenda();
+          else listeAgendaSud();
+        }
+        else if (tab === 'checkin') renderCheckin();
+      }
+    }).catch(error => console.warn('Radar', error));
+  }
+  function radarAutour(centre, km, dates) {
+    return { bounds: zonesRadar.circle(centre, km), dates };
+  }
+  function radarPourAgenda() {
+    const rayon = RAYONS[state.rayonIdx];
+    const critere = state.radarDep ? { country: 'FR', dep: state.radarDep } :
+      rayon >= FRANCE_KM ? { country: state.paysAgenda } : radarAutour(centreAgenda(), rayon);
+    actualiserRadar(critere, 'agenda');
+  }
+  function radarPourCarte() {
+    if (!map || state.tab !== 'map') return;
+    const b = map.getBounds(), now = Date.now();
+    actualiserRadar({ bounds: { minLat: b.getSouth(), maxLat: b.getNorth(), minLng: b.getWest(), maxLng: b.getEast() },
+      dates: [iso(new Date(now)), iso(new Date(now - 86400000))] }, 'map');
+  }
+  let rechercheRadar;
+  function radarParRecherche(texte, ids, dateExacte) {
+    const date = iso(new Date());
+    const critere = row => ids ? ids.has(String(row[1])) && (!dateExacte || row[2] === dateExacte) : row[2] >= date && sansAccent(row[3]).includes(texte);
+    const trouver = location.protocol === 'file:' ? Promise.resolve([]) : zonesRadar.search().then(index => [...new Set(index.filter(critere).map(row => row[0]))]);
+    return trouver.then(zones => chargerRadar({ ids: zones }));
+  }
   appliquerMonClub(); // la fiche du club revendiqué (horaires, soirées) passe par-dessus les données publiques
   const radarUrl = (value) => { try { if (/^img\/(clubs|flyers|review-flyers)\/[\w.-]+$/.test(String(value || ''))) return value; const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch (e) { return ''; } };
   function centreGeographique() {
@@ -3579,7 +3683,12 @@
         return { ...x, l: SUD.lieux[x.lieu], km: distKm(centre, [SUD.lieux[x.lieu].lat, SUD.lieux[x.lieu].lng]) }; })
       .sort((a, b) => a.date.localeCompare(b.date) || a.km - b.km);
   }
+  let chargementDossierAgenda;
   function renderAgendaSud() {
+    chargementDossierAgenda ||= chargerRessource('agenda-dossier-2026.js?v=1')
+      .then(() => chargerRessource('agenda-dossier-ui.js?v=1'))
+      .catch(() => { chargementDossierAgenda = null; });
+    radarPourAgenda();
     const r = RAYONS[state.rayonIdx];
     $('#screen-agenda').innerHTML = `<div class="fader-module">
         <div class="acc-tete fd-tete"><div><h2>${state.agVille ? 'Agenda · ' + esc(state.agVille.nom) : RAYONS[state.rayonIdx] >= FRANCE_KM && state.paysAgenda !== 'FR' ? 'Agenda · ' + esc(paysAgenda.of(state.paysAgenda)) : 'Agenda autour de moi'}</h2></div>${state.agVille || state.paysAgenda !== 'FR' ? '<button type="button" class="ag-retour-moi" data-ag-ville-reset="1">📍 Autour de moi</button>' : ''}</div>
@@ -3589,7 +3698,7 @@
           <div class="fd-graduations" aria-hidden="true">${RAYONS.map((k, i) => `<span class="${i === state.rayonIdx ? 'on' : ''}" data-rayon="${i}">${k >= FRANCE_KM ? 'Pays' : k}</span>`).join('')}</div>
         </div>
         
-        <p class="demo-note">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements français avec annonces' + (RADAR.countryCoverage && RADAR.countryCoverage.BE ? ' · Belgique : ' + RADAR.countryCoverage.BE + ' soirées' : '') + (RADAR.countryCoverage && RADAR.countryCoverage.ES ? ' · Espagne : ' + RADAR.countryCoverage.ES + ' soirées' : '') + ' · collecte partielle.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
+        <p class="demo-note" id="agenda-etat-radar" data-maj="${esc(RADAR.maj || '')}">${RADAR.maj ? 'Radar actualisé le ' + esc(new Date(RADAR.maj).toLocaleString('fr-FR')) + ' · ' + Object.values(RADAR.coverage).filter(Boolean).length + '/101 départements français avec annonces' + (RADAR.countryCoverage && RADAR.countryCoverage.BE ? ' · Belgique : ' + RADAR.countryCoverage.BE + ' soirées' : '') + (RADAR.countryCoverage && RADAR.countryCoverage.ES ? ' · Espagne : ' + RADAR.countryCoverage.ES + ' soirées' : '') + ' · collecte partielle.' : 'Radar en attente de connexion aux sources. Aucune soirée importée pour le moment.'}</p>
         <div id="ag-cal-zone"></div>
         <div id="ag-filtres"></div>
       </div>
@@ -3673,9 +3782,9 @@
     const sent = $('#ag-plus');
     if (sent && 'IntersectionObserver' in window) { const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); state.agJours = (state.agJours || 7) + 7; listeAgendaSud(); } }, { rootMargin: '300px' }); io.observe(sent); }
   }
-  document.addEventListener('change', (e) => { if (e.target.id === 'radar-departement') { state.radarDep = e.target.value; listeAgendaSud(); } if (e.target.id === 'radar-avec-dj') { state.sudAvecDj = e.target.checked; listeAgendaSud(); } });
+  document.addEventListener('change', (e) => { if (e.target.id === 'radar-departement') { state.radarDep = e.target.value; radarPourAgenda(); listeAgendaSud(); } if (e.target.id === 'radar-avec-dj') { state.sudAvecDj = e.target.checked; listeAgendaSud(); } });
   const reglerRayon = (i) => { state.rayonIdx = Math.max(0, Math.min(RAYONS.length - 1, i)); store.set('rayonIdx', state.rayonIdx);
-    const f = $('#fader-rayon'); if (f) { f.value = state.rayonIdx; f.setAttribute('aria-valuetext', kmTxt(RAYONS[state.rayonIdx])); } listeAgendaSud(); };
+    const f = $('#fader-rayon'); if (f) { f.value = state.rayonIdx; f.setAttribute('aria-valuetext', kmTxt(RAYONS[state.rayonIdx])); } radarPourAgenda(); listeAgendaSud(); };
   document.addEventListener('input', (e) => { if (e.target.id === 'fader-rayon') reglerRayon(+e.target.value); });
   document.addEventListener('click', (e) => { const g = e.target.closest('.fd-graduations [data-rayon]'); if (g) reglerRayon(+g.dataset.rayon); });
   // Affiche inventée pour une soirée (style jeu vidéo néon, aucun flyer repris) : ciel, soleil rayé, silhouette, titre en gros
@@ -4284,7 +4393,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const v = e.target.closest('[data-spot-voir]');
     if (v) {
       const s = SPOTS.find((x) => x.id === v.dataset.spotVoir); if (!s) return;
-      setTab('map'); setTimeout(() => { map.setView([s.lat, s.lng], 15); renderMap(); layer.eachLayer((l) => { if (l.getLatLng && l.getLatLng().lat === s.lat && l.getLatLng().lng === s.lng && l.openPopup) l.openPopup(); }); }, 50);
+      setTab('map').then(ouvert => { if (!ouvert) return; map.setView([s.lat, s.lng], 15); renderMap(); layer.eachLayer((l) => { if (l.getLatLng && l.getLatLng().lat === s.lat && l.getLatLng().lng === s.lng && l.openPopup) l.openPopup(); }); });
     }
   });
 
@@ -4545,7 +4654,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   const bullesEmpilees = (lst) => `<div class="pb-pile">${lst.join('<hr class="pb-sep">')}</div>`;
   const OPT_BULLE = { className: 'pop-banzic', maxWidth: 280, minWidth: 240, closeButton: false, offset: [0, -8] };
   // Grande carte : plus aucune bulle. Toucher un repère cale le bandeau sur son info, ou ouvre directement sa fiche
-  if (window.L && L.Layer && !L.Layer.prototype.__sansBulle) {
+  function personnaliserLeaflet() {
+    if (!window.L || !L.Layer || L.Layer.prototype.__sansBulle) return;
     const ouvrirDepuisRepere = function () {
       if (window.__zoomRepere) window.__zoomRepere(this);
       if (this.__fiche && window.__bulleCarte) { window.__bulleCarte(this.__fiche, this.getLatLng()); return; }
@@ -4832,7 +4942,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const x = e.target.closest('[data-cl-effacer]');
     if (x) { const box = x.closest('[data-choix-lieu]'); box.querySelector('input[type=hidden]').value = ''; box.querySelector('.cl-choisi').hidden = true; box.querySelector('.cl-q').focus(); return; }
     const vc = e.target.closest('[data-carte-ll]');
-    if (vc) { const [la, lo] = vc.dataset.carteLl.split(',').map(Number); if (typeof fermerDj === 'function') fermerDj(); setTab('map'); setTimeout(() => map && map.setView([la, lo], 16), 150); }
+    if (vc) { const [la, lo] = vc.dataset.carteLl.split(',').map(Number); if (typeof fermerDj === 'function') fermerDj(); setTab('map').then(ouvert => { if (ouvert) map.setView([la, lo], 16); }); }
   });
   // Position pour « Autour de moi » : le GPS du téléphone, sinon la dernière position connue, sinon le centre de la zone (même si la carte n'a jamais été ouverte)
   function maPositionLieu(cb) {
@@ -5325,8 +5435,18 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   }
   const compteurOpening = (id, monde) => OPENINGS[id] ? `<span class="acc-bande"><span class="acc-compteur" data-compteur="${id}">${texteOpening(id)}</span>${monde || ''}</span>` : (monde || '');
   setInterval(() => document.querySelectorAll('[data-compteur]').forEach((el) => { const t = texteOpening(el.dataset.compteur); if (el.innerHTML !== t) el.innerHTML = t; }), 20000);
+  const mediasAccueil = new IntersectionObserver(entries => {
+    for (const { target, isIntersecting } of entries) {
+      if (!isIntersecting || !target.isConnected) continue;
+      mediasAccueil.unobserve(target);
+      if (target.dataset.photoAccueil) target.src = target.dataset.photoAccueil;
+      if (target.dataset.fondDest) target.style.setProperty('--g',
+        `url('${target.dataset.fondDest}') left center / cover no-repeat, ${target.style.getPropertyValue('--g')}`);
+      if (target.classList.contains('top-tete')) remplirAvatars(target);
+    }
+  });
   function accCarte(o) {
-    return `<button class="acc-carte ${o.cls || ''}" ${o.attr || ''}><span class="acc-art" style="--g:${o.g || accGrad(o.titre)}">${ACC_ANNEAUX}${o.badge || ''}<span class="acc-grand">${o.grand != null ? o.grand : esc(accInit(o.titre))}</span></span><b>${esc(o.titre)}</b><span class="acc-s">${esc(o.sous)}</span></button>`;
+    return `<button class="acc-carte ${o.cls || ''}" ${o.attr || ''}><span class="acc-art"${o.fond ? ` data-fond-dest="${esc(o.fond)}"` : ''} style="--g:${o.g || accGrad(o.titre)}">${ACC_ANNEAUX}${o.badge || ''}<span class="acc-grand">${o.grand != null ? o.grand : esc(accInit(o.titre))}</span></span><b>${esc(o.titre)}</b><span class="acc-s">${esc(o.sous)}</span></button>`;
   }
   // 5 cartes par rangée, puis une 6e carte « Tout voir »
   const accRubrique = (titre, sous, cartes, voir, max) => {
@@ -5549,7 +5669,24 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     return `<section class="acc-rub ms-rub"><button class="ligne-acc la-mes" data-mes-soirees="1"><span class="la-ico" aria-hidden="true">${ICO_BANG}</span><span class="la-txt"><b>Mes soirées</b><small>${n ? `<em>${n}</em> soirée${n > 1 ? 's' : ''} gardée${n > 1 ? 's' : ''} · rappel le jour J` : 'Touche « Banger » sur un flyer pour la garder ici'}</small></span>${n ? `<span class="ms-vignettes">${gs.slice(0, 5).map((x) => `<img src="${esc(radarUrl(x.flyerUrl) || afficheSoiree(x))}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="" referrerpolicy="no-referrer">`).join('')}</span>` : ''}<span class="la-btn">${n ? 'Voir →' : ''}</span></button></section>`;
   }
   // Rappel le jour J : à l'ouverture de l'appli (et toutes les 30 min), une notification par soirée gardée qui a lieu aujourd'hui
+  let verifRappels;
   function rappelsSoirees() {
+    const auj = iso(new Date());
+    const connus = new Set(SUD.soirees.map(x => String(x.id)));
+    const ids = new Set(mesSoirees().map(String).filter(id => !connus.has(id)));
+    if (ids.size && !verifRappels) {
+      verifRappels = radarParRecherche('', ids, auj)
+        .then(changement => {
+          if (changement && state.tab === 'live') {
+            const hub = $('#accueil .md-hub');
+            if (hub) { hub.outerHTML = bandeauMesDj(); remplirAvatars($('#accueil .md-hub')); }
+          }
+          envoyerRappelsSoirees();
+        }).catch(() => {}).finally(() => { verifRappels = null; });
+    }
+    envoyerRappelsSoirees();
+  }
+  function envoyerRappelsSoirees() {
     const auj = iso(new Date()), deja = store.get('rappelsFaits', {}), ids = mesSoirees();
     SUD.soirees.filter((x) => ids.includes(x.id) && x.date === auj && !deja[x.id]).forEach((x) => {
       const l = SUD.lieux[x.lieu] || {}, txt = (x.heure ? 'À ' + x.heure.replace(':', 'h') + ' · ' : 'Ce soir · ') + (l.nom || '') + (l.ville ? ', ' + l.ville : '');
@@ -5570,50 +5707,25 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (!r || !r.offsetParent || document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     if (window.BANZIC_FLYER_LAYOUT) window.BANZIC_FLYER_LAYOUT.next();
   }, 3000);
+  let majCompteursAccueil;
+  function compterAccueil() {
+    if (majCompteursAccueil) return;
+    majCompteursAccueil = requestAnimationFrame(() => requestAnimationFrame(() => {
+      majCompteursAccueil = 0;
+      if (state.tab !== 'live') return;
+      renderCheckin(false, false, true);
+      const counter = $('#nav-checkin-count'), n = state.ckTotalCount || 0;
+      if (counter) {
+        counter.setAttribute('font-size', n > 99 ? '6' : '8');
+        counter.closest('button').setAttribute('aria-label', 'Check-in : ' + n + ' départs aujourd’hui, demain et après-demain autour de toi');
+      }
+    }));
+  }
   function renderAccueil() {
     if (state.pageMontent) { renderPageMontent(); return; }
     if (state.pageTendance) { renderPageTendance(); return; }
-    const t = state.t, auj = iso(new Date());
+    const t = state.t;
     let h = '';
-    // 1. En direct autour de moi : DJ déclarés près de ma position, spots signalés, puis les clubs du coin
-    const centre0 = DEST.local.centre, km = (la, lo) => distKm(centre0, [la, lo]);
-    const decls = DECLS.filter((x) => x.dest === 'local' && declActive(x) && djDe(x)).map((x) => ({ x, l: lieuDe(x) })).filter((o) => o.l && (o.l.lat == null || km(o.l.lat, o.l.lng) <= 60));
-    const spotsP = SPOTS.filter((sp) => spotPublic(sp) && sp.lat != null && km(sp.lat, sp.lng) <= 60);
-    const coin = Object.values(LIEUX_DEST).filter((l) => l.dest === 'local').map((l) => ({ l, d: km(l.lat, l.lng) })).filter((o) => o.d <= 60).sort((a, b) => a.d - b.d);
-    // Les cartes affichent le lieu répertorié en titre, et le DJ qui y joue en dessous
-    // Couleurs de la légende : live (or), déclaré (orange), spot signalé (violet), club (turquoise)
-    const COUL_AUTOUR = { live: ['#F2C53A', '#7A5A10'], decl: ['#FF8A3D', '#7A2E10'], spot: ['#B58CFF', '#3E2A7A'], club: ['#3DD6C6', '#0E4A52'] };
-    const gAut = (k) => `linear-gradient(145deg, ${COUL_AUTOUR[k][0]}, ${COUL_AUTOUR[k][1]})`;
-    // Cartes « autour de moi » : petit carré avec un dessin explicite (un DJ aux platines, un spot signalé), aux couleurs de la légende
-    const DESSIN_DJ = (c) => `<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="17" r="8" fill="#0A0D16"/><path d="M22 17a10 10 0 0 1 20 0" fill="none" stroke="#0A0D16" stroke-width="3"/><rect x="19" y="15" width="5" height="8" rx="2" fill="#0A0D16"/><rect x="40" y="15" width="5" height="8" rx="2" fill="#0A0D16"/><path d="M20 40c2-9 7-13 12-13s10 4 12 13" fill="#0A0D16"/><path d="M14 33l6 7M50 33l-6 7" stroke="#0A0D16" stroke-width="3.5" stroke-linecap="round"/><rect x="6" y="40" width="52" height="16" rx="3" fill="#0A0D16"/><circle cx="20" cy="48" r="5.5" fill="${c}"/><circle cx="44" cy="48" r="5.5" fill="${c}"/><circle cx="20" cy="48" r="1.6" fill="#0A0D16"/><circle cx="44" cy="48" r="1.6" fill="#0A0D16"/><path d="M2 12q3 -4 0 -8M58 10q4 -5 0 -10M62 14q3 -4 0 -8" fill="none" stroke="#0A0D16" stroke-width="2" stroke-linecap="round" opacity=".7"/></svg>`;
-    const DESSIN_SPOT = `<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6c-10 0-18 8-18 18 0 13 18 32 18 32s18-19 18-32c0-10-8-18-18-18z" fill="#0A0D16"/><path d="M24 26l9-6v14l-9-6z" fill="#B58CFF"/><rect x="20" y="22" width="5" height="8" rx="1" fill="#B58CFF"/><path d="M37 21q4 5 0 10M40 18q7 8 0 16" fill="none" stroke="#B58CFF" stroke-width="2" stroke-linecap="round"/></svg>`;
-    const DESSIN_CLUB = `<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="#0A0D16"/><circle cx="32" cy="32" r="14" fill="none" stroke="#3DD6C6" stroke-width="1.5" opacity=".6"/><circle cx="32" cy="32" r="8" fill="none" stroke="#3DD6C6" stroke-width="1.5" opacity=".6"/><circle cx="32" cy="32" r="3" fill="#3DD6C6"/><path d="M46 14l6-6" stroke="#0A0D16" stroke-width="3" stroke-linecap="round"/></svg>`;
-    const ilYa = (ms) => { const m = Math.max(1, Math.round((Date.now() - ms) / 60000)); return m < 60 ? `il y a ${m} min` : `il y a ${Math.floor(m / 60)} h`; };
-    // Tuiles « autour de moi » : tout dans le carré (état, dessin, nom, heure). Triées par distance ; ce qui est fini disparaît
-    // (déclarations terminées, spots expirés). Plus il y a de soirées, plus les tuiles rétrécissent pour tenir dans la zone.
-    const kmDe = (la, lo) => la == null ? 99 : km(la, lo);
-    // Encart qui s'ouvre quand on passe le doigt sur un point de la mini-carte : tout ce qu'on sait du lieu
-    const vautLeCoup = (sp) => { const n = sp.note || 0, c = sp.conf || 0; return n >= 4 && c >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || c >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof']; };
-    const fmtKm = (d) => d < 1 ? '< 1 km' : Math.round(d) + ' km';
-    const encart = (o) => ({ k: o.k, attr: o.attr, html: `<span class="enc-art enc-${o.k}">${o.dessin}</span><span class="enc-txt"><span class="enc-etat enc-${o.k}"><i></i>${o.etat}</span><b>${esc(o.t)}</b><span class="enc-heure">${o.heure}</span><small>${o.s}</small>${o.plus || ''}<span class="enc-voir">Voir la fiche →</span></span>` });
-    const infos = decls.filter((o) => o.l).map(({ x, l }) => { const d = djDe(x), k = declConfirmee(x) ? 'live' : 'decl', dist = kmDe(l.lat, l.lng);
-        return encart({ k, attr: x.lieu ? `data-lieu="${x.lieu}"` : `data-dj-pro="${esc(d.nom)}"`, dessin: DESSIN_DJ(k === 'live' ? '#F2C53A' : '#FF8A3D'), etat: k === 'live' ? 'DJ en live' : 'DJ déclaré',
-          heure: `${hm(x.debut)} → ${hm(x.fin)}`, t: d.nom, s: `${esc(l.nom)} · ${fmtKm(dist)}`, plus: `<small>${k === 'live' ? x.conf + ' Bangers confirment' : 'Pas encore confirmé par les Bangers'}</small>` }); })
-      .concat(spotsP.map((sp) => { const dist = kmDe(sp.lat, sp.lng), v = vautLeCoup(sp); return encart({ k: 'spot', attr: `data-spot-voir="${sp.id}"`, dessin: DESSIN_SPOT, etat: 'Spot signalé', heure: `Signalé à ${hm(sp.t)}`,
-        t: sp.nom || TYPES_SPOT[sp.type], s: `${esc(sp.dj || 'DJ inconnu')} · ${fmtKm(dist)}`, plus: `<small>par <b>@${esc(sp.par || 'un Banger')}</b> · ${sp.conf} confirment${sp.note ? ' · ' + '★'.repeat(sp.note) : ''}</small><span class="enc-vaut ${v[1]}">${v[0]}</span>` }); }))
-      .concat(coin.slice(0, 14).map(({ l, d }) => encart({ k: 'club', attr: `data-lieu="${l.id}"`, dessin: DESSIN_CLUB, etat: 'Club du coin', heure: 'DJ à confirmer', t: l.nom, s: `${esc((l.style || 'Club').split(/[,·:]/)[0].trim())} · ${fmtKm(d)}` })));
-    const lgItem = (k, nom, info) => `<button type="button" class="lg-item" data-lg-info="${info}"><i class="lg ${k}"></i>${nom}</button>`;
-    const legende = `<div class="aut-legende" aria-label="Légende de la carte">${lgItem('moi', 'Toi', 'Ta position')}${lgItem('live', 'Live', 'DJ en live, confirmé par les Bangers')}${lgItem('decl', 'Déclaré', 'DJ déclaré, pas encore confirmé')}${lgItem('spot', 'Spot', 'Spot signalé par un Banger : bar, plage, bateau…')}${lgItem('club', 'Club', 'Club du coin, DJ à confirmer')}<span class="lg-bulle" aria-live="polite"></span></div>`;
-    // Fil d'actualité qui défile sous la carte : les DJ qui jouent (où, à combien de km, combien de temps il reste, confirmés ou non) puis les spots signalés
-    const resteJeu = (fin) => { const m = Math.round((fin - Date.now()) / 60000); if (m <= 0) return 'se termine'; return 'encore ' + (m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min'); };
-    const avant = (deb) => { const m = Math.round((deb - Date.now()) / 60000); return m > 0 ? 'commence dans ' + (m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min') : null; };
-    const filItems = decls.filter((o) => o.l).map(({ x, l }) => ({ x, l, dist: kmDe(l.lat, l.lng) })).sort((a, b) => a.dist - b.dist).map(({ x, l, dist }) => { const d = djDe(x), k = declConfirmee(x) ? 'live' : 'decl';
-        return `<button class="fil-item k-${k} a-vis" ${x.lieu ? `data-lieu="${x.lieu}"` : `data-dj-pro="${esc(d.nom)}"`}>${visFil(d.nom, x.conf || 0, `data-decl-ok="${x.id}"`)}<span class="fil-l1"><em class="fil-tag ${k}">${k === 'live' ? 'Live' : 'Déclaré'}</em><b>${esc(d.nom)}</b><span class="fil-t">${avant(x.debut) || resteJeu(x.fin)}</span></span><span class="fil-l2"><span>${esc(l.nom)} · ${fmtKm(dist)}</span><span class="${k === 'live' ? 'fil-ok' : 'fil-att'}">${k === 'live' ? x.conf + ' Banger' + (x.conf > 1 ? 's' : '') + ' confirment' : 'pas encore confirmé'}</span></span></button>`; })
-      .concat(spotsP.map((sp) => ({ sp, dist: kmDe(sp.lat, sp.lng) })).sort((a, b) => a.dist - b.dist).map(({ sp, dist }) => { const v = vautLeCoup(sp);
-        return `<button class="fil-item k-spot a-vis" data-spot-voir="${sp.id}">${visSpotC(sp)}<span class="fil-l1"><em class="fil-tag spot">Spot</em><b>${esc(sp.nom || TYPES_SPOT[sp.type])}</b><span class="fil-vaut v-${v[1]}">${v[0]}</span></span><span class="fil-l2"><span>${esc(sp.dj || 'DJ inconnu')} · ${fmtKm(dist)}</span><span>signalé à ${hm(sp.t)} par @${esc(sp.par || 'un Banger')}</span></span></button>`; }));
-    coin.slice(0, 14).forEach(({ l, d }) => filItems.push(filClub(l, fmtKm(d))));
-    const filInfos = filItems.length ? `<div class="fil-infos" aria-label="Fil d'actualité autour de moi"><div class="fil-fenetre"><div class="fil-piste">${filItems.join('<span class="fil-sep" aria-hidden="true"></span>')}<span class="fil-sep" aria-hidden="true"></span><span class="fil-copie" aria-hidden="true">${filItems.join('<span class="fil-sep"></span>')}<span class="fil-sep"></span></span></div></div></div>` : '';
-    const essaiB = document.documentElement.classList.contains('essai-bannieres');
     // ---- « À découvrir près de toi » : grand carrousel de flyers (futurs encarts publicitaires vendus aux clubs) ----
     // En attendant les pubs vendues : les soirées à venir autour de chez lui, flyers d'abord ; tous styles mélangés,
     // sauf si le Banger active « Selon mes styles ». Les clubs libertins n'y sont jamais.
@@ -5633,41 +5745,24 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const slides = demoFlyers || pubs.map((x) => { ficheSoireeJour(x); const dt = new Date(x.date + 'T12:00:00'), img = radarUrl(x.flyerUrl) || afficheSoiree(x);
       const garde = mesSoirees().includes(x.id);
       return `<div class="dc-slide" data-ag-fiche="s:${esc(x.id)}" role="button" tabindex="0" aria-label="Voir la soirée ${esc(x.nom)}">
-        <span class="dc-media">${x.encart ? '<em class="dc-une">À la une</em>' : ''}<img src="${esc(img)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.removeAttribute('src');this.alt='Affiche officielle momentanément indisponible'" alt="" loading="${x.featuredOfficialFlyer ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer"></span><div class="dc-footer">
+        <span class="dc-media">${x.encart ? '<em class="dc-une">À la une</em>' : ''}<img data-photo-accueil="${esc(img)}" data-fallback="${afficheSoiree(x)}" onerror="this.onerror=null;this.removeAttribute('src');this.alt='Affiche officielle momentanément indisponible'" alt="" loading="${x.featuredOfficialFlyer ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer"></span><div class="dc-footer">
         <span class="dc-bas"><small>${['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'][dt.getDay()]} ${dt.getDate()} ${MOIS_CRT[dt.getMonth()]}${x.heure ? ' · ' + esc(x.heure.replace(':', 'h')) : ''}</small><b>${esc(x.nom)}</b><span>${esc(x.l.nom)} · ${esc(x.l.ville || '')} · ${Math.round(x.km)} km</span></span><button type="button" class="dc-bang${garde ? ' on' : ''}" data-garder="${esc(x.id)}" aria-pressed="${garde}" aria-label="${garde ? 'Retirer de mes soirées' : 'Garder cette soirée'}">${ICO_BANG}<span>${garde ? 'Gardée' : 'Banger'}</span></button></div></div>`; }).join('');
     const interStyles = `<button type="button" class="dc-inter${selonStyles ? ' on' : ''}" data-pub-styles="1" role="switch" aria-checked="${selonStyles}"${prefStyles.length ? '' : ' disabled title="Choisis tes styles dans ton profil"'}><i aria-hidden="true"></i>Selon mes styles</button>`;
     // « Mes soirées » juste sous « Mes DJ » : les soirées gardées avec le bouton Banger
     // Les soirées gardées sont réunies avec Mes DJ dans le bandeau commun.
     h += `<section class="acc-rub dc-rub"><div class="dc-tete"><div><h2>Les <span class="dc-title-accent">soirées</span><br>près de toi</h2><small>${selonStyles ? 'Tes styles' : 'Tous les styles'} · à moins de 50 km ${nomCentrePub === 'toi' ? 'de toi' : 'de ' + esc(nomCentrePub)}</small></div>${interStyles}</div>
       ${slides ? `<div class="dc-cadre"><span class="dc-pub">${demoFlyers ? 'ESSAI · FLYERS FOURNIS' : 'Affiches des organisateurs'}</span><div class="dc-rail" id="dc-rail">${slides}</div></div>` : '<p class="aide">Rien à découvrir pour l’instant avec tes styles. Désactive « Selon mes styles ».</p>'}</section>`;
-    // ---- « Direct autour de moi » et « Départs du jour » : une ligne chacun (la carte et le Check-in détaillent) ----
-    const rCk = state.ckRayon || 100; // même distance que celle réglée dans le Check-in
-    const auj100 = soireesAvecKm().filter((x) => x.date === auj && x.km <= rCk && !estLibertin(x)).length;
-    const cAcc = centreGeographique(), clubs100 = (window.DISCOTHEQUES || []).filter((c) => distKm(cAcc, [c[2], c[3]]) <= rCk).length;
-    let nbDeparts = 0; try { renderCheckin(); nbDeparts = state.ckTotalCount || 0; } catch (e) { nbDeparts = 0; }
-    // Reuse the same nearby counts in the bottom navigation icons.
-    const liveNearby = soireesAvecKm().some(x => { if (x.km > rCk || estLibertin(x) || !x.heure || !x.heureFin) return false; const t = horairesCheckin(x); return Date.now() >= t.debut && Date.now() < t.fin; });
-    const mapCount = document.getElementById('nav-map-count');
-    const checkinCount = document.getElementById('nav-checkin-count');
-    if (mapCount) majCompteurCarte();
-    if (checkinCount) { checkinCount.textContent = nbDeparts; checkinCount.setAttribute('font-size', nbDeparts > 99 ? '6' : '8'); checkinCount.closest('button').setAttribute('aria-label', 'Check-in : ' + nbDeparts + ' départs aujourd’hui, demain et après-demain autour de toi'); }
-    const accesPivotants = `<section class="home-flip" aria-label="Direct et départs autour de moi"><div class="home-flip-rotor">
-      <button class="ligne-acc la-direct home-flip-face" data-tab="map"><span class="la-ico" aria-hidden="true"><span class="ico-diffusion"><i></i><b></b><b></b></span></span><span class="la-txt"><b>Direct autour de moi</b><small><em>${auj100}</em> soirée${auj100 > 1 ? 's' : ''} ce soir · <em>${clubs100}</em> clubs à ${rCk} km</small></span><span class="la-btn">Carte →</span></button>
-      <button class="ligne-acc la-ck home-flip-face" inert aria-hidden="true" data-tab="checkin"><span class="la-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16l20-5-2-3-6 1.5L8 4 6 5l3 6-5 1.3L2.5 10 1 11l1 5z"/><path d="M3 21h18"/></svg></span><span class="la-txt"><b>Départs du jour</b><small><em>${nbDeparts}</em> départ${nbDeparts > 1 ? 's' : ''} aujourd’hui autour de toi</small></span><span class="la-btn">Check-in →</span></button>
-</div><button type="button" class="home-flip-swap" aria-label="Afficher Départs du jour" title="Changer de face">↕</button></section>`;
-    // 1 bis. Agenda autour de moi : de petites cartes par type de sortie, avec le nombre de dates dans le rayon de l'Agenda
-    const rayonAg = RAYONS[state.rayonIdx], dansRayon = soireesAvecKm().filter((x) => dansRayonAg(x, rayonAg));
-    const nbType = (k) => k === 'tout' ? dansRayon.length : dansRayon.filter((x) => (x.type || 'club') === k).length;
-    const TYPES_AG = [['tout', 'Agenda', '✦', '#C9CFDD'], ['club', 'Club', '🪩', '#3D8BFF'], ['festival', 'Festival', '🎪', '#FF8A3D'], ['concert', 'Concert', '🎤', '#F2C53A'], ['bar', 'Bar', '🍸', '#A77BFF'], ['resto', 'Restaurant', '🍽️', '#3DF28A']];
+    compterAccueil();
+    const rayonAg = RAYONS[state.rayonIdx];
     // Agenda autour de moi : la bannière « L'agenda » (visuel fourni par Antonio, textes dans la police de l'appli).
     // Un appui ouvre l'Agenda, où l'on choisit Club, Festival, Concert…
     h += `<section class="acc-rub ag-rub"><button class="ag-banniere ag-photo ag-static sorties-banniere" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
-        <img src="agenda-banniere.webp" alt="" width="800" height="288" loading="lazy" decoding="async"><span class="ag-txt"><small class="ag-kick">▦ AGENDA</small><b class="ag-titre"><span class="sorties-rose">Les</span><br>prochaines<br><span class="sorties-rose">sorties</span></b><span class="sorties-rubriques"><span>📍<small>AUTOUR<br>DE MOI</small></span><span>▦<small>AGENDA</small></span><span>🎟<small>BILLETTERIE</small></span></span><span class="ag-sous">Clubs, concerts &amp; festivals</span><small class="sorties-distance">Toutes les dates à moins de 200 km</small></span></button></section>`;
+        <img data-photo-accueil="agenda-banniere.webp" alt="" width="800" height="288" loading="lazy" decoding="async"><span class="ag-txt"><small class="ag-kick">▦ AGENDA</small><b class="ag-titre"><span class="sorties-rose">Les</span><br>prochaines<br><span class="sorties-rose">sorties</span></b><span class="sorties-rubriques"><span>📍<small>AUTOUR<br>DE MOI</small></span><span>▦<small>AGENDA</small></span><span>🎟<small>BILLETTERIE</small></span></span><span class="ag-sous">Clubs, concerts &amp; festivals</span><small class="sorties-distance">${rayonAg >= FRANCE_KM ? esc(paysAgenda.of(state.paysAgenda)) : 'Dans un rayon de ' + rayonAg + ' km'}</small></span></button></section>`;
     // 2. Les saisons
     const ordreSaisons = ['miami', 'dubai', 'phuket', 'tulum', 'ibiza', 'mykonos', 'santa-catarina'];
     h += accRubrique('Les saisons', 'En saison d\'abord, puis les prochaines openings', DESTS.filter((d) => !d.local).sort((a, b) => ordreSaisons.indexOf(a.id) - ordreSaisons.indexOf(b.id)).map((d) => { const n = d.mois[MOIS_NOW], c = COUL_DEST[d.id] || ['#3D8BFF', '#0A1F4A'];
       const fond = FOND_DEST[d.id];
-      return accCarte({ cls: 'large' + (fond ? ' avec-photo' : ''), titre: d.nom + ' saison', sous: d.saison, grand: fond ? '' : (DRAPEAUX[d.id] || '') + ' ' + esc(d.nom), g: fond ? `url('${fond}') left center / cover no-repeat, linear-gradient(145deg, ${c[0]}, ${c[1]})` : `linear-gradient(145deg, ${c[0]}, ${c[1]})`, attr: `data-dest-puce="${d.id}"`,
+      return accCarte({ cls: 'large' + (fond ? ' avec-photo' : ''), titre: d.nom + ' saison', sous: d.saison, grand: fond ? '' : (DRAPEAUX[d.id] || '') + ' ' + esc(d.nom), fond, g: `linear-gradient(145deg, ${c[0]}, ${c[1]})`, attr: `data-dest-puce="${d.id}"`,
         badge: compteurOpening(d.id, n < 0 ? `<span class="acc-badge hors">${T('hors')}</span>` : `<span class="acc-badge ${ACC_NIV[n][0]}">${ACC_NIV[n][1]}</span>`) }); }), '', 7);
     // 3. DJ live dans le monde
     const lives = streamsActifs(), genres = [...new Set(lives.map(genreDe))];
@@ -5675,14 +5770,14 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const puces = `<div class="genre-puces">${['', ...genres].map((g) => `<button class="genre-puce${(state.genreLive || '') === g ? ' on' : ''}" data-genre-live="${esc(g)}" style="--gc:${g ? coulGenre(g) : '#C9CFDD'}">${g ? esc(g) : 'Tous'}</button>`).join('')}</div>`;
     // Bannière « Les DJ en live » (visuel fourni par Antonio, textes dans la police de l'appli) : un appui ouvre tous les lives disponibles
     h += `<section class="acc-rub ag-rub"><button class="ag-banniere live-banniere lv-photo ag-static ag-live-static" data-live-tous="1" aria-label="Les DJ en live : écouter un live">
-        <img src="live-banniere.webp" alt="" width="800" height="288" loading="lazy" decoding="async"><span class="ag-txt"><b class="ag-titre">Les DJ<br><span class="banner-live-accent">en live</span></b><span class="ag-sous">Écoute les DJ en direct</span></span>${compteurLives()}</button></section>`;
+        <img data-photo-accueil="live-banniere.webp" alt="" width="800" height="288" loading="lazy" decoding="async"><span class="ag-txt"><b class="ag-titre">Les DJ<br><span class="banner-live-accent">en live</span></b><span class="ag-sous">Écoute les DJ en direct</span></span>${compteurLives()}</button></section>`;
     // La rubrique « DJ live dans le monde » (titre, styles, lecteurs) est retirée de l'accueil : la bannière ci-dessus ouvre tous les lives
     // 4. Classement DJ Mag Top 100 2026, du 1er au 100e (à la place des clubs d'Ibiza)
     const TOP = window.DJMAG2026; let secTop = '';
     if (TOP) {
       const MOUV = { '+': ['monte', '▲'], '-': ['descend', '▼'], '=': ['stable', '='], N: ['nouveau', 'Nouveau'], R: ['retour', 'Retour'] };
       const top = TOP.djs.map(([nom, mv], i) => `<button class="top-carte${i < 3 ? ' podium p' + (i + 1) : ''}" data-dj-pro="${esc(nom)}" style="--g:${accGrad(nom)}">
-        <span class="top-vinyle"><span class="top-tete">${avatarDj(nom, 'top-photo')}</span><span class="top-rang">${i + 1}</span></span>
+        <span class="top-vinyle"><span class="top-tete">${avatarDj(nom, 'top-photo').replace(' src=', ' data-photo-accueil=')}</span><span class="top-rang">${i + 1}</span></span>
         <b class="top-nom">${esc(nom)}</b><small class="top-mv ${MOUV[mv][0]}">${MOUV[mv][1]}</small></button>`);
       h += '@@TOP100@@'; secTop = `<section class="acc-rub"><div class="acc-tete"><div><h2>DJ Top 100 · 2026</h2><small>Le classement complet, du 1er au 100e · annoncé le 7 octobre à [UNVRS] Ibiza</small></div></div><div class="acc-rang top-rangee">${top.join('')}</div></section>`;
     }
@@ -5695,23 +5790,24 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       .concat(streamsActifs().slice(0, 3).map((d) => vCarte({ attr: `data-dj-pro="${esc(d.nom)}"`, c: coulGenre(genreDe(d)), img: d.photo || '', badge: '<i></i>Live en ligne', type: esc(genreDe(d)), nom: esc(d.nom), lieu: esc(d.ville || ''), bas: [(d.stream.vues || 0).toLocaleString('fr-FR') + ' à l\'écoute'] })));
     // Bannière « La tendance du moment » (visuel fourni par Antonio, textes dans la police de l'appli) : ouvre la page des tendances
     h += `<section class="acc-rub ag-rub"><button class="ag-banniere td-banniere" data-page-tendance="1" aria-label="La tendance du moment : explorer les tendances">
-        <img src="tendance-banniere.jpg?v=1" alt="" loading="lazy">
+        <img data-photo-accueil="tendance-banniere.jpg?v=1" alt="" loading="lazy">
         <span class="ag-txt"><small class="ag-kick">${tend.length} en ce moment</small><b class="ag-titre">La tendance<br><span class="banner-live-accent">du moment</span></b><span class="ag-sous">Les coups de cœur des Bangers</span></span></button></section>`;
     // 6. Les DJ qui montent : plus fortes progressions du Top 100 2026, puis les nouvelles entrées
     const MONTEES = [['John Summit', 22], ['Mau P', 22], ['CHRIS STASSY', 22], ['GORDO', 18], ['Fred again..', 17], ['The Martinez Brothers', 15], ['Korolova', 14], ['Solomun', 14], ['Miss Monique', 14], ['B Jones', 14], ['Michael Bibi', 11], ['Indira Paganotto', 10], ['Mochakk', 10], ['Anyma', 7]];
     window.__MONTEES = MONTEES;
     // Bannière « Les DJ qui montent » (visuel fourni par Antonio, textes dans la police de l'appli) : un appui ouvre la page de tous les DJ qui montent
     const secMonte = `<section class="acc-rub ag-rub"><button class="ag-banniere mt-banniere ag-static montent-static" data-page-montent="1" aria-label="Les DJ qui montent : découvre la nouvelle vague">
-        <img src="montent-banniere.webp" alt="" loading="lazy" decoding="async" width="640" height="230">
+        <img data-photo-accueil="montent-banniere.webp" alt="" loading="lazy" decoding="async" width="640" height="230">
         <span class="ag-txt"><small class="ag-kick">Top 100 · 2026</small><b class="ag-titre">Les DJ<br><span class="banner-live-accent">qui montent</span></b><span class="ag-sous">Découvre la nouvelle vague</span></span></button></section>`;
     // « Les DJ qui montent » prend la place du Top 100, qui descend en dernier
     h = h.includes('@@TOP100@@') ? h.replace('@@TOP100@@', secMonte) + secTop : h + secMonte;
+    mediasAccueil.disconnect();
     $('#accueil').innerHTML = bandeauMesDj() + h;
+    document.querySelectorAll('#accueil [data-photo-accueil], #accueil [data-fond-dest], #accueil .top-tete')
+      .forEach(node => mediasAccueil.observe(node));
     if (window.BANZIC_HOME_FLIP) window.BANZIC_HOME_FLIP.sync($('#accueil'));
     if (window.BANZIC_FLYER_LAYOUT) window.BANZIC_FLYER_LAYOUT.sync($('#accueil'));
-    // Photos des DJ du Top 100 : chargées au fur et à mesure qu'on fait défiler la rangée
-    const vus = new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) { vus.unobserve(en.target); remplirAvatars(en.target); } }), { rootMargin: '0px 300px' });
-    document.querySelectorAll('#accueil .top-tete').forEach((el) => vus.observe(el));
+
   }
   // ---- Page « La tendance du moment » : ce que les Bangers adorent, et pourquoi
   state.tdOnglet = 'sets';
@@ -6005,12 +6101,12 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       const formBang = document.querySelector('#form-spot');
       if (formBang && !document.querySelector('#panel-spot').hidden) { formBang.requestSubmit(); return; }
       const ici = djIci(); if (ici) { ouvrirNoteDj(ici); return; }
-      if (MON_DJ && (state.ongletProfil || 'dj') === 'dj') { setTab('profil'); state.ongletProfil = 'dj'; state.vueDj = 'mixe'; renderProfil(); } else { setTab('map'); setTimeout(() => { const s = $('#btn-spot'); if (s) s.click(); }, 250); } return; }
+      if (MON_DJ && (state.ongletProfil || 'dj') === 'dj') { setTab('profil'); state.ongletProfil = 'dj'; state.vueDj = 'mixe'; renderProfil(); } else { setTab('map').then(ouvert => { if (ouvert) $('#btn-spot')?.click(); }); } return; }
     const f = $('#plus-feuille'); if (!f || f.hidden) return;
     const b = e.target.closest('[data-plus]');
     if (!b) { if (e.target === f) fermerPlus(); return; }
     const k = b.dataset.plus; fermerPlus();
-    if (k === 'spot') { setTab('map'); setTimeout(() => { const s = $('#btn-spot'); if (s) s.click(); }, 250); }
+    if (k === 'spot') { setTab('map').then(ouvert => { if (ouvert) $('#btn-spot')?.click(); }); }
     else if (k === 'mixe') { state.vueDj = MON_DJ ? 'mixe' : 'creer'; setTab('profil'); }
     else if (k === 'agenda') setTab('agenda');
   });
@@ -6060,20 +6156,41 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     $('#screen-checkin').hidden = tab !== 'checkin';
     { const sf = $('#screen-soiree'); if (sf) sf.hidden = true; const sc = $('#screen-club'); if (sc) sc.hidden = true; }
     const pst = document.querySelector('.pastilles'); if (pst) pst.hidden = tab !== 'live'; // boutons Autour de moi / DJ live : seulement sur « En direct »
-    if (tab === 'map') { initMap(); setTimeout(() => map && map.invalidateSize(), 0); }
     majPortails();
-    render();
-    if (tab === 'map') {
+    if (tab !== 'map') {
+      render();
+      if (tab === 'fav') {
+        const ids = new Set(mesSoirees().map(String));
+        if (ids.size) radarParRecherche('', ids).then(changement => {
+          if (changement && state.tab === 'fav') renderFavs();
+        }).catch(error => console.warn('Radar', error));
+      }
+      return;
+    }
+    const screen = $('#screen-map');
+    screen.setAttribute('aria-busy', 'true');
+    return chargerCarte().then(() => {
+      if (state.tab !== 'map') return false;
+      initMap();
+      render();
+      map.invalidateSize();
       if (fitCount) {
-        requestAnimationFrame(() => {
-          if (!map || state.tab !== 'map') return;
-          map.invalidateSize();
+        const now = Date.now();
+        chargerRadar(radarAutour(centreGeographique(), state.ckRayon || 100,
+          [iso(new Date(now - 86400000)), iso(new Date(now))])).catch(() => {}).then(() => {
+          if (state.tab !== 'map') return;
+          renderCheckin(false, false, true);
           const points = (state.ckTodayRows || []).map(row => row.point);
           if (points.length) map.fitBounds(L.latLngBounds(points), { padding: [48, 64], maxZoom: 15, animate: false });
           else { map.setView(centreGeographique(), 10); toast('Aucune soirée à cadrer dans le rayon choisi'); }
+          renderMap();
         });
-      } else setTimeout(centrerSurMoi, 250);
-    }
+      } else centrerSurMoi();
+      return true;
+    }).catch(() => {
+      if (state.tab === 'map') toast('Impossible de charger la carte. Réessaie.');
+      return false;
+    }).finally(() => screen.removeAttribute('aria-busy'));
   }
   // En ouvrant la carte : on atterrit sur le point bleu de géolocalisation (position réelle du téléphone)
   function centrerSurMoi() {
@@ -6282,7 +6399,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   if (state.mode === 'ibiza') state.dest = 'ibiza';
   if (state.mode === 'monde') state.dest = DEST[store.get('dest', 'ibiza')] && !DEST[store.get('dest', 'ibiza')].local ? store.get('dest', 'ibiza') : 'ibiza';
   majDestLigne();
-  render();
+  if (state.mode !== 'geo') render();
   localiser();
 })();
 
