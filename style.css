@@ -3350,20 +3350,16 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 @keyframes fermeClignote { 50% { opacity: .45; } }
 .sous-menu, .filtres-panneau { animation: none; }
 
-/* Accueil : bannière Agenda animée, sans son ni commandes superposées. */
-.ag-banniere.ag-video { aspect-ratio: 1472 / 624; }
-.ag-banniere.ag-video > img { width: 100%; height: 100%; object-fit: cover; }
-.ag-banniere.ag-video > video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-@media (prefers-reduced-motion: reduce) { .ag-banniere.ag-video > video { visibility: hidden; } }
+/* Visuels fixes des bannières de l’accueil. */
+.ag-banniere.ag-static { aspect-ratio: 1472 / 624; }
+.ag-banniere.ag-static > img { width: 100%; height: 100%; object-fit: cover; }
 
-/* Mes DJ : vidéo légèrement aplatie en bandeau, informations conservées au-dessus. */
-.acc-mesdj.md-fin.md-video { height: 124px !important; isolation: isolate; }
-.acc-mesdj.md-video > video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; pointer-events: none; z-index: 0; }
-.acc-mesdj.md-video::before { z-index: 1; background: linear-gradient(90deg, transparent 22%, rgba(8,6,24,.52) 50%, rgba(8,6,24,.82)); }
-.acc-mesdj.md-video .md-ligne { z-index: 2; }
-@media (prefers-reduced-motion: reduce) { .acc-mesdj.md-video > video { visibility: hidden; } }
+/* Mes DJ : informations superposées au visuel. */
+.acc-mesdj.md-fin.md-static { height: 124px !important; isolation: isolate; }
+.acc-mesdj.md-static::before { z-index: 1; background: linear-gradient(90deg, transparent 22%, rgba(8,6,24,.52) 50%, rgba(8,6,24,.82)); }
+.acc-mesdj.md-static .md-ligne { z-index: 2; }
 
-/* Un bandeau animé, deux accès à la page personnelle commune. */
+/* Deux accès à la page personnelle commune. */
 .acc-mesdj.md-fin.md-hub { height: 120px !important; padding: 8px 12px; cursor: default; }
 .md-hub-links { position: relative; z-index: 2; width: 70%; display: grid; gap: 4px; }
 .acc-mesdj.md-hub .md-hub-row { width: 100%; min-width: 0; min-height: 44px; padding: 6px 8px; border: 1px solid rgba(255,255,255,.07); border-radius: 12px; background: rgba(16,9,24,.18); color: #fff; text-align: left; cursor: pointer; font: inherit; }
@@ -3462,8 +3458,8 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 @media(max-width:360px) { .md-hub .md-hub-links { width: 60%; } .acc-mesdj.md-hub .md-txt b { font-size: 16px; } }
 
 /* DJ en live : cadre entier conservé, vidéo aplatie à 1278 × 440. */
-.ag-banniere.live-banniere.lv-photo.ag-live-video { aspect-ratio: 1278 / 440 !important; }
-.ag-banniere.ag-live-video > img, .ag-banniere.ag-live-video > video { width: 100%; height: 100%; object-fit: contain; }
+.ag-banniere.live-banniere.lv-photo.ag-live-static { aspect-ratio: 1278 / 440 !important; }
+.ag-banniere.ag-live-static > img { width: 100%; height: 100%; object-fit: contain; }
 
 /* Palette Banzic : une touche chaude sur les faces du panneau pivotant. */
 .home-flip { border-color: rgba(255,138,61,.28); background: linear-gradient(110deg,#321725,#17162a); }
@@ -3513,12 +3509,12 @@ button.fp-badge.b-enlive { font-size: 11px; font-weight: 800; letter-spacing: .0
 .dc-tete h2 .dc-title-accent { color: #f43b91; background: linear-gradient(90deg,#ff795d,#f031a6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-shadow: none; }
 
 /* Compact agenda banner: complete visual, gently flattened. */
-.ag-banniere.ag-photo.ag-video { aspect-ratio: 800 / 288 !important; }
-.ag-banniere.ag-photo.ag-video > img, .ag-banniere.ag-photo.ag-video > video { object-fit: fill; }
+.ag-banniere.ag-photo.ag-static { aspect-ratio: 800 / 288 !important; }
+.ag-banniere.ag-photo.ag-static > img { object-fit: fill; }
 
 /* Compact live banner, with no cropping. */
-.ag-banniere.live-banniere.lv-photo.ag-live-video { aspect-ratio: 800 / 288 !important; }
-.ag-banniere.ag-live-video > img, .ag-banniere.ag-live-video > video { object-fit: fill; }
+.ag-banniere.live-banniere.lv-photo.ag-live-static { aspect-ratio: 800 / 288 !important; }
+.ag-banniere.ag-live-static > img { object-fit: fill; }
 
 /* Shared coral-to-fuchsia wording inspired by the live banner. */
 .ag-titre .banner-live-accent { color: #e00072; background: linear-gradient(90deg,#f45b38 0%,#e00072 65%,#d00094 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -3659,7 +3655,6 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 .acc-mesdj.md-hub .md-txt b { font-size: clamp(17px, 4.6vw, 19px); }
 .acc-mesdj.md-hub .md-txt small { font-size: 12px; }
 .acc-mesdj.md-hub .md-hub-row { background: rgba(20, 10, 24, .42); }
-.acc-mesdj.md-hub > video { object-position: left center; }
 .acc-mesdj.md-hub { background-position: left center; }
 
 @media (max-width: 700px) {

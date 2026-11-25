@@ -287,7 +287,7 @@
     let h = '';
     const pr = state.profil;
     { const di = DEST.ibiza, ni = di.mois[MOIS_NOW];
-      h += `<div class="dest-banniere" style="background-image:url('ibiza-carte.jpg?v=4');background-position:left center"></div><div class="dest-tete"><div><h2>${esc(di.nom)}</h2><small>${esc(di.pays)} · ${T('saison')} : ${esc(di.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(di.tz) })} · ${decalage(di.tz)}</small></div>${pastilleMois(ni)}</div>`
+      h += `<div class="dest-banniere" style="background-image:url('ibiza-carte.webp');background-position:left center"></div><div class="dest-tete"><div><h2>${esc(di.nom)}</h2><small>${esc(di.pays)} · ${T('saison')} : ${esc(di.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(di.tz) })} · ${decalage(di.tz)}</small></div>${pastilleMois(ni)}</div>`
         + filDest(); }
     h += blocDecls();
     h += blocPepites();
@@ -1992,7 +1992,7 @@
     const ong = state.agendaDj && state.agendaDj.dj === nom ? state.agendaDj.o : 'avenir';
     const liste = ong === 'ibiza' ? ibiza : ong === 'passe' ? passe : avenir;
     const fmtJ = (iso) => { const x = new Date(iso + 'T12:00'); return ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'][x.getDay()] + ' ' + x.getDate() + ' ' + MOIS[x.getMonth()] + (x.getFullYear() !== new Date().getFullYear() ? ' ' + x.getFullYear() : ''); };
-    const DEST_IMG = { Tulum: 'tulum-carte.jpg', Mykonos: 'mykonos-carte.jpg' };
+    const DEST_IMG = { Tulum: 'tulum-carte.webp', Mykonos: 'mykonos-carte.webp' };
     const img = (x) => (x.ville === 'Ibiza' ? (imgLieu(lieux[x.lieu]) || ((window.PHOTOS_LIEUX || {})[x.lieu] || {}).f) : '') || photoVille(x.ville, x.pays) || DEST_IMG[x.ville] || 'fond-platine.jpg';
     const carte = (x) => { const j = Math.round((new Date(x.date + 'T12:00') - new Date(auj + 'T12:00')) / 864e5);
       const badge = (DRAPEAU_PAYS[x.pays] || '') + ' ' + (j === 0 ? 'Ce soir' : j === 1 ? 'Demain' : j > 1 && j <= 30 ? 'Dans ' + j + ' j' : esc(x.pays));
@@ -2250,7 +2250,7 @@
     const contenu = contenuFicheTestPierro(d);
     const direct = contenuLiveTestPierro(d);
     $('#dj-body').innerHTML = `<article class="pierro-test" aria-label="Fiche test de ${esc(nom)}">
-      <div class="pt-cover"><img src="mesdj-banniere-poster.jpg" alt="" decoding="async"><span class="pt-marque">BANZIC</span></div>
+      <div class="pt-cover"><img src="mesdj-banniere.webp" alt="" decoding="async"><span class="pt-marque">BANZIC</span></div>
       <header class="pt-identite"><div class="pt-avatar">${avatarDj(nom)}</div><div class="pt-nom"><h2>${esc(nom)}</h2><p>${esc(d.ville || '')}</p>${certifie ? '<span class="pt-certifie" title="Validé par la communauté Bangers">✓ Pro certifié</span>' : ''}</div>${boutonCasque(nom)}</header>
       <div class="pt-actions">${contact ? `<a class="pt-contact" href="${esc(contact)}" target="_blank" rel="noopener" aria-label="Contacter ${esc(nom)} sur ${liens.instagram ? 'Instagram' : liens.soundcloud ? 'SoundCloud' : 'YouTube'}">Contacter</a>` : '<button class="pt-contact" disabled>Contact non renseigné</button>'}${certifie && contact ? `<a class="pt-booking" href="${esc(contact)}" target="_blank" rel="noopener">Booking</a>` : ''}</div>
       <div class="pt-suivi"><button data-fav="${esc(nom)}">${suivi ? 'Suivi ✓' : 'Suivre +'}</button><button data-alerte-dj="${esc(nom)}">${alerte ? 'Alerte activée' : "M’alerter"}</button><span class="fp-stat"><b>${stats ? stats.abonnes : d.abonnes || 0}</b> <small>abonnés</small></span><span>${setsConfirmes(d)} sets confirmés</span></div>
@@ -3188,7 +3188,7 @@
   document.addEventListener('input', (e) => { if (e.target.id === 'fader-ck') { const j = +e.target.value; state.ckRayon = CK_RAYONS[j]; store.set('ckRayon', state.ckRayon); renderCheckin(true); e.target.style.setProperty('--pct', j / (CK_RAYONS.length - 1) * 100 + '%'); document.querySelectorAll('[data-ck-rayon]').forEach((s, k) => s.classList.toggle('on', k === j)); const v = document.getElementById('ckr-val'); if (v) v.textContent = CK_RAYONS[j] + ' km'; } });
   document.addEventListener('click', (e) => { const g = e.target.closest('[data-ck-rayon]'); if (g) reglerCk(+g.dataset.ckRayon); });
 
-  const FOND_DEST = { ibiza: 'ibiza-carte.jpg?v=4', mykonos: 'mykonos-carte.jpg?v=4', tulum: 'tulum-carte.jpg?v=4', miami: 'miami-carte.jpg?v=4', dubai: 'dubai-carte.jpg?v=4', phuket: 'phuket-carte.jpg?v=4', 'santa-catarina': 'santa-catarina-carte.jpg?v=1' };
+  const FOND_DEST = { ibiza: 'ibiza-carte.webp', mykonos: 'mykonos-carte.webp', tulum: 'tulum-carte.webp', miami: 'miami-carte.webp', dubai: 'dubai-carte.webp', phuket: 'phuket-carte.webp', 'santa-catarina': 'santa-catarina-carte.webp' };
 
   function renderDestLive() {
     const d = DEST[state.dest], m = MOIS_NOW, n = d.mois[m];
@@ -5537,7 +5537,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     toast(garde ? (id.startsWith('demo:') ? 'Flyer test ajouté à « Mes soirées »' : 'Soirée ajoutée à « Mes soirées » : rappel le jour J') : 'Soirée retirée de « Mes soirées »');
     if (garde && !id.startsWith('demo:') && 'Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission().then(() => rappelsSoirees()); } catch (er) { /* navigateur sans notifications */ } }
     dcPause = Date.now() + 8000;
-    const hub = document.querySelector('.md-hub'); if (hub) { hub.outerHTML = bandeauMesDj(); remplirAvatars($('#accueil').querySelector('.md-hub')); if (window.BANZIC_AGENDA_VIDEO) window.BANZIC_AGENDA_VIDEO.sync($('#accueil')); }
+    const hub = document.querySelector('.md-hub'); if (hub) { hub.outerHTML = bandeauMesDj(); remplirAvatars($('#accueil').querySelector('.md-hub')); }
     if (state.tab === 'fav') renderFavs();
   }, true);
   document.addEventListener('click', (e) => {
@@ -5661,8 +5661,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const TYPES_AG = [['tout', 'Agenda', '✦', '#C9CFDD'], ['club', 'Club', '🪩', '#3D8BFF'], ['festival', 'Festival', '🎪', '#FF8A3D'], ['concert', 'Concert', '🎤', '#F2C53A'], ['bar', 'Bar', '🍸', '#A77BFF'], ['resto', 'Restaurant', '🍽️', '#3DF28A']];
     // Agenda autour de moi : la bannière « L'agenda » (visuel fourni par Antonio, textes dans la police de l'appli).
     // Un appui ouvre l'Agenda, où l'on choisit Club, Festival, Concert…
-    h += `<section class="acc-rub ag-rub"><button class="ag-banniere ag-photo ag-video sorties-banniere" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
-        <img src="agenda-banniere-poster.jpg?v=5" alt="" width="1472" height="624" loading="lazy"><video data-home-banner-video muted loop playsinline preload="none" poster="agenda-banniere-poster.jpg?v=5" aria-hidden="true" tabindex="-1"><source src="agenda-banniere.mp4?v=6" type="video/mp4"></video><span class="ag-txt"><small class="ag-kick">▦ AGENDA</small><b class="ag-titre"><span class="sorties-rose">Les</span><br>prochaines<br><span class="sorties-rose">sorties</span></b><span class="sorties-rubriques"><span>📍<small>AUTOUR<br>DE MOI</small></span><span>▦<small>AGENDA</small></span><span>🎟<small>BILLETTERIE</small></span></span><span class="ag-sous">Clubs, concerts &amp; festivals</span><small class="sorties-distance">Toutes les dates à moins de 200 km</small></span></button></section>`;
+    h += `<section class="acc-rub ag-rub"><button class="ag-banniere ag-photo ag-static sorties-banniere" data-ag-type="tout" aria-label="Voir l'agenda : clubs, concerts et festivals">
+        <img src="agenda-banniere.webp" alt="" width="800" height="288" loading="lazy" decoding="async"><span class="ag-txt"><small class="ag-kick">▦ AGENDA</small><b class="ag-titre"><span class="sorties-rose">Les</span><br>prochaines<br><span class="sorties-rose">sorties</span></b><span class="sorties-rubriques"><span>📍<small>AUTOUR<br>DE MOI</small></span><span>▦<small>AGENDA</small></span><span>🎟<small>BILLETTERIE</small></span></span><span class="ag-sous">Clubs, concerts &amp; festivals</span><small class="sorties-distance">Toutes les dates à moins de 200 km</small></span></button></section>`;
     // 2. Les saisons
     const ordreSaisons = ['miami', 'dubai', 'phuket', 'tulum', 'ibiza', 'mykonos', 'santa-catarina'];
     h += accRubrique('Les saisons', 'En saison d\'abord, puis les prochaines openings', DESTS.filter((d) => !d.local).sort((a, b) => ordreSaisons.indexOf(a.id) - ordreSaisons.indexOf(b.id)).map((d) => { const n = d.mois[MOIS_NOW], c = COUL_DEST[d.id] || ['#3D8BFF', '#0A1F4A'];
@@ -5674,8 +5674,8 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     if (state.genreLive && !genres.includes(state.genreLive)) state.genreLive = null;
     const puces = `<div class="genre-puces">${['', ...genres].map((g) => `<button class="genre-puce${(state.genreLive || '') === g ? ' on' : ''}" data-genre-live="${esc(g)}" style="--gc:${g ? coulGenre(g) : '#C9CFDD'}">${g ? esc(g) : 'Tous'}</button>`).join('')}</div>`;
     // Bannière « Les DJ en live » (visuel fourni par Antonio, textes dans la police de l'appli) : un appui ouvre tous les lives disponibles
-    h += `<section class="acc-rub ag-rub"><button class="ag-banniere live-banniere lv-photo ag-video ag-live-video" data-live-tous="1" aria-label="Les DJ en live : écouter un live">
-        <img src="live-banniere-poster.jpg?v=4" alt="" width="800" height="288" loading="eager" fetchpriority="high"><video data-home-banner-video muted loop playsinline preload="none" poster="live-banniere-poster.jpg?v=4" aria-hidden="true" tabindex="-1"><source src="live-banniere.mp4?v=4" type="video/mp4"></video><span class="ag-txt"><b class="ag-titre">Les DJ<br><span class="banner-live-accent">en live</span></b><span class="ag-sous">Écoute les DJ en direct</span></span>${compteurLives()}</button></section>`;
+    h += `<section class="acc-rub ag-rub"><button class="ag-banniere live-banniere lv-photo ag-static ag-live-static" data-live-tous="1" aria-label="Les DJ en live : écouter un live">
+        <img src="live-banniere.webp" alt="" width="800" height="288" loading="lazy" decoding="async"><span class="ag-txt"><b class="ag-titre">Les DJ<br><span class="banner-live-accent">en live</span></b><span class="ag-sous">Écoute les DJ en direct</span></span>${compteurLives()}</button></section>`;
     // La rubrique « DJ live dans le monde » (titre, styles, lecteurs) est retirée de l'accueil : la bannière ci-dessus ouvre tous les lives
     // 4. Classement DJ Mag Top 100 2026, du 1er au 100e (à la place des clubs d'Ibiza)
     const TOP = window.DJMAG2026; let secTop = '';
@@ -5701,15 +5701,14 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const MONTEES = [['John Summit', 22], ['Mau P', 22], ['CHRIS STASSY', 22], ['GORDO', 18], ['Fred again..', 17], ['The Martinez Brothers', 15], ['Korolova', 14], ['Solomun', 14], ['Miss Monique', 14], ['B Jones', 14], ['Michael Bibi', 11], ['Indira Paganotto', 10], ['Mochakk', 10], ['Anyma', 7]];
     window.__MONTEES = MONTEES;
     // Bannière « Les DJ qui montent » (visuel fourni par Antonio, textes dans la police de l'appli) : un appui ouvre la page de tous les DJ qui montent
-    const secMonte = `<section class="acc-rub ag-rub"><button class="ag-banniere mt-banniere ag-video montent-video" data-page-montent="1" aria-label="Les DJ qui montent : découvre la nouvelle vague">
-        <img src="montent-banniere-poster.jpg?v=2" alt="" loading="lazy" width="640" height="230"><video data-home-banner-video muted loop playsinline preload="none" poster="montent-banniere-poster.jpg?v=2" aria-hidden="true" tabindex="-1"><source src="montent-banniere.mp4?v=2" type="video/mp4"></video>
+    const secMonte = `<section class="acc-rub ag-rub"><button class="ag-banniere mt-banniere ag-static montent-static" data-page-montent="1" aria-label="Les DJ qui montent : découvre la nouvelle vague">
+        <img src="montent-banniere.webp" alt="" loading="lazy" decoding="async" width="640" height="230">
         <span class="ag-txt"><small class="ag-kick">Top 100 · 2026</small><b class="ag-titre">Les DJ<br><span class="banner-live-accent">qui montent</span></b><span class="ag-sous">Découvre la nouvelle vague</span></span></button></section>`;
     // « Les DJ qui montent » prend la place du Top 100, qui descend en dernier
     h = h.includes('@@TOP100@@') ? h.replace('@@TOP100@@', secMonte) + secTop : h + secMonte;
     $('#accueil').innerHTML = bandeauMesDj() + h;
     if (window.BANZIC_HOME_FLIP) window.BANZIC_HOME_FLIP.sync($('#accueil'));
     if (window.BANZIC_FLYER_LAYOUT) window.BANZIC_FLYER_LAYOUT.sync($('#accueil'));
-    if (window.BANZIC_AGENDA_VIDEO) window.BANZIC_AGENDA_VIDEO.sync($('#accueil'));
     // Photos des DJ du Top 100 : chargées au fur et à mesure qu'on fait défiler la rangée
     const vus = new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) { vus.unobserve(en.target); remplirAvatars(en.target); } }), { rootMargin: '0px 300px' });
     document.querySelectorAll('#accueil .top-tete').forEach((el) => vus.observe(el));
@@ -5804,8 +5803,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       return Number.isFinite(h.debut) && Date.now() >= h.debut && Date.now() < h.fin;
     });
     const vinyles = enCours.slice(0, 4).map(x => `<span class="md-soiree-live" title="${esc(x.nom)} · En cours"><span class="md-soiree-disque" aria-hidden="true">${ICO_BANG}</span><i class="md-live-point"></i></span>`).join('');
-    return `<section class="acc-mesdj md-illus md-fin md-video md-hub" aria-label="Mes DJ et mes soirées" style="--md-img:url('mesdj-banniere-poster.jpg?v=3')">
-      <video data-home-banner-video muted loop playsinline preload="none" poster="mesdj-banniere-poster.jpg?v=3" aria-hidden="true" tabindex="-1"><source src="mesdj-banniere.mp4?v=3" type="video/mp4"></video>
+    return `<section class="acc-mesdj md-illus md-fin md-static md-hub" aria-label="Mes DJ et mes soirées" style="--md-img:url('mesdj-banniere.webp')">
       <div class="md-hub-links"><button type="button" class="md-hub-row md-ligne" data-fav-open="dj">${coeur}<span class="md-txt"><b>Mes DJ</b><small>${sous}</small></span>${avs ? `<span class="md-avs">${avs}</span>` : ''}</button>
       <button type="button" class="md-hub-row md-ligne md-hub-soirees" data-fav-open="soirees"><span class="md-coeur" aria-hidden="true">${ICO_BANG}</span><span class="md-txt"><b>Mes soirées</b><small>${n} soirée${n > 1 ? 's' : ''} gardée${n > 1 ? 's' : ''}${enCours.length ? ` · ${enCours.length} en cours` : ''}</small></span>${vinyles ? `<span class="md-avs" aria-label="${enCours.length} soirées en cours">${vinyles}</span>` : ''}</button></div></section>`;
   }
@@ -6277,7 +6275,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
   document.head.appendChild(favorisStyle);
 
   const montentStyle = document.createElement('style');
-  montentStyle.textContent = '#accueil .montent-video{background:rgba(8,12,29,.85)}#accueil .montent-video>img,#accueil .montent-video>video{object-fit:fill;clip-path:polygon(50.5% 0,100% 0,100% 100%,53% 100%,53% 13%,52.9% 10%,52.6% 7%,52.1% 4%,51.4% 1.5%)}';
+  montentStyle.textContent = '#accueil .montent-static{background:rgba(8,12,29,.85)}#accueil .montent-static>img{object-fit:fill;clip-path:polygon(50.5% 0,100% 0,100% 100%,53% 100%,53% 13%,52.9% 10%,52.6% 7%,52.1% 4%,51.4% 1.5%)}';
   document.head.appendChild(montentStyle);
   applyLangue();
   majPortails();
