@@ -291,7 +291,7 @@
     { const di = DEST.ibiza, ni = di.mois[MOIS_NOW];
       h += `<button class="ei-retour" data-retour-banzic="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Retour à Banzic</button>`;
       h += `<div class="dest-banniere" style="background-image:url('ibiza-carte.jpg?v=4');background-position:left center"></div><div class="dest-tete"><div><h2>${esc(di.nom)}</h2><small>${esc(di.pays)} · ${T('saison')} : ${esc(di.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(di.tz) })} · ${decalage(di.tz)}</small></div>${pastilleMois(ni)}</div>`
-        + miniCarteDest(di) + filDest() + blocEspaceIbiza(); }
+        + filDest() + blocEspaceIbiza(); }
     h += blocDecls();
     h += blocPepites();
     h += blocSpots();
