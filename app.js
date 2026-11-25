@@ -5439,6 +5439,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     for (const { target, isIntersecting } of entries) {
       if (!isIntersecting || !target.isConnected) continue;
       mediasAccueil.unobserve(target);
+      if (target.classList.contains('dc-rub')) actualiserCarrouselAccueil(target);
       if (target.dataset.photoAccueil) target.src = target.dataset.photoAccueil;
       if (target.dataset.fondDest) target.style.setProperty('--g',
         `url('${target.dataset.fondDest}') left center / cover no-repeat, ${target.style.getPropertyValue('--g')}`);
@@ -5721,17 +5722,31 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
       }
     }));
   }
-  function renderAccueil() {
-    if (state.pageMontent) { renderPageMontent(); return; }
-    if (state.pageTendance) { renderPageTendance(); return; }
-    const t = state.t;
-    let h = '';
+  function centreCarrouselAccueil() {
+    return (state.villeChoisie && state.villeRecherche) ||
+      (state.maPos && [state.maPos.lat, state.maPos.lng]) || [43.1205, 6.1286];
+  }
+  function actualiserCarrouselAccueil(section) {
+    const centre = centreCarrouselAccueil(), soirees = SUD.soirees;
+    chargerRadar(radarAutour(centre, 50)).then(() => {
+      if (!section.isConnected || state.tab !== 'live' || soirees === SUD.soirees) return;
+      const html = carrouselAccueil(centre);
+      const rail = section.querySelector('#dc-rail');
+      const scroll = rail?.scrollLeft || 0;
+      section.innerHTML = html;
+      section.querySelectorAll('[data-photo-accueil]').forEach(node => mediasAccueil.observe(node));
+      if (window.BANZIC_FLYER_LAYOUT) window.BANZIC_FLYER_LAYOUT.sync($('#accueil'));
+      const nouveauRail = section.querySelector('#dc-rail');
+      if (nouveauRail) nouveauRail.scrollLeft = scroll;
+    }).catch(error => console.warn('Radar accueil', error));
+  }
+  function carrouselAccueil(centrePub) {
     // ---- « À découvrir près de toi » : grand carrousel de flyers (futurs encarts publicitaires vendus aux clubs) ----
     // En attendant les pubs vendues : les soirées à venir autour de chez lui, flyers d'abord ; tous styles mélangés,
     // sauf si le Banger active « Selon mes styles ». Les clubs libertins n'y sont jamais.
     // Les flyers des soirées à venir à moins de 50 km du Banger (sa position, ou la ville qu'il a choisie ; Hyères tant qu'on ne la connaît pas).
     // Les encarts payés par les clubs, bars et DJ du coin (champ « encart » de la soirée) passent en premier, marqués « À la une ».
-    const centrePub = (state.villeChoisie && state.villeRecherche) || (state.maPos && [state.maPos.lat, state.maPos.lng]) || [43.1205, 6.1286], auj0 = iso(new Date());
+    const auj0 = iso(new Date());
     const nomCentrePub = state.villeChoisie ? (state.zoneGeo && state.zoneGeo.nom) || 'ta ville' : state.maPos ? 'toi' : 'Hyères';
     const prefStyles = ((state.profil && state.profil.styles) || []).map((g) => sansAccent(String(g).toLowerCase())).filter(Boolean);
     const selonStyles = !!state.pubStyles && prefStyles.length > 0;
@@ -5750,8 +5765,15 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     const interStyles = `<button type="button" class="dc-inter${selonStyles ? ' on' : ''}" data-pub-styles="1" role="switch" aria-checked="${selonStyles}"${prefStyles.length ? '' : ' disabled title="Choisis tes styles dans ton profil"'}><i aria-hidden="true"></i>Selon mes styles</button>`;
     // « Mes soirées » juste sous « Mes DJ » : les soirées gardées avec le bouton Banger
     // Les soirées gardées sont réunies avec Mes DJ dans le bandeau commun.
-    h += `<section class="acc-rub dc-rub"><div class="dc-tete"><div><h2>Les <span class="dc-title-accent">soirées</span><br>près de toi</h2><small>${selonStyles ? 'Tes styles' : 'Tous les styles'} · à moins de 50 km ${nomCentrePub === 'toi' ? 'de toi' : 'de ' + esc(nomCentrePub)}</small></div>${interStyles}</div>
-      ${slides ? `<div class="dc-cadre"><span class="dc-pub">${demoFlyers ? 'ESSAI · FLYERS FOURNIS' : 'Affiches des organisateurs'}</span><div class="dc-rail" id="dc-rail">${slides}</div></div>` : '<p class="aide">Rien à découvrir pour l’instant avec tes styles. Désactive « Selon mes styles ».</p>'}</section>`;
+    return `<div class="dc-tete"><div><h2>Les <span class="dc-title-accent">soirées</span><br>près de toi</h2><small>${selonStyles ? 'Tes styles' : 'Tous les styles'} · à moins de 50 km ${nomCentrePub === 'toi' ? 'de toi' : 'de ' + esc(nomCentrePub)}</small></div>${interStyles}</div>
+      ${slides ? `<div class="dc-cadre"><span class="dc-pub">${demoFlyers ? 'ESSAI · FLYERS FOURNIS' : 'Affiches des organisateurs'}</span><div class="dc-rail" id="dc-rail">${slides}</div></div>` : '<p class="aide">Rien à découvrir pour l’instant avec tes styles. Désactive « Selon mes styles ».</p>'}`;
+  }
+  function renderAccueil() {
+    if (state.pageMontent) { renderPageMontent(); return; }
+    if (state.pageTendance) { renderPageTendance(); return; }
+    const t = state.t;
+    let h = '';
+    h += `<section class="acc-rub dc-rub">${carrouselAccueil(centreCarrouselAccueil())}</section>`;
     compterAccueil();
     const rayonAg = RAYONS[state.rayonIdx];
     // Agenda autour de moi : la bannière « L'agenda » (visuel fourni par Antonio, textes dans la police de l'appli).
@@ -5803,7 +5825,7 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
     h = h.includes('@@TOP100@@') ? h.replace('@@TOP100@@', secMonte) + secTop : h + secMonte;
     mediasAccueil.disconnect();
     $('#accueil').innerHTML = bandeauMesDj() + h;
-    document.querySelectorAll('#accueil [data-photo-accueil], #accueil [data-fond-dest], #accueil .top-tete')
+    document.querySelectorAll('#accueil .dc-rub, #accueil [data-photo-accueil], #accueil [data-fond-dest], #accueil .top-tete')
       .forEach(node => mediasAccueil.observe(node));
     if (window.BANZIC_HOME_FLIP) window.BANZIC_HOME_FLIP.sync($('#accueil'));
     if (window.BANZIC_FLYER_LAYOUT) window.BANZIC_FLYER_LAYOUT.sync($('#accueil'));
