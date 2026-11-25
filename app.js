@@ -288,7 +288,7 @@
     const pr = state.profil;
     { const di = DEST.ibiza, ni = di.mois[MOIS_NOW];
       h += `<div class="dest-banniere" style="background-image:url('ibiza-carte.jpg?v=4');background-position:left center"></div><div class="dest-tete"><div><h2>${esc(di.nom)}</h2><small>${esc(di.pays)} · ${T('saison')} : ${esc(di.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(di.tz) })} · ${decalage(di.tz)}</small></div>${pastilleMois(ni)}</div>`
-        + miniCarteDest(di) + filDest() + carteAgendaDest(di); }
+        + filDest(); }
     h += blocDecls();
     h += blocPepites();
     h += blocSpots();
@@ -3227,10 +3227,9 @@
     }
     const FOND_DEST = { ibiza: 'ibiza-carte.jpg?v=4', mykonos: 'mykonos-carte.jpg?v=4', tulum: 'tulum-carte.jpg?v=4', miami: 'miami-carte.jpg?v=4', dubai: 'dubai-carte.jpg?v=4', phuket: 'phuket-carte.jpg?v=4' };
     let h = `${FOND_DEST[d.id] ? `<div class="dest-banniere" style="background-image:url('${FOND_DEST[d.id]}');background-position:left center"></div>` : ''}<div class="dest-tete"><div><h2>${esc(d.nom)}</h2><small>${esc(d.pays)} · ${T('saison')} : ${esc(d.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(d.tz) })} · ${decalage(d.tz)}</small></div>${pastilleMois(n)}</div>
-      ${miniCarteDest(d)}${filDest()}
+      ${filDest()}
       <p class="conseil"><b>${Maj(moisNom(m))}</b> : ${esc(d.notes[m] || (n < 0 ? 'hors saison.' : labelMois(n) + '.'))}${n < 0 ? ` ${T('reprise', { m: '<b>' + reprise(d, m) + '</b>' })}.` : ''}</p>`;
-    h += carteAgendaDest(d); // cartes illustrées (Ibiza, Dubaï) retirées le 11/11/2026
-    if (d.id === 'dubai') h += blocAgendaDubai();
+    // Les agendas sont réservés aux fiches des établissements.
     h += blocDecls() + blocSpots();
     const coulNiv = (k) => k < 0 ? '#5A6378' : ['#3FBF7F', '#F59E2E', '#E5484D', '#8A5CFF'][k];
     h += `<div class="section-title">${T('temps_forts')}</div>` + (d.evenements.length ? '' : '<p class="aide" style="margin:4px 0 12px">Les temps forts arrivent bientôt.</p>') + rangCartes(evenementsAVenir(d, m).map((e) => vCarte({ tag: e.url ? 'a' : 'div', attr: e.url ? `href="${e.url}" target="_blank" rel="noopener"` : '', img: (photoVille(d.nom, '') || FOND_DEST[d.id] || '').split('?')[0],
