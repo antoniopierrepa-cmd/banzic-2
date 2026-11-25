@@ -5,9 +5,9 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('tourism',ROOT/'scripts/import-datatourisme.py');tourism=importlib.util.module_from_spec(spec);spec.loader.exec_module(tourism)
 DEPS=dict(s.split(':') for s in (ROOT/'scripts/radar.mjs').read_text().split('`')[1].split('|'));BY_NAME={tourism.plain(v):k for k,v in DEPS.items()}
-def convert(row,checked,today):
+def convert(row,checked,today,eligible=tourism.eligible):
  title=row.get('title_fr') or '';description=row.get('longdescription_fr') or row.get('description_fr') or ''
- if not tourism.eligible(title,description):return []
+ if not eligible(title,description):return []
  if row.get('location_countrycode') and row['location_countrycode'].upper()!='FR':return []
  status=json.loads(row.get('status') or '{}').get('label',{}).get('fr','')
  if re.search('annul|reporte',tourism.plain(status)):return []

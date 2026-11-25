@@ -2124,11 +2124,15 @@
         SPOTS = SPOTS.filter((s) => s.mien || s.demo).concat(ss.filter((r) => !sMiens.has(r.id)).map((r) => ({ id: r.id, dest: 'local', type: r.type || 'bar', nom: r.nom, dj: r.dj, lat: r.lat, lng: r.lng, t: ms(r.t), maj: ms(r.maj), conf: r.conf || 0, par: r.par, temp: r.temp, com: r.com, trace: [], distant: true })));
         SPOTS.forEach((s) => { const r = ss.find((y) => y.id === s.id); if (r && s.mien) { s.conf = Math.max(s.conf || 0, r.conf || 0); if (r.temp != null) s.temp = r.temp; if (r.com) s.com = r.com; } });
         // Soirées
-        SUD.soirees = SUD.soirees.filter((x) => x.src !== 'bdd').concat(so.map((r) => { const k = 'bdd-' + r.id; SUD.lieux[k] = { nom: r.lieu_nom || 'Lieu', ville: r.ville || '', dep: '', lat: r.lat, lng: r.lng };
-          return { type: r.type || 'club', date: r.date, heure: r.heure || '', nom: r.nom, djs: r.djs || '', lieu: k, url: r.url || '', src: 'bdd' }; }));
+        const base = SUD.soirees.map(x => soireesAvantSupabase.get(x) || x).filter(x => x.src !== 'bdd');
+        const distantes = so.map((r) => { const k = 'bdd-' + r.id; SUD.lieux[k] = { nom: r.lieu_nom || 'Lieu', ville: r.ville || '', dep: '', lat: r.lat, lng: r.lng };
+          return { type: r.type || 'club', date: r.date, heure: r.heure || '', nom: r.nom, djs: r.djs || '', lieu: k, url: r.url || '', src: 'bdd' }; });
+        const fusion = window.BANZIC_AGENDA_MATCH.mergeFeeds(base, distantes, SUD.lieux);
+        SUD.soirees = fusion.events;
+        soireesAvantSupabase = fusion.originals;
         INDEX_DJ = null;
         actualiserLiveTestPierro();
-        try { if (state.tab === 'checkin') renderCheckin(); else if (state.tab === 'map') renderMap(); else if (state.tab === 'live' || state.tab === 'accueil') render(); } catch (e) { /* */ }
+        try { if (state.tab === 'agenda') listeAgendaSud(); else if (state.tab === 'checkin') renderCheckin(); else if (state.tab === 'map') renderMap(); else if (state.tab === 'live' || state.tab === 'accueil') render(); } catch (e) { /* */ }
       }).catch(() => {}).finally(() => { enCours = false; });
     }
     setTimeout(charger, 800); setInterval(charger, 30000);
@@ -3291,9 +3295,8 @@
   const SUD = window.AGENDA_SUD || { lieux: {}, sources: {}, soirees: [] };
   const RADAR = window.AGENDA_RADAR || { departments: {}, coverage: {}, lieux: {}, sources: {}, soirees: [] };
   Object.assign(SUD.lieux, RADAR.lieux); Object.assign(SUD.sources, RADAR.sources);
-  // Une soirée déjà saisie depuis l'agenda officiel du lieu (agenda-sud.js) n'est pas répétée par le radar : même date, même endroit (moins de 300 m)
-  { const off = SUD.soirees.map((x) => [x.date, SUD.lieux[x.lieu]]).filter((y) => y[1]);
-    SUD.soirees.push(...RADAR.soirees.filter((x) => { const l = (RADAR.lieux || {})[x.lieu] || SUD.lieux[x.lieu]; return !l || !off.some(([d, m]) => d === x.date && Math.abs(m.lat - l.lat) < 0.003 && Math.abs(m.lng - l.lng) < 0.004); })); }
+  SUD.soirees = window.BANZIC_AGENDA_MATCH.mergeFeeds(SUD.soirees, RADAR.soirees, SUD.lieux).events;
+  let soireesAvantSupabase = new Map();
   appliquerMonClub(); // la fiche du club revendiqué (horaires, soirées) passe par-dessus les données publiques
   const radarUrl = (value) => { try { if (/^img\/(clubs|flyers|review-flyers)\/[\w.-]+$/.test(String(value || ''))) return value; const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch (e) { return ''; } };
   function centreGeographique() {

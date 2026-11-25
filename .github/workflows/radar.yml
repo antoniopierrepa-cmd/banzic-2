@@ -1,10 +1,10 @@
 name: Vérifier le radar national
 on:
   pull_request:
-    paths: ['app.js', 'agenda-radar.js', 'scripts/**', 'tests/**', 'data/radar-events.json', 'data/radar-belgium.json', 'data/radar-spain.json', '.github/workflows/radar.yml']
+    paths: ['app.js', 'agenda-radar.js', 'scripts/**', 'tests/**', 'lib/agenda-match.js', 'data/radar-openagenda-priorites.json', 'data/radar-sites-valides.json', 'data/radar-events.json', 'data/radar-belgium.json', 'data/radar-spain.json', '.github/workflows/radar.yml']
   push:
     branches: [main]
-    paths: ['app.js', 'agenda-radar.js', 'scripts/**', 'tests/**', 'data/radar-events.json', 'data/radar-belgium.json', 'data/radar-spain.json', '.github/workflows/radar.yml']
+    paths: ['app.js', 'agenda-radar.js', 'scripts/**', 'tests/**', 'lib/agenda-match.js', 'data/radar-openagenda-priorites.json', 'data/radar-sites-valides.json', 'data/radar-events.json', 'data/radar-belgium.json', 'data/radar-spain.json', '.github/workflows/radar.yml']
 permissions:
   contents: read
 jobs:
@@ -19,6 +19,7 @@ jobs:
       - run: node --test tests/*.test.mjs
       - run: node --check app.js
       - run: node --check agenda-radar.js
+      - run: node --check scripts/radar-local-hyeres.mjs
       - name: Valider les annonces et le fichier livré
         run: |
           cp agenda-radar.js /tmp/radar-delivered.js

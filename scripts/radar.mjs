@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import agendaMatch from '../lib/agenda-match.js';
 
 export const departments = Object.fromEntries(`01:Ain|02:Aisne|03:Allier|04:Alpes-de-Haute-Provence|05:Hautes-Alpes|06:Alpes-Maritimes|07:Ardèche|08:Ardennes|09:Ariège|10:Aube|11:Aude|12:Aveyron|13:Bouches-du-Rhône|14:Calvados|15:Cantal|16:Charente|17:Charente-Maritime|18:Cher|19:Corrèze|2A:Corse-du-Sud|2B:Haute-Corse|21:Côte-d'Or|22:Côtes-d'Armor|23:Creuse|24:Dordogne|25:Doubs|26:Drôme|27:Eure|28:Eure-et-Loir|29:Finistère|30:Gard|31:Haute-Garonne|32:Gers|33:Gironde|34:Hérault|35:Ille-et-Vilaine|36:Indre|37:Indre-et-Loire|38:Isère|39:Jura|40:Landes|41:Loir-et-Cher|42:Loire|43:Haute-Loire|44:Loire-Atlantique|45:Loiret|46:Lot|47:Lot-et-Garonne|48:Lozère|49:Maine-et-Loire|50:Manche|51:Marne|52:Haute-Marne|53:Mayenne|54:Meurthe-et-Moselle|55:Meuse|56:Morbihan|57:Moselle|58:Nièvre|59:Nord|60:Oise|61:Orne|62:Pas-de-Calais|63:Puy-de-Dôme|64:Pyrénées-Atlantiques|65:Hautes-Pyrénées|66:Pyrénées-Orientales|67:Bas-Rhin|68:Haut-Rhin|69:Rhône|70:Haute-Saône|71:Saône-et-Loire|72:Sarthe|73:Savoie|74:Haute-Savoie|75:Paris|76:Seine-Maritime|77:Seine-et-Marne|78:Yvelines|79:Deux-Sèvres|80:Somme|81:Tarn|82:Tarn-et-Garonne|83:Var|84:Vaucluse|85:Vendée|86:Vienne|87:Haute-Vienne|88:Vosges|89:Yonne|90:Territoire de Belfort|91:Essonne|92:Hauts-de-Seine|93:Seine-Saint-Denis|94:Val-de-Marne|95:Val-d'Oise|971:Guadeloupe|972:Martinique|973:Guyane|974:La Réunion|976:Mayotte`.split('|').map(x => x.split(':')));
 
@@ -31,28 +32,10 @@ export function normalize(row, source, today) {
     type: ['club', 'festival', 'concert', 'bar', 'restaurant', 'soiree'].includes(row.type) ? row.type : 'club',
     djSet: row.djSet !== false && (row.djSet === true || (Array.isArray(row.lineup) ? row.lineup.some(Boolean) : !!text(row.djs))),
     scheduleNote: text(row.scheduleNote), genres: text(row.genres), prix: text(row.prix), url, ticketUrl: safeUrl(row.ticketUrl), flyerUrl: safeUrl(row.flyerUrl),
-    sourceName: text(row.sourceName), sourceUpdatedAt: text(row.sourceUpdatedAt), sourceLicense: safeUrl(row.sourceLicense), sourceRecordUrl: safeUrl(row.sourceRecordUrl),
+    verifiedAt: text(row.verifiedAt), sourceName: text(row.sourceName), sourceUpdatedAt: text(row.sourceUpdatedAt), sourceLicense: safeUrl(row.sourceLicense), sourceRecordUrl: safeUrl(row.sourceRecordUrl),
     venue: { nom: text(row.lieu), ville: text(row.ville), country, dep, lat, lng, approx: row.positionApproximate === true } };
 }
-// Doublons entre sources (OpenAgenda, Shotgun, Xceed, sites des lieux) : même jour, même endroit (moins de 300 m)
-// et un titre proche, ou la même heure de début. On garde une seule soirée, complétée avec le line-up, le flyer et le billet des autres.
-const MOTS_VIDES = new Set('the and les des une pour avec soiree party night club live dj djs presents presente invite feat with all nuit de la le du et en au aux x'.split(' '));
-const mots = t => String(t || '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, ' ').split(' ').filter(w => w.length > 2 && !MOTS_VIDES.has(w));
-// Mots du titre, sans le nom de la ville ni du lieu (sinon « DAKEEZ - Marseille » ressemblerait à « Krav Boca - Marseille »)
-export const motsTitre = e => { const lieu = new Set(mots(e.venue.nom + ' ' + e.venue.ville)); return new Set(mots(e.nom).filter(w => !lieu.has(w))); };
-const ressemblance = (a, b, min = true) => {
-  if (!a.size || !b.size) return 0;
-  let commun = 0; for (const w of a) if (b.has(w)) commun++;
-  return commun / (min ? Math.min(a.size, b.size) : Math.max(a.size, b.size));
-};
-export function memeSoiree(a, b) {
-  if (a.date !== b.date || Math.abs(a.venue.lat - b.venue.lat) > 0.0027 || Math.abs(a.venue.lng - b.venue.lng) > 0.0038) return false;
-  // Une même source n'annonce pas deux fois la même soirée sous deux titres : seuls les titres presque identiques sont fusionnés
-  if (a.src === b.src) return ressemblance(a.mots, b.mots, false) >= 0.8 || (!a.mots.size && !b.mots.size && a.heure === b.heure);
-  if (ressemblance(a.mots, b.mots) >= 0.5) return true;
-  // Titres trop différents : même lieu (même nom) et même heure de début
-  return !!a.heure && a.heure === b.heure && ressemblance(new Set(mots(a.venue.nom)), new Set(mots(b.venue.nom))) >= 0.5;
-}
+export const { wordsInTitle: motsTitre, sameEvent: memeSoiree } = agendaMatch;
 export function snapshot(rows, sources, now = new Date()) {
   const today = now.toISOString().slice(0, 10), lieux = {}, soirees = [], seen = new Set(), parJour = {};
   const countryCoverage = { FR: 0, BE: 0, ES: 0 };
@@ -66,9 +49,8 @@ export function snapshot(rows, sources, now = new Date()) {
     const existing = jour.find(x => memeSoiree(x, e));
     if (existing) {
       doublons++;
-      existing.djs ||= e.djs; existing.ticketUrl ||= e.ticketUrl; existing.flyerUrl ||= e.flyerUrl; existing.genres ||= e.genres;
-      existing.heure ||= e.heure; existing.scheduleNote ||= e.scheduleNote; existing.djSet ||= e.djSet;
-      if (!existing.autresSources.includes(e.sourceName || e.src)) existing.autresSources.push(e.sourceName || e.src);
+      Object.assign(existing, agendaMatch.mergeEvent(existing, e));
+      seen.add(e.id);
       continue;
     }
     seen.add(e.id); e.autresSources = []; jour.push(e); soirees.push(e);
@@ -84,7 +66,12 @@ export function snapshot(rows, sources, now = new Date()) {
   return { maj: now.toISOString(), departments, coverage, countryCoverage, sources: Object.fromEntries(sources.map(s => [s.id, s.homepage])), lieux, soirees: out };
 }
 async function lire(fichier, input) {
-  let d; try { d = JSON.parse(await readFile(fichier, 'utf8')); } catch { return []; }
+  let contenu;
+  try { contenu = await readFile(fichier, 'utf8'); } catch (error) {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  }
+  const d = JSON.parse(contenu);
   input.sources.push(...d.sources.filter(s => !input.sources.some(x => x.id === s.id)));
   return d.events;
 }
@@ -92,10 +79,12 @@ async function main() {
   const input = JSON.parse(await readFile('data/radar-events.json', 'utf8'));
   // Les sources les plus complètes (line-up) passent d'abord : en cas de doublon, c'est leur fiche qui est gardée
   input.events.unshift(...await lire('data/radar-shotgun-direct.json', input), ...await lire('data/radar-xceed.json', input));
+  const priorites = await lire('data/radar-openagenda-priorites.json', input);
+  input.events.push(...priorites);
+  const sites = await lire('data/radar-sites-valides.json', input);
+  input.events.push(...sites.filter(row => row.reviewRequired === false));
   for (const countryFile of ['data/radar-belgium.json', 'data/radar-spain.json']) {
-    const countryData = JSON.parse(await readFile(countryFile, 'utf8'));
-    input.events.push(...countryData.events);
-    input.sources.push(...countryData.sources.filter(s => !input.sources.some(x => x.id === s.id)));
+    input.events.push(...await lire(countryFile, input));
   }
   const sources = input.sources;
   if (!Array.isArray(sources) || !Array.isArray(input.events)) throw new Error('Format radar invalide');
@@ -114,7 +103,9 @@ async function main() {
   const data = snapshot(rows, sources);
   const json = JSON.stringify(data).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
   await writeFile('agenda-radar.js', '// Généré par scripts/radar.mjs. Ne contient aucune clé API.\nwindow.AGENDA_RADAR = ' + json + ';\n');
-  console.log(`${data.soirees.length} soirées publiées ; ${Object.values(data.coverage).filter(Boolean).length}/101 départements avec annonces.`);
+  const sansAnnonce = Object.keys(data.coverage).filter(dep => !data.coverage[dep]);
+  console.log(`${data.soirees.length} soirées ; ${101 - sansAnnonce.length}/101 départements avec annonces.`);
+  console.log('Départements sans annonce :', sansAnnonce.join(', ') || 'aucun');
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch(() => {
   console.error('Radar non actualisé. Vérifier les annonces et leur provenance ; données précédentes conservées.'); process.exitCode = 1;

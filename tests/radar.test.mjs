@@ -40,3 +40,34 @@ test('Espagne et îles : événements géolocalisés sans département ni DJ obl
  const event=normalize(espagne,source,'2026-11-12');assert.equal(event.venue.country,'ES');assert.equal(event.venue.dep,'ES');assert.equal(event.djSet,false);assert.equal(event.scheduleNote,espagne.scheduleNote);
  const data=snapshot([{row:espagne,source},{row,source}],[source],new Date('2026-11-12T10:00:00Z'));assert.equal(data.countryCoverage.ES,1);assert.equal(data.coverage['83'],1);assert.equal(Object.keys(data.coverage).length,101);
 });
+
+test('le rapprochement commun ne fusionne ni des titres distincts ni deux horaires publiés', async () => {
+  const { default: match } = await import('../lib/agenda-match.js');
+  const venues = { local: { nom: 'Club test', ville: 'Hyères', lat: 43.12, lng: 6.13 } };
+  const first = { id: 'local-a', src: 'local', lieu: 'local', date: row.date, nom: 'Soirée électro', heure: '22:00', djs: 'DJ Un', url: 'https://example.org/a' };
+  const same = { ...first, id: 'bdd-a', src: 'bdd', djs: 'DJ Un, DJ Deux', ticketUrl: 'https://example.org/billets' };
+  const different = { ...same, id: 'bdd-b', nom: 'Soirée salsa' };
+  const secondSlot = { ...same, id: 'bdd-c', heure: '23:30' };
+  const { events, originals } = match.mergeFeeds([first], [same, different, secondSlot], venues);
+  assert.deepEqual(events.map(event => event.id), ['local-a', 'bdd-b', 'bdd-c']);
+  assert.equal(events[0].djs, 'DJ Un, DJ Deux');
+  assert.equal(events[0].ticketUrl, same.ticketUrl);
+  assert.deepEqual(events[0].provenance.map(item => item.source), ['local', 'bdd']);
+  assert.strictEqual(originals.get(events[0]), first);
+  assert.equal(first.ticketUrl, undefined);
+});
+
+test('Hyères extrait uniquement des candidats datés, valides et à vérifier', async () => {
+  const { candidatesFromHtml } = await import('../scripts/radar-local-hyeres.mjs');
+  const now = new Date('2026-11-25T12:00:00Z'), end = new Date('2026-11-28T12:00:00Z');
+  const event = { '@type': 'MusicEvent', name: 'Soirée test', startDate: '2026-11-26T20:00:00+01:00', url: '/agenda/soiree' };
+  const html = '<script type="application/ld+json">' + JSON.stringify({ '@graph': [
+    event, event,
+    { ...event, name: 'Annulée', eventStatus: 'https://schema.org/EventCancelled' },
+    { ...event, name: 'Sans horaire', startDate: '2026-11-26' },
+  ] }) + '</script>';
+  const candidates = candidatesFromHtml(html, { id: 'test', url: 'https://example.org/agenda' }, now, end);
+  assert.equal(candidates.length, 1);
+  assert.equal(candidates[0].url, 'https://example.org/agenda/soiree');
+  assert.equal(candidates[0].reviewRequired, true);
+});
