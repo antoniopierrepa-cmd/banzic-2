@@ -3184,36 +3184,6 @@
   document.addEventListener('input', (e) => { if (e.target.id === 'fader-ck') { const j = +e.target.value; state.ckRayon = CK_RAYONS[j]; store.set('ckRayon', state.ckRayon); renderCheckin(true); e.target.style.setProperty('--pct', j / (CK_RAYONS.length - 1) * 100 + '%'); document.querySelectorAll('[data-ck-rayon]').forEach((s, k) => s.classList.toggle('on', k === j)); const v = document.getElementById('ckr-val'); if (v) v.textContent = CK_RAYONS[j] + ' km'; } });
   document.addEventListener('click', (e) => { const g = e.target.closest('[data-ck-rayon]'); if (g) reglerCk(+g.dataset.ckRayon); });
 
-  // Mini-carte des pages saison, comme celle de l'accueil : DJ en live, déclarés, spots et clubs, avec l'encart au doigt
-  function miniCarteDest(d) {
-    const c = d.centre, kmC = (la, lo) => la == null ? 99 : distKm(c, [la, lo]);
-    const fK = (x) => x < 1 ? '< 1 km du centre' : Math.round(x) + ' km du centre';
-    const DJ_SVG = (col) => `<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="17" r="8" fill="#0A0D16"/><path d="M22 17a10 10 0 0 1 20 0" fill="none" stroke="#0A0D16" stroke-width="3"/><path d="M20 40c2-9 7-13 12-13s10 4 12 13" fill="#0A0D16"/><rect x="6" y="40" width="52" height="16" rx="3" fill="#0A0D16"/><circle cx="20" cy="48" r="5.5" fill="${col}"/><circle cx="44" cy="48" r="5.5" fill="${col}"/></svg>`;
-    const SPOT_SVG = `<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6c-10 0-18 8-18 18 0 13 18 32 18 32s18-19 18-32c0-10-8-18-18-18z" fill="#0A0D16"/><path d="M24 26l9-6v14l-9-6z" fill="#B58CFF"/></svg>`;
-    const CLUB_SVG = `<svg class="aut-dessin" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="#0A0D16"/><circle cx="32" cy="32" r="14" fill="none" stroke="#3DD6C6" stroke-width="1.5" opacity=".6"/><circle cx="32" cy="32" r="3" fill="#3DD6C6"/></svg>`;
-    const enc = (o) => ({ k: o.k, attr: o.attr, html: `<span class="enc-art enc-${o.k}">${o.dessin}</span><span class="enc-txt"><span class="enc-etat enc-${o.k}"><i></i>${o.etat}</span><b>${esc(o.t)}</b><span class="enc-heure">${o.heure}</span><small>${o.s}</small>${o.plus || ''}<span class="enc-voir">Voir la fiche →</span></span>` });
-    const decls = [], infosD = [];
-    if (d.id === 'ibiza') { const t = state.t;
-      passages.filter((p) => !p.inconnu && t >= p.d && t < p.f).forEach((p) => { const l = lieux[p.lieu]; if (!l || l.lat == null) return; const conf = p.constate ? (p.confirmations || 2) : 0;
-        decls.push({ x: { conf }, l });
-        infosD.push(enc({ k: conf >= 2 ? 'live' : 'decl', attr: `data-lieu="${l.id}"`, dessin: DJ_SVG(conf >= 2 ? '#F2C53A' : '#FF8A3D'), etat: conf >= 2 ? 'DJ en live' : 'Line-up annoncé', heure: `${p.debut} → ${p.fin}`, t: p.dj, s: `${esc(l.nom)}${p.salle ? ' · ' + esc(p.salle) : ''}`, plus: `<small>${conf >= 2 ? conf + ' Bangers confirment' : 'Pas encore confirmé par les Bangers'}</small>` })); }); }
-    declsVisibles().forEach((x) => { const dj = djDe(x), l = lieuDe(x) || {}, ok = declConfirmee(x); decls.push({ x, l });
-      infosD.push(enc({ k: ok ? 'live' : 'decl', attr: `data-dj-pro="${esc(dj.nom)}"`, dessin: DJ_SVG(ok ? '#F2C53A' : '#FF8A3D'), etat: ok ? 'DJ en live' : 'DJ déclaré', heure: `${hm(x.debut)} → ${hm(x.fin)}`, t: dj.nom, s: esc(l.nom || 'Spot'), plus: `<small>${ok ? x.conf + ' Bangers confirment' : 'Pas encore confirmé par les Bangers'}</small>` })); });
-    const spots = spotsVisibles().filter((s) => spotPublic(s) && s.lat != null);
-    const infosS = spots.map((sp) => { const n = sp.note || 0, cf = sp.conf || 0, v = n >= 4 && cf >= 3 ? ['Ça vaut le coup', 'top'] : n >= 3 || cf >= 2 ? ['Sympa', 'bien'] : ['À vérifier', 'bof'];
-      return enc({ k: 'spot', attr: `data-spot-voir="${sp.id}"`, dessin: SPOT_SVG, etat: 'Spot signalé', heure: `Signalé à ${hm(sp.t || sp.maj)}`, t: sp.nom || TYPES_SPOT[sp.type] || 'Spot', s: `${esc(sp.dj || 'DJ inconnu')} · ${fK(kmC(sp.lat, sp.lng))}`, plus: `<small>par <b>@${esc(sp.par || 'un Banger')}</b> · ${cf} confirment</small><span class="enc-vaut ${v[1]}">${v[0]}</span>` }); });
-    const ls = (d.id === 'ibiza' ? D.lieux : Object.values(LIEUX_DEST).filter((l) => l.dest === d.id)).filter((l) => l.lat != null);
-    const enJeu = new Set(decls.map((o) => o.l && o.l.id));
-    const coin = ls.filter((l) => !enJeu.has(l.id)).map((l) => ({ l, d: kmC(l.lat, l.lng) })).sort((x, y) => x.d - y.d);
-    const infosC = coin.slice(0, 14).map(({ l, d: dd }) => enc({ k: 'club', attr: `data-lieu="${l.id}"`, dessin: CLUB_SVG, etat: l.type === 'plage' ? 'Beach club' : 'Club', heure: 'DJ à confirmer', t: l.nom, s: `${esc(l.zone || '')}${l.zone ? ' · ' : ''}${fK(dd)}` }));
-    let html = carteMiniMap(c, decls, spots, coin, infosD.concat(infosS, infosC));
-    html = html.replace(/<circle class="mm-pulse" cx="[\d.]+" cy="[\d.]+" r="12" fill="#4DA3FF" opacity=".3"\/><circle cx="[\d.]+" cy="[\d.]+" r="6.5" fill="#4DA3FF" stroke="#fff" stroke-width="2"\/>/, '')
-      .replace(/<span class="acc-badge"><i><\/i>\d+ DJ autour<\/span>/, `<span class="acc-badge"><i></i>${decls.length + spots.length} DJ en ce moment</span>`);
-    const lg = (k, nom, info) => `<button type="button" class="lg-item" data-lg-info="${info}"><i class="lg ${k}"></i>${nom}</button>`;
-    const legende = `<div class="aut-legende" aria-label="Légende de la carte">${lg('live', 'Live', 'DJ en live, confirmé par les Bangers')}${lg('decl', 'Déclaré', 'DJ annoncé ou déclaré, pas encore confirmé')}${lg('spot', 'Spot', 'Spot signalé par un Banger : bar, plage, bateau…')}${lg('club', 'Club', 'Club ou beach club, DJ à confirmer')}<span class="lg-bulle" aria-live="polite"></span></div>`;
-    return `<div class="aut-carte dest-mini">${html}</div>${legende}`;
-  }
-
   const FOND_DEST = { ibiza: 'ibiza-carte.jpg?v=4', mykonos: 'mykonos-carte.jpg?v=4', tulum: 'tulum-carte.jpg?v=4', miami: 'miami-carte.jpg?v=4', dubai: 'dubai-carte.jpg?v=4', phuket: 'phuket-carte.jpg?v=4', 'santa-catarina': 'santa-catarina-carte.jpg?v=1' };
 
   function renderDestLive() {
