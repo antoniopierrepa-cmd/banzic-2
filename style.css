@@ -3832,3 +3832,13 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 .ei-tuile.bleu .ei-rond i { color: #9cc8ff; }
 .ei-tuile:hover, .ei-tuile:active { transform: scale(1.05); box-shadow: 0 0 22px rgba(255,79,216,.8), 0 0 6px #fff; }
 .ei-tuile.bleu:hover, .ei-tuile.bleu:active { box-shadow: 0 0 22px rgba(60,140,255,.9), 0 0 6px #fff; }
+
+/* Bulle « Banzic Ibiza » : la barre du bas et les écrans vides restent dans le look néon */
+body.bulle-ibiza nav.tabs { border-top: 1px solid #ff4fd8; box-shadow: 0 -6px 24px rgba(255,79,216,.25); }
+body.bulle-ibiza nav.tabs .tab.on { color: #ff6be0; filter: drop-shadow(0 0 6px #ff4fd8); }
+body.bulle-ibiza #screen-checkin, body.bulle-ibiza #screen-live { background: radial-gradient(120% 60% at 50% 0%, #1a0b2e 0%, #07060d 60%); }
+.ei-vide { margin: 30px 4px; padding: 26px 20px; border-radius: 20px; border: 1px solid #ff4fd8; background: #120c22; box-shadow: 0 0 22px rgba(255,79,216,.4); text-align: center; display: flex; flex-direction: column; gap: 8px; }
+.ei-vide-marque { font-family: 'Monoton', 'Syne', sans-serif; font-size: 22px; color: #ff6be0; text-shadow: 0 0 8px #ff4fd8, 0 0 20px #3c8cff; }
+.ei-vide b { font-size: 18px; background: linear-gradient(180deg, #fff6d8, #ffd27a 40%, #a8741f 60%, #ffe7a8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ei-vide p { margin: 0; color: #cfc8ef; font-size: 14px; line-height: 1.5; }
+.espace-ibiza .ei-marque { margin-left: 10px; font-family: 'Monoton', 'Syne', sans-serif; font-size: 15px; color: #ff6be0; text-shadow: 0 0 8px #ff4fd8; vertical-align: middle; }

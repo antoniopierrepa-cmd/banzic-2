@@ -268,6 +268,7 @@
   }
 
   function renderLive() {
+    if (state.bulleIbiza) { state.vueAcc = 'liste'; state.dest = 'ibiza'; }
     const acc = $('#accueil'), voirAcc = state.vueAcc === 'accueil' && estInscrit();
     if (acc) acc.hidden = !voirAcc;
     majChipsAcc();
@@ -277,6 +278,7 @@
     const ibiza = state.dest === 'ibiza';
     $('#chips').hidden = !ibiza; $('#live-note').hidden = !ibiza;
     $('#screen-live').classList.toggle('espace-ibiza', ibiza);
+    if (ibiza) entrerBulleIbiza();
     if (!ibiza) { renderDestLive(); return; }
     const t = state.t;
     const now = passages.filter((p) => t >= p.d && t < p.f && matchQ(p) && matchFiltre(p))
@@ -289,12 +291,10 @@
     let h = '';
     const pr = state.profil;
     { const di = DEST.ibiza, ni = di.mois[MOIS_NOW];
-      h += `<button class="ei-retour" data-retour-banzic="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Retour à Banzic</button>`;
+      h += `<button class="ei-retour" data-retour-banzic="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Retour à Banzic</button><span class="ei-marque">Banzic Ibiza</span>`;
       h += `<div class="dest-banniere" style="background-image:url('ibiza-carte.jpg?v=4');background-position:left center"></div><div class="dest-tete"><div><h2>${esc(di.nom)}</h2><small>${esc(di.pays)} · ${T('saison')} : ${esc(di.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(di.tz) })} · ${decalage(di.tz)}</small></div>${pastilleMois(ni)}</div>`
         + filDest() + blocEspaceIbiza(); }
-    h += blocDecls();
-    h += blocPepites();
-    h += blocSpots();
+    if (!state.bulleIbiza) { h += blocDecls(); h += blocPepites(); h += blocSpots(); }
     h += `<div class="section-title">En ce moment <small>${now.length} set${now.length > 1 ? 's' : ''}</small></div>`;
     h += now.length ? rangCartes(now.map((p) => { const l = lieux[p.lieu], n = suivant(p), pct = Math.max(0, Math.min(100, Math.round((t - p.d) / (p.f - p.d) * 100)));
       return vCarte({ tag: 'div', attr: `role="button" tabindex="0" data-lieu="${l.id}"`, c: COUL_TYPE_LIEU[l.type] || '#FF8A3D', img: imgLieu(l), badge: '<i></i>Live',
@@ -498,6 +498,13 @@
       '<p class="demo-note">Photos : Ibiza Spotlight, pour la démo. Pour l\'appli publique, il faudra les photos des lieux partenaires ou celles de Google, avec leur crédit.</p>';
   }
   function renderMap() {
+    if (state.bulleIbiza) {
+      renderCheckin();
+      $('.map-legend').innerHTML = '<span><i style="background:#ff4fd8"></i>Banzic Ibiza · 0 soirée pour l\'instant</span>';
+      const gal = $('#galerie-lieux'); if (gal) gal.innerHTML = '<div class="empty">Aucune soirée à Ibiza pour l\'instant.</div>';
+      if (map) { layer.clearLayers(); map.setView(DEST.ibiza.centre, DEST.ibiza.zoom); }
+      return;
+    }
     renderCheckin();
     try { renderCartesMap(); } catch (e) { console.warn(e); }
     const leg = [['#B58CFF', 'Signalé en live'], ['#F2C94C', 'DJ déclaré aujourd’hui'], ['#3DD6C6', 'Soirée du jour']];
@@ -2536,7 +2543,16 @@
     const grille = (titre, xs, cl) => `<div class="ei-titre"><h3>${titre}</h3><small>${xs.length} lieux</small></div><div class="ei-grille">${xs.map((x) => tuile(x, cl)).join('')}</div>`;
     return `<div class="ei-bloc">${grille('Les clubs', ESPACE_IBIZA.clubs, 'rose')}${grille('Beach clubs &amp; bars plage', ESPACE_IBIZA.plages, 'bleu')}</div>`;
   }
-  document.addEventListener('click', (e) => { if (!e.target.closest('[data-retour-banzic]')) return; state.vueAcc = 'accueil'; store.set('vueAcc', 'accueil'); setTab('live'); });
+  // Écosystème « Banzic Ibiza » : une bulle à part, avec ses propres données (vides pour l'instant).
+  // Tant qu'on y est, Accueil ramène à l'accueil Ibiza, le Check-in et la Carte ne montrent que les données d'Ibiza.
+  // Seul le bouton « Retour à Banzic » fait sortir de la bulle.
+  state.bulleIbiza = false;
+  const majBulleIbiza = () => document.body.classList.toggle('bulle-ibiza', !!state.bulleIbiza);
+  function entrerBulleIbiza() { if (state.bulleIbiza) return; state.bulleIbiza = true; majBulleIbiza(); }
+  function sortirBulleIbiza() { state.bulleIbiza = false; majBulleIbiza(); state.dest = 'local'; state.vueAcc = 'accueil'; store.set('vueAcc', 'accueil'); setTab('live'); }
+  document.addEventListener('click', (e) => { if (!e.target.closest('[data-retour-banzic]')) return; sortirBulleIbiza(); });
+  const videBulleIbiza = (titre, texte) => `<button class="ei-retour" data-retour-banzic="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Retour à Banzic</button>
+    <div class="ei-vide"><span class="ei-vide-marque">Banzic Ibiza</span><b>${titre}</b><p>${texte}</p></div>`;
   function renderSheetIbizaPlus(l) {
     $('#sheet-status').innerHTML = '<span class="badge b-est">DJ à confirmer</span>';
     const q = l.nom + ' ' + (l.ville === 'Dubaï' ? 'Dubai' : 'Ibiza') + ' ' + (l.zone || '');
@@ -2679,6 +2695,7 @@
 
   // Bandeau d'actualité des pages saison (Ibiza, Dubaï, Miami…) : sets en cours, line-ups confirmés, DJ déclarés, spots, soirées du jour
   function filDest(jourSeulement = false) {
+    if (state.bulleIbiza) return '';
     const d = DEST[state.dest]; if (!d) return '';
     const kmL = (la, lo) => d.local && la != null ? ' · ' + (distKm(d.centre, [la, lo]) < 1 ? '< 1' : Math.round(distKm(d.centre, [la, lo]))) + ' km' : '';
     const dur = (m) => m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? String(m % 60).padStart(2, '0') : '') : m + ' min';
@@ -3076,6 +3093,8 @@
   const nomsFiltresCheckin = { tous: 'Toutes', club: 'Discothèques / clubs', bar: 'Bars festifs', libertin: '18+ Libertins', festival: 'Festivals', concert: 'Concerts', soiree: 'Autres soirées' };
   function renderCheckin(lignesSeules, zoneCarte = false) {
     const box = $('#screen-checkin'); if (!box && !lignesSeules) return;
+    if (state.bulleIbiza) { state.ckTodayRows = []; if (lignesSeules) return [];
+      box.innerHTML = videBulleIbiza('Check-in Ibiza', 'Aucune soirée pour l\'instant. Les soirées d\'Ibiza arriveront avec les programmes des openings.'); return; }
     // Position : le GPS du téléphone ; pour tester ailleurs, ?position=dubai (ou ibiza, miami, mykonos, tulum) dans l'adresse
     const posTest = (location.search.match(/[?&]position=([a-z]+)/) || [])[1], destTest = posTest && DEST[posTest];
     const r = state.ckRayon || 100, c = centreGeographique(), now = Date.now();
@@ -6120,10 +6139,11 @@ ${x.djs ? (() => { const d = x.djs.toUpperCase().replace(/[^\p{L}\p{N}' &+,.-]/g
           if (!map || state.tab !== 'map') return;
           map.invalidateSize();
           const points = (state.ckTodayRows || []).map(row => row.point);
+          if (state.bulleIbiza) { map.setView(DEST.ibiza.centre, DEST.ibiza.zoom); return; }
           if (points.length) map.fitBounds(L.latLngBounds(points), { padding: [48, 64], maxZoom: 15, animate: false });
           else { map.setView(centreGeographique(), 10); toast('Aucune soirée à cadrer dans le rayon choisi'); }
         });
-      } else setTimeout(centrerSurMoi, 250);
+      } else if (!state.bulleIbiza) setTimeout(centrerSurMoi, 250);
     }
   }
   // En ouvrant la carte : on atterrit sur le point bleu de géolocalisation (position réelle du téléphone)
