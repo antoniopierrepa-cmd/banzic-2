@@ -271,10 +271,12 @@
     const acc = $('#accueil'), voirAcc = state.vueAcc === 'accueil' && estInscrit();
     if (acc) acc.hidden = !voirAcc;
     majChipsAcc();
+    $('#screen-live').classList.remove('espace-ibiza');
     if (voirAcc) { $('#chips').hidden = true; $('#live-note').hidden = true; $('#live-list').innerHTML = ''; renderAccueil(); return; }
     if (!estInscrit()) { $('#chips').hidden = true; $('#live-note').hidden = true; $('#live-list').innerHTML = portail('live'); return; }
     const ibiza = state.dest === 'ibiza';
     $('#chips').hidden = !ibiza; $('#live-note').hidden = !ibiza;
+    $('#screen-live').classList.toggle('espace-ibiza', ibiza);
     if (!ibiza) { renderDestLive(); return; }
     const t = state.t;
     const now = passages.filter((p) => t >= p.d && t < p.f && matchQ(p) && matchFiltre(p))
@@ -287,8 +289,9 @@
     let h = '';
     const pr = state.profil;
     { const di = DEST.ibiza, ni = di.mois[MOIS_NOW];
+      h += `<button class="ei-retour" data-retour-banzic="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Retour à Banzic</button>`;
       h += `<div class="dest-banniere" style="background-image:url('ibiza-carte.jpg?v=4');background-position:left center"></div><div class="dest-tete"><div><h2>${esc(di.nom)}</h2><small>${esc(di.pays)} · ${T('saison')} : ${esc(di.saison)}</small><small class="heure-loc">${T('il_est', { h: heureLocale(di.tz) })} · ${decalage(di.tz)}</small></div>${pastilleMois(ni)}</div>`
-        + miniCarteDest(di) + filDest() + carteAgendaDest(di); }
+        + miniCarteDest(di) + filDest() + carteAgendaDest(di) + blocEspaceIbiza(); }
     h += blocDecls();
     h += blocPepites();
     h += blocSpots();
@@ -2515,6 +2518,25 @@
   const LIEUX_IBIZA_PLUS = {};
   REPERES_IBIZA.forEach((r) => { if (!r[0]) { const id = cleX(r[4]); LIEUX_IBIZA_PLUS[id] = { id, nom: r[4], zone: r[5], cat: r[1], type: r[1] === 'plage' ? 'plage' : 'club', ville: 'Ibiza' }; } });
   REPERES_DUBAI.forEach((r) => { const id = cleX(r[4]); LIEUX_IBIZA_PLUS[id] = { id, nom: r[4], zone: r[5], cat: r[1], type: r[1] === 'plage' ? 'plage' : 'club', ville: 'Dubaï' }; });
+  // Espace Ibiza (bulle à part, look néon) : clubs et beach clubs affichés en encarts sur la page Ibiza.
+  // Chaque encart ouvre la fiche du lieu ; l'agenda du lieu se remplira avec les programmes des openings.
+  const ESPACE_IBIZA = {
+    clubs: [['hi', 'Hï Ibiza', "Playa d'en Bossa"], ['ushuaia', 'Ushuaïa', "Playa d'en Bossa"], ['pacha', 'Pacha', 'Eivissa'], ['dc10', 'DC10', 'Sant Jordi'],
+      ['amnesia', 'Amnesia', 'Sant Rafel'], ['unvrs', 'UNVRS', 'Sant Rafel'], ['rocks', 'Ibiza Rocks', 'Sant Antoni'], ['eden', 'Eden', 'Sant Antoni'], ['espardis', 'Es Paradis', 'Sant Antoni']],
+    plages: [['obeach', 'O Beach', 'Sant Antoni'], ['x-nikki-beach', 'Nikki Beach', 'Santa Eulària'], ['x-destino-pacha', 'Destino Pacha', 'Eivissa'], ['bluemarlin', 'Blue Marlin', 'Cala Jondal'],
+      ['x-cala-bassa-beach-club', 'Cala Bassa Beach Club', 'Cala Bassa'], ['x-amante', 'Amante', "Sol d'en Serra"], ['x-cotton-beach-club', 'Cotton Beach Club', 'Cala Tarida'],
+      ['cafedelmar', 'Café del Mar', 'Sant Antoni'], ['x-playa-soleil', 'Playa Soleil', "Playa d'en Bossa"], ['mambo', 'Café Mambo', 'Sant Antoni']]
+  };
+  ESPACE_IBIZA.clubs.forEach(([id, nom, zone]) => { if (!LIEUX_IBIZA_PLUS[id]) LIEUX_IBIZA_PLUS[id] = { id, nom, zone, cat: 'club', type: 'club', ville: 'Ibiza' }; });
+  ESPACE_IBIZA.plages.forEach(([id, nom, zone]) => { if (!LIEUX_IBIZA_PLUS[id]) LIEUX_IBIZA_PLUS[id] = { id, nom, zone, cat: 'plage', type: 'plage', ville: 'Ibiza' }; });
+  const initialesLieu = (nom) => nom.replace(/[^\p{L}\p{N} ]/gu, '').split(' ').filter(Boolean).slice(0, 2).map((m) => m[0]).join('').toUpperCase();
+  function blocEspaceIbiza() {
+    const tuile = ([id, nom], cl) => { const l = LIEUX_IBIZA_PLUS[id] || { id, nom };
+      return `<button class="ei-tuile ${cl}" data-lieu="${id}" aria-label="${esc(nom)} : fiche et agenda"><span class="ei-rond">${(window.PHOTOS_LIEUX || {})[id] ? photo(l, 'ei-photo') : `<i>${esc(initialesLieu(nom))}</i>`}</span><b>${esc(nom)}</b><small>Agenda →</small></button>`; };
+    const grille = (titre, xs, cl) => `<div class="ei-titre"><h3>${titre}</h3><small>${xs.length} lieux</small></div><div class="ei-grille">${xs.map((x) => tuile(x, cl)).join('')}</div>`;
+    return `<div class="ei-bloc">${grille('Les clubs', ESPACE_IBIZA.clubs, 'rose')}${grille('Beach clubs &amp; bars plage', ESPACE_IBIZA.plages, 'bleu')}</div>`;
+  }
+  document.addEventListener('click', (e) => { if (!e.target.closest('[data-retour-banzic]')) return; state.vueAcc = 'accueil'; store.set('vueAcc', 'accueil'); setTab('live'); });
   function renderSheetIbizaPlus(l) {
     $('#sheet-status').innerHTML = '<span class="badge b-est">DJ à confirmer</span>';
     const q = l.nom + ' ' + (l.ville === 'Dubaï' ? 'Dubai' : 'Ibiza') + ' ' + (l.zone || '');
