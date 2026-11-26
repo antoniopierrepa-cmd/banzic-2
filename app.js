@@ -2545,17 +2545,17 @@
   const LIEUX_IBIZA_PLUS = {};
   REPERES_IBIZA.forEach((r) => { if (!r[0]) { const id = cleX(r[4]); LIEUX_IBIZA_PLUS[id] = { id, nom: r[4], zone: r[5], cat: r[1], type: r[1] === 'plage' ? 'plage' : 'club', ville: 'Ibiza' }; } });
   REPERES_DUBAI.forEach((r) => { const id = cleX(r[4]); LIEUX_IBIZA_PLUS[id] = { id, nom: r[4], zone: r[5], cat: r[1], type: r[1] === 'plage' ? 'plage' : 'club', ville: 'Dubaï' }; });
-  // Clubs et beach bars d'Ibiza avec leur logo (ibiza-lieux.js) : encarts filtrables en haut de l'accueil Ibiza
-  const IBZ_LIEUX = window.IBIZA_LIEUX || [];
-  const IBZ_CATS = ['Clubs', 'Beach clubs', 'Bars de plage', 'Sunset bars', 'Bars & restos festifs'];
-  const IBZ_ZONES = ["Playa d'en Bossa", 'San Antonio & ouest', 'Ibiza ville', 'Salinas & sud', 'Nord & est', 'Centre'];
-  const IBZ_CAT_FICHE = { 'Clubs': 'club', 'Beach clubs': 'plage' };
-  IBZ_LIEUX.forEach((v) => { const id = cleX(v.n); if (!LIEUX_IBIZA_PLUS[id]) LIEUX_IBIZA_PLUS[id] = { id, nom: v.n, zone: v.s, cat: IBZ_CAT_FICHE[v.c] || 'bar', type: v.c === 'Beach clubs' ? 'plage' : 'club', ville: 'Ibiza' }; });
-  const ibz = { q: '', cat: '', zone: '' };
+  // Clubs et beach bars de chaque destination, avec logo (ibiza-lieux.js, dest-lieux.js) : encarts filtrables en haut de la page destination
+  const ORDRE_CATS = ['Clubs', 'Beach clubs', 'Pool clubs', 'Bars de plage', 'Sunset bars', 'Rooftops', 'Bars & restos festifs'];
+  const LIEUX_LOGOS = Object.assign({ ibiza: window.IBIZA_LIEUX || [] }, window.DEST_LIEUX || {});
+  const IBZ_CAT_FICHE = { 'Clubs': 'club', 'Beach clubs': 'plage', 'Pool clubs': 'pool' };
+  Object.entries(LIEUX_LOGOS).forEach(([dest, liste]) => liste.forEach((v) => { const id = cleX(v.n); if (!LIEUX_IBIZA_PLUS[id]) LIEUX_IBIZA_PLUS[id] = { id, nom: v.n, zone: v.s, cat: IBZ_CAT_FICHE[v.c] || 'bar', type: v.c === 'Beach clubs' ? 'plage' : 'club', ville: DEST[dest] ? DEST[dest].nom : 'Ibiza' }; }));
+  const ibz = { dest: '', q: '', cat: '', zone: '' };
   const sansAccentIbz = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const lieuxLogos = () => LIEUX_LOGOS[state.dest] || [];
   function grilleLogosIbiza() {
     const q = sansAccentIbz(ibz.q.trim());
-    const liste = IBZ_LIEUX.filter((v) => (!ibz.cat || v.c === ibz.cat) && (!ibz.zone || v.z === ibz.zone) && (!q || sansAccentIbz(v.n + ' ' + v.s).includes(q)));
+    const liste = lieuxLogos().filter((v) => (!ibz.cat || v.c === ibz.cat) && (!ibz.zone || v.z === ibz.zone) && (!q || sansAccentIbz(v.n + ' ' + v.s).includes(q)));
     const tuiles = liste.map((v) => `<button type="button" class="ibz-tuile" data-lieu="${cleX(v.n)}" aria-label="${esc(v.n)}, ${esc(v.s)}">
         <span class="ibz-logo">${v.logo ? `<img src="${v.logo}" alt="" loading="lazy" class="ibz-${v.m || 'white'}">` : `<i class="ibz-ini">${esc(v.ini)}</i>`}</span>
         <b>${esc(v.n)}</b><small>${esc(v.s)}</small></button>`).join('');
@@ -2563,18 +2563,20 @@
   }
   function puceIbz(attr, val, label, on) { return `<button type="button" class="ibz-puce${on ? ' on' : ''}" ${attr}="${esc(val)}" aria-pressed="${on}">${esc(label)}</button>`; }
   function blocLogosIbiza() {
-    if (!IBZ_LIEUX.length) return '';
-    const g = grilleLogosIbiza(), filtre = ibz.q || ibz.cat || ibz.zone;
+    const tous = lieuxLogos(); if (!tous.length) return '';
+    if (ibz.dest !== state.dest) { ibz.dest = state.dest; ibz.q = ''; ibz.cat = ''; ibz.zone = ''; }
+    const cats = ORDRE_CATS.filter((c) => tous.some((v) => v.c === c)), zones = [...new Set(tous.map((v) => v.z))];
+    const g = grilleLogosIbiza(), filtre = ibz.q || ibz.cat || ibz.zone, nomDest = DEST[state.dest] ? DEST[state.dest].nom : '';
     return `<section class="ibz-bloc" aria-labelledby="ibz-titre">
       <h3 id="ibz-titre" class="ibz-titre">Clubs &amp; beach bars</h3>
       <p class="ibz-sous">Touche un logo pour ouvrir la fiche du lieu.</p>
-      <label class="ibz-recherche"><span class="sr-only">Rechercher un lieu à Ibiza</span>
+      <label class="ibz-recherche"><span class="sr-only">Rechercher un lieu à ${esc(nomDest)}</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
         <input type="search" id="ibz-q" placeholder="Rechercher un club, une plage…" value="${esc(ibz.q)}" autocomplete="off"></label>
       <div class="ibz-label">Type de lieu</div>
-      <div class="ibz-puces">${puceIbz('data-ibz-cat', '', 'Tous (' + IBZ_LIEUX.length + ')', !ibz.cat)}${IBZ_CATS.map((c) => puceIbz('data-ibz-cat', c, c + ' (' + IBZ_LIEUX.filter((v) => v.c === c).length + ')', ibz.cat === c)).join('')}</div>
-      <div class="ibz-label">Zone</div>
-      <div class="ibz-puces">${puceIbz('data-ibz-zone', '', "Toute l'île", !ibz.zone)}${IBZ_ZONES.map((z) => puceIbz('data-ibz-zone', z, z, ibz.zone === z)).join('')}</div>
+      <div class="ibz-puces">${puceIbz('data-ibz-cat', '', 'Tous (' + tous.length + ')', !ibz.cat)}${cats.map((c) => puceIbz('data-ibz-cat', c, c + ' (' + tous.filter((v) => v.c === c).length + ')', ibz.cat === c)).join('')}</div>
+      ${zones.length > 1 ? `<div class="ibz-label">Zone</div>
+      <div class="ibz-puces">${puceIbz('data-ibz-zone', '', 'Partout', !ibz.zone)}${zones.map((z) => puceIbz('data-ibz-zone', z, z, ibz.zone === z)).join('')}</div>` : ''}
       <div class="ibz-compte"><span><b id="ibz-n">${g.n}</b> lieux</span>${filtre ? '<button type="button" class="ibz-reset" data-ibz-reset>Tout effacer</button>' : ''}</div>
       <div class="ibz-grille" id="ibz-grille">${g.html}</div>
     </section>`;
@@ -3284,6 +3286,7 @@
     let h = `${FOND_DEST[d.id] ? `<div class="dest-banniere" style="background-image:url('${FOND_DEST[d.id]}');background-position:left center"></div>` : ''}<div class="dest-tete"><div><h2>${esc(d.nom)}</h2><small>${esc(d.pays)} · ${T('saison')} : ${esc(d.saison)}</small>${d.zones ? `<small>${d.zones.map(esc).join(' · ')}</small>` : ''}<small class="heure-loc">${T('il_est', { h: heureLocale(d.tz) })} · ${decalage(d.tz)}</small></div>${pastilleMois(n)}</div>
       ${filDest()}
       <p class="conseil"><b>${Maj(moisNom(m))}</b> : ${esc(d.notes[m] || (n < 0 ? 'hors saison.' : labelMois(n) + '.'))}${n < 0 ? ` ${T('reprise', { m: '<b>' + reprise(d, m) + '</b>' })}.` : ''}</p>`;
+    h += blocLogosIbiza();
     // Les agendas sont réservés aux fiches des établissements.
     h += blocDecls() + blocSpots();
     const coulNiv = (k) => k < 0 ? '#5A6378' : ['#3FBF7F', '#F59E2E', '#E5484D', '#8A5CFF'][k];
