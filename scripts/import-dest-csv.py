@@ -5,8 +5,10 @@ import csv, json, re, sys
 CAT = {'Discothèque': 'Clubs', 'Discothèques': 'Clubs', 'Beach club': 'Beach clubs', 'Beach clubs': 'Beach clubs', 'Beach club / pool party': 'Beach clubs',
        'Pool parties (lieux)': 'Pool clubs', 'Lieu de pool parties': 'Pool clubs', 'Pool club': 'Pool clubs', 'Pool clubs': 'Pool clubs', 'Bars de plage': 'Bars de plage', 'Bar de plage': 'Bars de plage',
        'Sunset bar': 'Sunset bars', 'Sunset bars': 'Sunset bars', 'Rooftop': 'Rooftops', 'Rooftops': 'Rooftops',
-       'Bar musical': 'Bars & restos festifs', 'Bars musicaux': 'Bars & restos festifs', 'Restaurants festifs': 'Bars & restos festifs', 'Restaurant festif': 'Bars & restos festifs', 'Bar festif': 'Bars & restos festifs'}
+       'Bar musical': 'Bars & restos festifs', 'Bars musicaux': 'Bars & restos festifs', 'Restaurants festifs': 'Bars & restos festifs', 'Restaurant festif': 'Bars & restos festifs', 'Bar festif': 'Bars & restos festifs',
+       'Restaurant festif à vérifier': 'Bars & restos festifs', 'Lieu de soirées': 'Beach clubs'}
 ZONES = {
+  'phuket': {'Patong': ['Patong', 'Paradise Beach'], 'Côte ouest (Bang Tao, Kamala)': ['Bang Tao', 'Kamala'], 'Sud (Kata, Karon, Rawai)': ['Kata', 'Kata Noi', 'Kata Noi / Karon', 'Rawai'], 'Phuket Town': ['Phuket Town']},
   'mykonos': {'Plages du sud': ['Paradise Beach', 'Super Paradise', 'Paraga', 'Psarou'], 'Nord': ['Ftelia', 'Panormos'], 'Chora (ville)': ['Mykonos Town']},
   'miami': {'Miami Beach': ['South Beach', 'Mid-Beach'], 'Downtown & Brickell': ['Downtown', 'Brickell', 'Watson Island'],
             'Wynwood & nord': ['Wynwood', 'Allapattah', 'Hialeah', 'Little River', 'MiMo', 'Upper East Side'], 'Little Havana & Grove': ['Little Havana', 'Coconut Grove']},
