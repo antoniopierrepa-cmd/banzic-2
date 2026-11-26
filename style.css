@@ -3830,3 +3830,4 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 .ibz-tuile b { width: 100%; font-size: 12px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ibz-tuile small { width: 100%; font-size: 10.5px; color: #a79fc4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ibz-vide { grid-column: 1 / -1; padding: 24px 12px; text-align: center; color: var(--muted); font-size: 14px; }
+.ibz-ferme { font-style: normal; font-size: 10px; font-weight: 700; color: #ffb4b4; background: rgba(229,72,77,.18); border: 1px solid rgba(229,72,77,.45); border-radius: 8px; padding: 1px 6px; }

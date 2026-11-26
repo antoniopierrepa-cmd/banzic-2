@@ -2549,7 +2549,7 @@
   const ORDRE_CATS = ['Clubs', 'Beach clubs', 'Pool clubs', 'Bars de plage', 'Sunset bars', 'Rooftops', 'Bars & restos festifs'];
   const LIEUX_LOGOS = Object.assign({ ibiza: window.IBIZA_LIEUX || [] }, window.DEST_LIEUX || {});
   const IBZ_CAT_FICHE = { 'Clubs': 'club', 'Beach clubs': 'plage', 'Pool clubs': 'pool' };
-  Object.entries(LIEUX_LOGOS).forEach(([dest, liste]) => liste.forEach((v) => { const id = cleX(v.n); if (!LIEUX_IBIZA_PLUS[id]) LIEUX_IBIZA_PLUS[id] = { id, nom: v.n, zone: v.s, cat: IBZ_CAT_FICHE[v.c] || 'bar', type: v.c === 'Beach clubs' ? 'plage' : 'club', ville: DEST[dest] ? DEST[dest].nom : 'Ibiza' }; }));
+  Object.entries(LIEUX_LOGOS).forEach(([dest, liste]) => liste.forEach((v) => { const id = cleX(v.n); if (!LIEUX_IBIZA_PLUS[id]) LIEUX_IBIZA_PLUS[id] = { id, nom: v.n, zone: v.s, cat: IBZ_CAT_FICHE[v.c] || 'bar', type: v.c === 'Beach clubs' ? 'plage' : 'club', ville: DEST[dest] ? DEST[dest].nom : 'Ibiza', gmaps: v.g || '', site: v.w || '', statut: v.f || '' }; }));
   const ibz = { dest: '', q: '', cat: '', zone: '' };
   const sansAccentIbz = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const lieuxLogos = () => LIEUX_LOGOS[state.dest] || [];
@@ -2558,7 +2558,7 @@
     const liste = lieuxLogos().filter((v) => (!ibz.cat || v.c === ibz.cat) && (!ibz.zone || v.z === ibz.zone) && (!q || sansAccentIbz(v.n + ' ' + v.s).includes(q)));
     const tuiles = liste.map((v) => `<button type="button" class="ibz-tuile" data-lieu="${cleX(v.n)}" aria-label="${esc(v.n)}, ${esc(v.s)}">
         <span class="ibz-logo">${v.logo ? `<img src="${v.logo}" alt="" loading="lazy" class="ibz-${v.m || 'white'}">` : `<i class="ibz-ini">${esc(v.ini)}</i>`}</span>
-        <b>${esc(v.n)}</b><small>${esc(v.s)}</small></button>`).join('');
+        <b>${esc(v.n)}</b><small>${esc(v.s)}</small>${v.f ? `<em class="ibz-ferme">${/temporaire/i.test(v.f) ? 'Fermé pour l’instant' : 'Fermé'}</em>` : ''}</button>`).join('');
     return { n: liste.length, html: tuiles || '<p class="ibz-vide">Aucun lieu ne correspond. Essaie une autre zone ou un autre type.</p>' };
   }
   function puceIbz(attr, val, label, on) { return `<button type="button" class="ibz-puce${on ? ' on' : ''}" ${attr}="${esc(val)}" aria-pressed="${on}">${esc(label)}</button>`; }
@@ -2596,7 +2596,7 @@
   });
   document.addEventListener('input', (e) => { if (e.target.id !== 'ibz-q') return; ibz.q = e.target.value; majBlocIbiza(true); });
   function renderSheetIbizaPlus(l) {
-    $('#sheet-status').innerHTML = '<span class="badge b-est">DJ à confirmer</span>';
+    $('#sheet-status').innerHTML = l.statut ? `<span class="badge b-off">${esc(l.statut)}</span>` : '<span class="badge b-est">DJ à confirmer</span>';
     const q = l.nom + ' ' + (l.ville === 'Dubaï' ? 'Dubai' : 'Ibiza') + ' ' + (l.zone || '');
     $('#sheet-body').innerHTML = `<div class="hero">${photo(l, 'hero-img')}</div><h2>${esc(l.nom)}</h2>
       <div class="meta">${NOM_CAT[l.cat]} · ${esc(l.zone)} · ${l.ville}</div>
@@ -2605,8 +2605,8 @@
       <p class="conseil">Les DJ de ce lieu ne sont pas encore annoncés dans Banzic. Le lieu et ses DJ pourront publier leurs dates eux-mêmes.</p>
       <p class="demo-note">Fiche de démonstration : description et horaires indicatifs, à vérifier avant d'y aller.</p>`;
     $('#sheet-actions').innerHTML = `
-      <a class="btn-ghost" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}" target="_blank" rel="noopener">Itinéraire</a>
-      <a class="btn-main" href="https://www.google.com/search?q=${encodeURIComponent(q + ' soirée')}" target="_blank" rel="noopener">Voir ses soirées</a>`;
+      <a class="btn-ghost" href="${esc(l.gmaps || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q))}" target="_blank" rel="noopener">Itinéraire</a>
+      <a class="btn-main" href="${esc(l.site || 'https://www.google.com/search?q=' + encodeURIComponent(q + ' soirée'))}" target="_blank" rel="noopener">${l.site ? 'Site du lieu' : 'Voir ses soirées'}</a>`;
   }
   const CARTES_ILLUS = { ibiza: { nom: "Carte d'Ibiza", img: 'ibiza-plan.jpg', cats: () => CAT_IBIZA, reps: () => REPERES_IBIZA }, dubai: { nom: 'Carte de Dubaï', img: 'dubai-plan.jpg', cats: () => CAT_DUBAI, reps: () => REPERES_DUBAI } };
   function carteIbizaGrande(dest) {
