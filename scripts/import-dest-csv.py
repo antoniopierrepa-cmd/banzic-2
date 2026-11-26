@@ -3,7 +3,7 @@ Usage : python3 scripts/import-dest-csv.py <dest> <fichier.csv>
 Les lieux « Non trouvé » sur Google Maps sont ignorés ; les lieux fermés définitivement aussi."""
 import csv, json, re, sys
 CAT = {'Discothèque': 'Clubs', 'Discothèques': 'Clubs', 'Beach club': 'Beach clubs', 'Beach clubs': 'Beach clubs', 'Beach club / pool party': 'Beach clubs',
-       'Pool parties (lieux)': 'Pool clubs', 'Pool club': 'Pool clubs', 'Pool clubs': 'Pool clubs', 'Bars de plage': 'Bars de plage', 'Bar de plage': 'Bars de plage',
+       'Pool parties (lieux)': 'Pool clubs', 'Lieu de pool parties': 'Pool clubs', 'Pool club': 'Pool clubs', 'Pool clubs': 'Pool clubs', 'Bars de plage': 'Bars de plage', 'Bar de plage': 'Bars de plage',
        'Sunset bar': 'Sunset bars', 'Sunset bars': 'Sunset bars', 'Rooftop': 'Rooftops', 'Rooftops': 'Rooftops',
        'Bar musical': 'Bars & restos festifs', 'Bars musicaux': 'Bars & restos festifs', 'Restaurants festifs': 'Bars & restos festifs', 'Restaurant festif': 'Bars & restos festifs', 'Bar festif': 'Bars & restos festifs'}
 ZONES = {
@@ -11,6 +11,19 @@ ZONES = {
   'miami': {'Miami Beach': ['South Beach', 'Mid-Beach'], 'Downtown & Brickell': ['Downtown', 'Brickell', 'Watson Island'],
             'Wynwood & nord': ['Wynwood', 'Allapattah', 'Hialeah', 'Little River', 'MiMo', 'Upper East Side'], 'Little Havana & Grove': ['Little Havana', 'Coconut Grove']},
 }
+# Zone déduite de l'adresse Google quand le tableur ne donne pas de secteur précis (premier mot-clé trouvé, dans l'ordre)
+ZONES_ADRESSE = {
+  'dubai': [('Palm Jumeirah', ['Palm', 'Nakhlat Jumeira']),
+            ('Marina, JBR & Bluewaters', ['Marsa Dubai', 'Jumeirah Beach Residence', 'Bluewaters', 'Dubai Harbour', 'Al Sufouh', 'Al Safouh', 'Media City', 'Jumeirah Lakes', 'Barsha Heights', 'Al Thanyah']),
+            ('Meydan & quartiers', ['Meydan', 'Nad Al Sheba', 'Jumeirah Village', 'Mirdif']),
+            ('Jumeirah', ['Jumeira', 'Umm Suqeim']),
+            ('Downtown, DIFC & Business Bay', ['Downtown', 'DIFC', 'Business Bay', 'Burj Khalifa', 'Sheikh Mohammed bin Rashid', 'Trade Center', 'Trade Centre', 'Sheikh Zayed', "Zaa'beel", 'Jaddaf']),
+            ('Vieux Dubaï', ['Burjuman', 'Al Raffa', 'Rolla', 'Al Mina', 'Oud Metha', 'Garhoud'])],
+}
+def zone_adresse(dest, adresse):
+    for zone, mots in ZONES_ADRESSE.get(dest, []):
+        if any(m.lower() in adresse.lower() for m in mots): return zone
+    return ''
 dest, fichier = sys.argv[1], sys.argv[2]
 zone_de = {s: z for z, ss in ZONES.get(dest, {}).items() for s in ss}
 def ini(n):
@@ -22,7 +35,7 @@ for r in csv.DictReader(open(fichier, encoding='utf-8-sig'), delimiter=';'):
     statut = (r.get('Statut Google') or '').strip()
     if r['Nom sur Google Maps'] == 'Non trouvé' or 'définitivement' in statut.lower(): ignores.append(r['Nom']); continue
     if r['Catégorie'] not in CAT: sys.exit('Catégorie inconnue : ' + r['Catégorie'])
-    e = {'n': r['Nom'], 's': r['Secteur'], 'z': zone_de.get(r['Secteur'], r['Secteur']), 'c': CAT[r['Catégorie']], 'logo': '', 'm': '', 'ini': ini(r['Nom'])}
+    e = {'n': r['Nom'], 's': (zone_adresse(dest, r.get('Adresse', '')) or r['Secteur']) if r['Secteur'].lower() in ('dubai', dest) else r['Secteur'], 'z': zone_de.get(r['Secteur']) or zone_adresse(dest, r.get('Adresse', '')) or r['Secteur'], 'c': CAT[r['Catégorie']], 'logo': '', 'm': '', 'ini': ini(r['Nom'])}
     if statut and statut != 'Ouvert': e['f'] = statut
     if r['Lien Google Maps'].startswith('https://'): e['g'] = r['Lien Google Maps']
     if r['Site officiel'].startswith('http'): e['w'] = r['Site officiel']
