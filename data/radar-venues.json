@@ -1,6 +1,6 @@
 {
   "phase": "manual",
-  "updatedAt": "2026-11-12T00:07:42.351Z",
+  "updatedAt": "2026-11-26T04:45:00Z",
   "scope": "France — 101 départements",
   "note": "Répertoire manuel des établissements identifiés, complété par les sources nationales DATAtourisme et OpenAgenda dans radar-events.json. Un lieu mentionné pour un événement ne prouve pas une ouverture permanente. Les anciens noms non vérifiés restent séparés.",
   "venues": [
@@ -227,6 +227,59 @@
       "facebook": "https://www.facebook.com/espacelumia/",
       "status": "programme futur publié",
       "note": "Site officiel consulté le 12 novembre 2026 ; programme club, cabaret et dancing. Ne pas transformer les horaires d’ouverture en événements."
+    },
+    {
+      "id": "le-cirque-hyeres",
+      "nom": "Le Cirque",
+      "ville": "Hyères",
+      "dep": "83",
+      "type": "bar",
+      "sourceUrl": "https://www.barpublecirque.com/",
+      "instagram": "https://www.instagram.com/barpublecirque/",
+      "note": "Bar pub et lieu d'événements sous chapiteau, 1914 avenue de l'Aéroport. Soirées datées publiées sur le site officiel.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "sams-klub-bandol",
+      "nom": "Sam's Klub (ex-Le Kube)",
+      "ville": "Bandol",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.sams-klub.com/soirees-bandol/",
+      "instagram": "https://www.instagram.com/sams_klub_bandol/",
+      "note": "Resto club, 898 Nouvelle Route du Beausset (face au bowling). Programme hebdomadaire : vendredi soirée à thème avec DJ, samedi DJ résident vers 22 h 30-3 h, dimanche bachata/kizomba. Position GPS exacte à confirmer avant import des soirées.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "lartiste-roquebrune",
+      "nom": "L'Artiste 83",
+      "ville": "Roquebrune-sur-Argens",
+      "dep": "83",
+      "type": "bar",
+      "sourceUrl": "https://www.lartiste83.com/",
+      "note": "Bar festif avec DJ et concerts, 15 rue de l'Industrie, La Bouverie (fiche office de tourisme Estérel Côte d'Azur). Aucune soirée datée trouvée.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "the-night-club-saint-raphael",
+      "nom": "The Night Club",
+      "ville": "Saint-Raphaël",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://www.lenightclub83.fr/",
+      "instagram": "https://www.instagram.com/lenight.club.saint.raphael/",
+      "note": "Discothèque, 133 rue Jules Barbier, ouverte de minuit à 6 h. Programme publié sur Instagram uniquement.",
+      "status": "a-verifier-manuellement"
+    },
+    {
+      "id": "boys-paradise-toulon",
+      "nom": "Boy's Paradise",
+      "ville": "Toulon",
+      "dep": "83",
+      "type": "club",
+      "sourceUrl": "https://agendalgbt.com/organisateur/boy-s-paradise",
+      "note": "Club gay friendly, 1 bd Pierre Toesca. Ouvert du mercredi au samedi (entrée 15 €) ; les dates listées sont des horaires d'ouverture, pas des soirées annoncées.",
+      "status": "a-verifier-manuellement"
     }
   ],
   "unverifiedCandidates": [
@@ -244,16 +297,6 @@
       "id": "absolu",
       "nom": "L’Absolu Club House",
       "ville": "Solliès-Pont",
-      "dep": "83",
-      "type": "club",
-      "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
-      "status": "piste-annuaire-activite-actuelle-non-verifiee",
-      "note": "Nom recensé dans un annuaire potentiellement ancien. Vérifier ouverture actuelle, renommage, doublons et page officielle avant toute publication d’événement. Ne constitue pas une confirmation d’activité en 2026."
-    },
-    {
-      "id": "artiste",
-      "nom": "L’Artiste",
-      "ville": "Roquebrune-sur-Argens",
       "dep": "83",
       "type": "club",
       "sourceUrl": "https://www.guidedenuit.com/discotheques_var",
