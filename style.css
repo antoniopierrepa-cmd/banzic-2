@@ -3825,6 +3825,9 @@ nav.tabs .tab[data-tab="checkin"] svg.nav-calendar > path.calendar-rings { strok
 .ibz-logo { height: 60px; width: 100%; display: flex; align-items: center; justify-content: center; }
 .ibz-logo img { max-width: 88%; max-height: 56px; object-fit: contain; }
 .ibz-logo img.ibz-white { filter: brightness(0) invert(1) drop-shadow(0 0 6px rgba(255,79,216,.55)); }
+.ibz-logo.ibz-visuel { height: auto; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; box-shadow: 0 0 10px rgba(255,79,216,.25); }
+.ibz-logo.ibz-visuel img { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; }
+.ibz-avec-visuel { padding-top: 6px; }
 .ibz-logo img.ibz-badge { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; }
 .ibz-ini { width: 52px; height: 52px; border-radius: 50%; border: 1.5px solid #ff4fd8; box-shadow: 0 0 12px rgba(255,79,216,.6); display: flex; align-items: center; justify-content: center; font: 800 16px 'Syne', sans-serif; font-style: normal; color: #ffd76a; }
 .ibz-tuile b { width: 100%; font-size: 12px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

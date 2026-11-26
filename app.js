@@ -2555,15 +2555,17 @@
   const lieuxLogos = () => LIEUX_LOGOS[state.dest] || [];
   function grilleLogosIbiza() {
     const q = sansAccentIbz(ibz.q.trim());
-    const liste = lieuxLogos().filter((v) => (!ibz.cat || v.c === ibz.cat) && (!ibz.zone || v.z === ibz.zone) && (!q || sansAccentIbz(v.n + ' ' + v.s).includes(q)));
-    const tuiles = liste.map((v) => `<button type="button" class="ibz-tuile" data-lieu="${cleX(v.n)}" aria-label="${esc(v.n)}, ${esc(v.s)}">
-        <span class="ibz-logo">${v.logo ? `<img src="${v.logo}" alt="" loading="lazy" class="ibz-${v.m || 'white'}">` : `<i class="ibz-ini">${esc(v.ini)}</i>`}</span>
-        <b>${esc(v.n)}</b><small>${esc(v.s)}</small>${v.f ? `<em class="ibz-ferme">${/temporaire/i.test(v.f) ? 'Fermé pour l’instant' : 'Fermé'}</em>` : ''}</button>`).join('');
+    const adulte = /libert|18\+|echangis/.test(q); // les lieux réservés aux adultes n'apparaissent que si on les cherche
+    const liste = lieuxLogos().filter((v) => (!v.a18 || adulte) && (!ibz.cat || v.c === ibz.cat) && (!ibz.zone || v.z === ibz.zone) && (!q || sansAccentIbz(v.n + ' ' + v.s).includes(q)));
+    const visuelIbz = (v) => { const p = (window.PHOTOS_LIEUX || {})[cleX(v.n)]; return p && /photos-lieux\/ibiza\//.test(p.f) ? p.f : ''; };
+    const tuiles = liste.map((v) => { const vis = visuelIbz(v); return `<button type="button" class="ibz-tuile${vis ? ' ibz-avec-visuel' : ''}" data-lieu="${cleX(v.n)}" aria-label="${esc(v.n)}, ${esc(v.s)}">
+        ${vis ? `<span class="ibz-logo ibz-visuel"><img src="${vis}" alt="" loading="lazy"></span>` : `<span class="ibz-logo">${v.logo ? `<img src="${v.logo}" alt="" loading="lazy" class="ibz-${v.m || 'white'}">` : `<i class="ibz-ini">${esc(v.ini)}</i>`}</span>`}
+        <b>${esc(v.n)}</b><small>${esc(v.s)}</small>${v.f ? `<em class="ibz-ferme">${/temporaire/i.test(v.f) ? 'Fermé pour l’instant' : 'Fermé'}</em>` : ''}${v.a18 ? '<em class="ibz-ferme">18+</em>' : ''}</button>`; }).join('');
     return { n: liste.length, html: tuiles || '<p class="ibz-vide">Aucun lieu ne correspond. Essaie une autre zone ou un autre type.</p>' };
   }
   function puceIbz(attr, val, label, on) { return `<button type="button" class="ibz-puce${on ? ' on' : ''}" ${attr}="${esc(val)}" aria-pressed="${on}">${esc(label)}</button>`; }
   function blocLogosIbiza() {
-    const tous = lieuxLogos(); if (!tous.length) return '';
+    const tous = lieuxLogos().filter((v) => !v.a18); if (!tous.length) return '';
     if (ibz.dest !== state.dest) { ibz.dest = state.dest; ibz.q = ''; ibz.cat = ''; ibz.zone = ''; }
     const cats = ORDRE_CATS.filter((c) => tous.some((v) => v.c === c)), zones = [...new Set(tous.map((v) => v.z))];
     const g = grilleLogosIbiza(), filtre = ibz.q || ibz.cat || ibz.zone, nomDest = DEST[state.dest] ? DEST[state.dest].nom : '';
