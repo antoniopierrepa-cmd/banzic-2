@@ -6,7 +6,8 @@ CAT = {'Discothèque': 'Clubs', 'Discothèques': 'Clubs', 'Beach club': 'Beach c
        'Pool parties (lieux)': 'Pool clubs', 'Lieu de pool parties': 'Pool clubs', 'Pool club': 'Pool clubs', 'Pool clubs': 'Pool clubs', 'Bars de plage': 'Bars de plage', 'Bar de plage': 'Bars de plage',
        'Sunset bar': 'Sunset bars', 'Sunset bars': 'Sunset bars', 'Rooftop': 'Rooftops', 'Rooftops': 'Rooftops',
        'Bar musical': 'Bars & restos festifs', 'Bars musicaux': 'Bars & restos festifs', 'Restaurants festifs': 'Bars & restos festifs', 'Restaurant festif': 'Bars & restos festifs', 'Bar festif': 'Bars & restos festifs',
-       'Restaurant festif à vérifier': 'Bars & restos festifs', 'Lieu de soirées': 'Beach clubs'}
+       'Restaurant festif à vérifier': 'Bars & restos festifs', 'Lieu de soirées': 'Beach clubs',
+       'Discothèques et clubs': 'Clubs', 'Lieux de pool parties': 'Pool clubs'}
 ZONES = {
   'phuket': {'Patong': ['Patong', 'Paradise Beach'], 'Côte ouest (Bang Tao, Kamala)': ['Bang Tao', 'Kamala'], 'Sud (Kata, Karon, Rawai)': ['Kata', 'Kata Noi', 'Kata Noi / Karon', 'Rawai'], 'Phuket Town': ['Phuket Town']},
   'mykonos': {'Plages du sud': ['Paradise Beach', 'Super Paradise', 'Paraga', 'Psarou'], 'Nord': ['Ftelia', 'Panormos'], 'Chora (ville)': ['Mykonos Town']},
@@ -15,6 +16,9 @@ ZONES = {
 }
 # Zone déduite de l'adresse Google quand le tableur ne donne pas de secteur précis (premier mot-clé trouvé, dans l'ordre)
 ZONES_ADRESSE = {
+  'tulum': [('Tulum centre & Aldea Zama', ['Tulum Centro', 'Aldea Zama', 'Orion Sur', 'Beta Sur']),
+            ('Route 307 & environs', ['México 307', 'Federal 307', 'Chemuyil']),
+            ('Zone hôtelière (plage)', ['Boca Paila', 'Tulum Beach', 'Zona Hotelera', 'Zona Costera', 'Beach Road', 'QROO 15', 'Punta Piedra'])],
   'dubai': [('Palm Jumeirah', ['Palm', 'Nakhlat Jumeira']),
             ('Marina, JBR & Bluewaters', ['Marsa Dubai', 'Jumeirah Beach Residence', 'Bluewaters', 'Dubai Harbour', 'Al Sufouh', 'Al Safouh', 'Media City', 'Jumeirah Lakes', 'Barsha Heights', 'Al Thanyah']),
             ('Meydan & quartiers', ['Meydan', 'Nad Al Sheba', 'Jumeirah Village', 'Mirdif']),
